@@ -70,6 +70,8 @@ private:
     size_t getNextIndex(size_t idx) const;
 
 public:
+    typedef struct circular_array_state inftyBufferState;
+
     /**
      * Instantiates a new buffer using external memory allocation.
      *

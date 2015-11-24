@@ -1,280 +1,557 @@
-(* function that prety prints 'observation' function as a lambda functions in c++ *)
+(*pp camlp4o -I C:/cygwin/home/anmap/.opam/system/lib/type_conv C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma -I C:/cygwin/home/anmap/.opam/system/lib/sexplib C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma -I +camlp4 *)
+
+open Hashtbl
+
+type helper = string * string * int ref * (string, int) t
+
+let get_event_fulltype (t1,t2,_,_) = 
+  t1 ^ "< " ^ t2 ^" >"
+
+let get_proposition_hashtbl (_,_,_,tbl) =
+  tbl
+
+let get_proposition_counter (_,_,count,_) =
+  count := !count + 1;
+  !count
+
+(* function that pretty prints 'observation' function as a lambda functions in c++ *)
 let synth_obs_function observation_funcname struct_name =
   (* *)
   let code = "
-    // obs lambda function
-    auto "^observation_funcname^" = []( struct "^struct_name^" env, proposition p, timespan t) -> three_valued_type
-    {
-      return b3_or ( env.trace->searchOForward(env.state_pos, p, t), env.trace->searchOBackward(env.state_pos, p, t) );
-    };
+  // obs lambda function
+  auto "^observation_funcname^" = []( struct "^struct_name^" env, proposition p, timespan t) -> three_valued_type
+  {
+    return b3_or ( env.trace->searchOForward(env.state_pos, p, t), env.trace->searchOBackward(env.state_pos, p, t) );
+  };
   " in
   code
 
   (* function that prety prints 'environment' function as a lambda function in c++ *)
-  let synth_environment =
-    let struct_name = "Environment" in
-    let circular_buffer_varname = "_local_buffer" in
-    let circular_buffer_vartype = "Trace<Event<int>>" in
-    let observation_funcname = "__observation" in
-    (* object to read traces containing current duration and element numbers (since is a circular buffer then size is constant)*)
-    let code_init = "
-      #include \"Trace.h\"
+let synth_environment helper =
+  let struct_name = "Environment" in
+  let circular_buffer_varname = "_local_buffer" in
+  let circular_buffer_vartype = "Trace< "^ get_event_fulltype(helper) ^" >" in
+  let observation_funcname = "__observation" in
+  (* object to read traces containing current duration and element numbers (since is a circular buffer then size is constant)*)
+  let code_init = "
+  struct "^struct_name^" {
+    size_t state_pos;
+    "^circular_buffer_vartype^" *trace;
+    three_valued_type (*evaluate)(struct Environment, proposition, timespan);
 
-      struct "^struct_name^" {
-        size_t state_pos;
-        "^circular_buffer_vartype^" *trace;
-        three_valued_type (*evaluate)(duration, "^circular_buffer_vartype^", proposition, timespan);
+    "^struct_name^"(
+      size_t s_pos,
+      "^circular_buffer_vartype^" * t,
+      three_valued_type (*ev)(struct Environment, proposition, timespan)
+    ) :
+      state_pos(s_pos),
+      trace(t),
+      evaluate(ev) {};
+  };
+  " in
 
-        "^struct_name^"(
-          size_t s_pos,
-          "^circular_buffer_vartype^" * t,
-          three_valued_type (*ev)(duration, "^circular_buffer_vartype^", proposition, timespan)
-        ) :
-          state_pos(s_pos),
-          trace(t),
-          evaluate(ev) {};
-      };
-    " in
-
-    (* observation function where duration_varname is the name of the current duration variable *)
-    let code_obs = synth_obs_function observation_funcname (struct_name) in
-    let code_end = "
-      // instantiation of the formula buffer
-      "^circular_buffer_vartype^" "^circular_buffer_varname^";
-
-      struct "^struct_name^" env(0, &"^circular_buffer_varname^", "^observation_funcname^");
-      extern struct "^struct_name^" env;
-    " in
-    (code_init^code_obs^code_end)
+  (* observation function where duration_varname is the name of the current duration variable *)
+  let code_obs = synth_obs_function observation_funcname (struct_name) in
+  let code_end = "
+  " in
+  (code_init^code_obs^code_end)
 
 
-  open Rmtld3.RMTLD3
 
-  (* Synthesization of the compute function  *)
-  let rec compute_term term =
-    match term with
-      | Constant value       -> string_of_float value
-      | Duration (di,phi)    -> "D" (*compute_term_duration m (t,t +. (compute_term m t  di)) phi*)
-      | FPlus (tr1,tr2)      -> compute_term tr1 ^" +. "^ compute_term tr2
-      | FTimes (tr1,tr2)     -> compute_term tr1 ^" *. "^ compute_term tr2
-      | _ -> raise (Failure "compute_terms: missing term") 
-  and compute formula =
-    let compute_function_head = "[](struct Environment env, timespan t)" in
-    match formula with
-      | Proposition p           -> compute_function_head^" { return env.ev(env, "^string_of_int (int_of_char (p.[0]))^", t); }"
-      | Not sf                  -> compute_function_head^" { return b3_not ("^ compute sf ^"); }"
-      | Or (sf1, sf2)           -> compute_function_head^" { return "^compute_function_head^" { return b3_or ("^ compute sf1 ^"(env,t), "^ compute sf2 ^"(env,t) ); }; }"
-      | Until (gamma, sf1, sf2) -> if gamma > 0. then compute_uless gamma (compute sf1) (compute sf2) else raise  (Failure "Gamma of U operator is a non-negative value") 
-      | LessThan (tr1,tr2)      -> compute_function_head^" { return "^compute_function_head^" { return b3_lessthan ("^ compute_term tr1 ^"(env,t), "^ compute_term tr2 ^"(env,t) ); }; }"
-      | _ -> raise (Failure "compute: missing formula")
-  and compute_uless gamma sf1 sf2 =
-    let trace_iterator = "TraceIterator<Event<int>>" in
-    "
-    []( struct Environment env, timespan t ) -> three_valued_type
+open Rmtld3.RMTLD3
+
+(* Synthesis of the compute function  *)
+let rec compute_term term helper =
+  match term with
+    | Constant value       -> string_of_float value
+    | Duration (di,phi)    -> "D" (*compute_term_duration m (t,t +. (compute_term m t  di)) phi*)
+    | FPlus (tr1,tr2)      -> compute_term tr1 helper ^" +. "^ compute_term tr2 helper
+    | FTimes (tr1,tr2)     -> compute_term tr1 helper ^" *. "^ compute_term tr2 helper
+    | _ -> raise (Failure "compute_terms: missing term")
+and compute formula helper =
+  let compute_function_head = "[](struct Environment env, timespan t)" in
+  match formula with
+    | Prop p                  -> let tbl = get_proposition_hashtbl helper in
+                                 let counter = get_proposition_counter helper in 
+                                 compute_function_head^" { return env.evaluate(env, "^
+                                  string_of_int (
+                                    try Hashtbl.find tbl p with Not_found -> Hashtbl.add tbl p counter; counter 
+                                                )^
+                                 ", t); }"
+    | Not sf                  -> compute_function_head^" { return b3_not ("^ compute sf helper ^"); }"
+    | Or (sf1, sf2)           -> compute_function_head^" { return "^compute_function_head^" { return b3_or ("^ compute sf1 helper ^"(env,t), "^ compute sf2 helper ^"(env,t) ); }; }"
+    | Until (gamma, sf1, sf2) -> if gamma > 0. then compute_uless gamma (compute sf1 helper) (compute sf2 helper) helper else raise  (Failure "Gamma of U operator is a non-negative value") 
+    | LessThan (tr1,tr2)      -> compute_function_head^" { return "^compute_function_head^" { return b3_lessthan ("^ compute_term tr1 helper ^"(env,t), "^ compute_term tr2 helper ^"(env,t) ); }; }"
+    | _ -> raise (Failure "compute: missing formula")
+and compute_uless gamma sf1 sf2 helper =
+  let trace_iterator = "TraceIterator< "^ get_event_fulltype(helper) ^" >" in
+  "
+  []( struct Environment env, timespan t ) -> three_valued_type
+  {
+    auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator^" x) -> four_valued_type
     {
-      auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator^" x) -> four_valued_type
+
+      // eval_b lambda function
+      auto eval_b = []( struct Environment env, timespan t, four_valued_type v ) -> four_valued_type
       {
-
-        // eval_b lambda function
-        auto eval_b = []( struct Environment env, timespan t, four_valued_type v ) -> four_valued_type
+        // eval_i lambda function
+        auto eval_i = [](three_valued_type b1, three_valued_type b2) -> four_valued_type
         {
-          // eval_i lambda function
-          auto eval_i = [](three_valued_type b1, three_valued_type b2) -> four_valued_type
-          {
-            return (b2 != FALSE) ? b3_to_b4(b2) : ( (b1 != TRUE && b2 == FALSE) ? b3_to_b4(b1) : FV_SYMBOL );
-          };
-
-          if ( v == FV_SYMBOL )
-          {
-            // compute phi1
-            three_valued_type cmpphi1 = "^sf1^"(env, t);
-            // compute phi2
-            three_valued_type cmpphi2 = "^sf2^"(env, t);
-
-            four_valued_type rs = eval_i(cmpphi1, cmpphi2);
-
-            return rs;
-          }
-          else
-          {
-            return v;
-          }
+          return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE && b2 == T_FALSE) ? b3_to_b4(b1) : FV_SYMBOL );
         };
 
-        // let s,_ = fold_left (fun (v,t') (prop,(ii1,ii2)) -> (eval_b (k, u, t') phi1 phi2 v, ii2)) (Symbol,t) x in
-        four_valued_type s = std::accumulate(
-          x.begin(),
-          x.end(),
-          std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
-            [env, eval_b]( const std::pair<four_valued_type, timespan> a, "^trace_iterator^" it ) {
-              return std::make_pair<four_valued_type, timespan>( eval_b( env, a.second, a.first ), a.second + it.getEvent().getTime() );
-            }
-        ).first;
+        if ( v == FV_SYMBOL )
+        {
+          // compute phi1
+          three_valued_type cmpphi1 = "^sf1^"(env, t);
+          // compute phi2
+          three_valued_type cmpphi2 = "^sf2^"(env, t);
 
-        return s;
+          four_valued_type rs = eval_i(cmpphi1, cmpphi2);
+
+          return rs;
+        }
+        else
+        {
+          return v;
+        }
       };
 
+      // let s,_ = fold_left (fun (v,t') (prop,(ii1,ii2)) -> (eval_b (k, u, t') phi1 phi2 v, ii2)) (Symbol,t) x in
+      four_valued_type s = std::accumulate(
+        x.begin(),
+        x.end(),
+        std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
+          [env, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype(helper) ^" e ) {
+            return std::make_pair<four_valued_type, timespan>( eval_b( env, a.second, a.first ), a.second + e.getTime() );
+          }
+      ).first;
 
-      // sub_k function defines a sub-trace
-      auto sub_k = []( struct Environment env, timespan t) -> "^trace_iterator^"
-      {
-        TraceIterator<Event<int>> it = env.trace->getTraceIterator();
+      return s;
+    };
 
-        // set TraceIterator for interval [t,"^string_of_float gamma^"[
-        it.setBegin( env.trace->serachIndexForwardUntil(t) );
-        it.setEnd( env.trace->serachIndexForwardUntil("^string_of_float gamma^") );
 
-        // return iterator ... interval length may be zero
-        return it;
+    // sub_k function defines a sub-trace
+    auto sub_k = []( struct Environment env, timespan t) -> "^trace_iterator^"
+    {
+      "^trace_iterator^" it = env.trace->getTraceIterator();
 
-       
-       /*if length tb < 1 then
-         []
-       else
-         let p1,p2 = partition (fun (_,(i1,i2)) -> if t <= i1 && i1 < (t+.gamma) then true else false) tb in
-         p1*/
+      // set TraceIterator for interval [t,t+"^string_of_float (gamma)^"[
+      std::pair<size_t,int> lb = env.trace->searchIndexForwardUntil(t);
+      std::pair<size_t,int> ub = env.trace->searchIndexForwardUntil(t+"^string_of_float (gamma)^");
 
-      };
+      it.setBegin( lb.first );
+      it.setEnd( ub.first );
+      it.setIt( lb.first );
+      it.setCnt( lb.second );
 
-      "^trace_iterator^" subk = sub_k(env, t);
-      // optimization step: update current index to avoid re-read events several times
-      env.state_pos = subk.getBegin();
+      // return iterator ... interval length may be zero
+      return it;
 
-      four_valued_type eval_c = eval_fold(env, t, subk );
-      
-      return ( eval_c = FV_SYMBOL ) ?
-        (
-        // we have two cases to consider
-        // when the time bound is the last symbol return False
-        // when the time bound is greater than trace return Unknown
-        ( env.trace->getDuration() <= (t + "^string_of_float gamma^") ) ? UNKNOWN : FALSE
-        )
-      :
-        b4_to_b3(eval_c)
-      ;
+     
+     /*if length tb < 1 then
+       []
+     else
+       let p1,p2 = partition (fun (_,(i1,i2)) -> if t <= i1 && i1 < (t+.gamma) then true else false) tb in
+       p1*/
 
-    }
+    };
 
-    "
+    "^trace_iterator^" subk = sub_k(env, t);
+    // optimization step: update current index to avoid re-read events several times
+    env.state_pos = subk.getBegin();
 
+    four_valued_type eval_c = eval_fold(env, t, subk );
+    
+    return ( eval_c == FV_SYMBOL ) ?
+      (
+      // we have two cases to consider
+      // when the time bound is the last symbol return False
+      // when the time bound is greater than trace return Unknown
+      ( env.trace->getDuration() <= (t + "^string_of_float gamma^") ) ? T_UNKNOWN : T_FALSE
+      )
+    :
+      b4_to_b3(eval_c)
+    ;
+
+  }
+
+  "
+
+(* compute the temporal upper bound of a formula *)
+let rec calculate_t_upper_bound formula =
+  match formula with
+    | Prop p                  -> 0.
+    | Not sf                  -> calculate_t_upper_bound sf
+    | Or (sf1, sf2)           -> max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
+    | Until (gamma, sf1, sf2) -> gamma +. max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
+    | LessThan (tr1,tr2)      -> max (calculate_t_upper_bound_term tr1) (calculate_t_upper_bound_term tr2)
+    | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.") 
+and calculate_t_upper_bound_term term =
+  match term with
+    | Constant value       -> 0.
+    | Duration (di,phi)    -> 0.
+    | FPlus (tr1,tr2)      -> 0.
+    | FTimes (tr1,tr2)     -> 0.
+    | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.") 
+
+
+(* rmtld3 synthesis interface *)
+
+let verbose = ref false
+let mon_filename = ref "config"
+let mon_formulas = ref ""
+
+let set_config_file file = mon_filename := file
+let set_formulas f = mon_formulas := f
+
+open Unix
+open Sexplib
+open Sexplib.Conv
+
+(* global_int settings *)
+type global_int = string * int with sexp
+(* global_string settings *)
+type global_string = string * string with sexp
+(* monitor setting entry*)
+type monitor = string * int * Rmtld3.RMTLD3.formula with sexp
+
+exception Settings_Not_Found of string;;
 
 let _ =
-  let event_queue_size = 100 in
 
-  (* Synthesize ocaml evaluation algorithm into c++ *)
-  let stream = open_out "eval_environment.h" in
-  Printf.fprintf stream "%s\n" "#ifndef _EVAL_ENVIRONMENT_H_
-    #define _EVAL_ENVIRONMENT_H_";
-  let r = synth_environment in
-  Printf.fprintf stream "%s %s\n" r "#endif //_EVAL_ENVIRONMENT_H_";
-  close_out stream;
+  let speclist = [
+    ("-f", Arg.String (set_formulas), "Formula(s) to be synthesized");
+    ("-n", Arg.String (set_config_file), "File containing synthesis settings");
+    ("-v", Arg.Set verbose, "Enables verbose mode");
+  ]
+  in let usage_msg = "rmtld3synthcpp [options]"
+  in Arg.parse speclist print_endline usage_msg;
+
+  print_endline ("Default synthesis directory: " ^ !mon_filename);
+
+  let create_dir dir_name = try let state = Sys.is_directory dir_name in if state then () else  Unix.mkdir dir_name 0o666; with _ -> Unix.mkdir dir_name 0o666 in
+
+  (* lets parsing configuration file into global_int and monitor type variables *)
+  let remainig_elements = Sexp.load_sexps !mon_filename in
+  let list_global_int_settings, remainig_elements = List.fold_left (
+    fun (lst,lst2) sexp_el -> ( try (global_int_of_sexp sexp_el) :: lst, lst2 with _ -> (lst, sexp_el::lst2) ) ) ([],[]) remainig_elements in
+  let list_global_string_settings, remainig_elements = List.fold_left (
+    fun (lst,lst2) sexp_el -> ( try (global_string_of_sexp sexp_el) :: lst, lst2 with _ -> (lst, sexp_el::lst2) ) ) ([],[]) remainig_elements in
+  let list_monitor_settings, remainig_elements = List.fold_left (
+    fun (lst,lst2) sexp_el -> ( try (monitor_of_sexp sexp_el) :: lst, lst2 with _ -> (lst, sexp_el::lst2) ) ) ([],[]) remainig_elements in
+  (* lets draw the settings that are not recognized *)
+  List.fold_left (fun lst sexp_el -> print_endline ( ( Sexp.to_string_hum sexp_el ) ^ " setting is not recognized.");  ) () remainig_elements;
+
+  (* c++ type templates *)
+  let evt_subtype = "int" in
+  let evt_type = "Event" in
+
+  (* monitor synthesis settings *)
+
+  let rec search_settings lst word =
+    if lst = [] then raise (Settings_Not_Found word);
+    let (el_id, el_val) = List.hd lst in
+    if el_id = word then el_val else search_settings (List.tl lst) word
+  in
+
+  (* buffer size *)
+  let event_queue_size = (search_settings list_global_int_settings "maximum_inter_arrival_time") in
+  (* monitor cluster name *)
+  let cluster_name = search_settings list_global_string_settings "cluster_name" in (* search that in global_string parameters *)
+  create_dir cluster_name;
+
+  (* manage helpers *)
+  let helper = (evt_type, evt_subtype, ref 0, Hashtbl.create 10) in
+
+  (* generate monitors *)
+  List.fold_left (fun _ (monitor_name,monitor_period,formula) ->
+
+    (*create_dir (cluster_name^"/"^monitor_name);*)
+
+    (* Synthesize ocaml evaluation algorithm into c++ *)
+
+    (* monitor dependent c++ functions begin here *)
+
+    (* Synthesize ocaml formula evaluation algorithm into c++ *)
+    let stream = open_out (cluster_name^"/"^monitor_name^"_compute.h") in
+    let code = "
+  #ifndef _"^ String.uppercase (monitor_name^"_compute") ^"_H_
+  #define _"^ String.uppercase (monitor_name^"_compute") ^"_H_
+
+  #include \"../rmtld3.h\"
+  
+  auto _"^monitor_name^"_compute = "^compute (formula) helper^";
+
+  #endif //_"^ String.uppercase (monitor_name^"_compute") ^"_H_
+    " in
+    Printf.fprintf stream "%s\n" code;
+    close_out stream;
 
 
+    let stream = open_out (cluster_name^"/"^String.capitalize monitor_name^".h") in
+    let code = "
+  #ifndef MONITOR_"^String.uppercase monitor_name^"_H
+  #define MONITOR_"^String.uppercase monitor_name^"_H
 
-  let stream = open_out "Trace.h" in
+  #include \"Rmtld3_reader.h\"
+  #include \"Monitor.h\"
+
+  class "^String.capitalize monitor_name^" : public Monitor {
+
+  private:
+    RTEML_reader<int> __reader;
+    RMTLD3_reader< "^ get_event_fulltype(helper) ^" > trace = RMTLD3_reader< "^ get_event_fulltype(helper) ^" >( &__reader, "^ string_of_float (calculate_t_upper_bound formula) ^" );
+
+    struct Environment env(0, &trace, __observation);
+
+  protected:
+    void run(){
+
+      _"^monitor_name^"_compute(,0);
+    }
+
+  public:
+    "^String.capitalize monitor_name^"(IEventBuffer<int> &buffer, useconds_t p): Monitor(p) {
+      configReader<int>(__reader, buffer);
+    }
+
+  };
+
+  #endif //MONITOR_"^String.uppercase monitor_name^"_H" in
+    Printf.fprintf stream "%s\n" code;
+    close_out stream;
+
+  (* monitor dependent functions ends here *)
+
+) () list_monitor_settings;
+
+
+(* the next functions will be used to manage the buffers assigned to each formula *)
+
+  let stream = open_out (cluster_name^"/Rmtld3_reader.h") in
   let code = "
-    #ifndef _TRACE_H_
-    #define _TRACE_H_
+  #ifndef _RMTLD3_READER_H_
+  #define _RMTLD3_READER_H_
 
-    #include <functional>
-    #include <iterator>
-    #include <numeric>
+  #include <functional>
+  #include <iterator>
+  #include <numeric>
 
-    #include \"Event.h\"
-    #include \"time_compat.h\"
+  #include \"rmtld3.h\"
 
-    typedef unsigned int duration;
-    typedef unsigned int proposition;
-    typedef unsigned int timespan;
+   "^ synth_environment helper ^"
 
-    enum three_valued_type {TRUE, FALSE, UNKNOWN};
+  template<typename T>
+  class RMTLD3_reader 
+  {
 
-    /** OR */
-    #define b3_or(b31, b32) \\
-      ( b31 == TRUE || b32 == TRUE ) ? TRUE : \\
-        (( b31 == FALSE && b32 == FALSE ) ? FALSE : UNKNOWN)
+    TraceIterator<T> iterator; // it allows us to run over the circular buffer constrained by an interval
 
-    /** NOT */
-    #define b3_not(b3) (b3 == TRUE) ? FALSE : ( (b3 == FALSE) ? TRUE : UNKNOWN )
+    // instead of a new memory allocator we will use the RTEML_reader of the monitor class
+    RTEML_reader<T> * __reader;
 
-    /** Relation operator < */
-    #define b3_lessthan(n1,n2)  (n1 < n2) ? TRUE : ( (n1 >= n2) ? FLASE : UNKNOWN )
+    // current buffer state (idx and cnt)
+    int state_cnt;
+    size_t state_idx;
 
-    // defines an interator for trace
-    template<typename T>
-    class TraceIterator :  public std::iterator< std::input_iterator_tag, T >
-    {
-      size_t idx_begin;
-      size_t idx_end;
+    timespan formula_t_upper_bound;
 
-      T * buffer;
+    public:
+      RMTLD3_reader(RTEML_reader<T> rd, timespan ub) : iterator(TraceIterator<T> (rd, 0, 0, 0, 0)), __reader(rd), formula_t_upper_bound(ub)  {};
 
-      public:
-        TraceIterator<T> (T * b, size_t i, size_t e) : buffer(b), idx_begin(i), idx_end(e) {};
+      /** match timestamp and return the index using forward direction (iterator++) */
+      std::pair<size_t,int> searchIndexForwardUntil(timespan t) {
 
-        size_t getBegin() { return idx_begin; };
-        void setBegin(size_t b) { idx_begin = b; };
-        void setEnd(size_t e) { idx_end = e; };
+        inftyBufferState st = trace->getCurrentBufferState();
 
-        T getEvent() { return buffer[0]; }; // [TODO]
+        /* while current buffer endpoint timestamp is not greater or equal than timespan t then
+         * yield (save state and context-switch) else continue 
+         */
+        while( st.lastelementpushed_ts % formula_t_upper_bound < t )
+        {
+          // wait
+          //yield();
+          continue;
+        }
 
-        TraceIterator<T> begin() { return *this; }; // [TODO]
-        TraceIterator<T> end() { return *this; }; // [TODO]
-        TraceIterator<T>& operator++() { return *this; } // [TODO]
-        bool operator!=(const TraceIterator<T>& rhs) { return true; } // [TODO]
-        TraceIterator<T>& operator*() { return *this; } // [TODO]
-    };
+        /* create an iterator where its end is the endpoint of the buffer
+         * and process the iteration until the timespan t is found. After
+         * that return the index and cnt where t holds.
+         */
 
-    template<typename T>
-    class Trace 
-    {
 
-      TraceIterator<T> iterator;
+        return std::make_pair<size_t, int>(0,0);
+      }; // [TODO]
 
-      T buffer["^string_of_int event_queue_size^"]; // statically assigned
+      // pre-indexed search
+      three_valued_type searchOForward(size_t idx, proposition p, timespan t) {
 
-      public:
-        Trace() : iterator(TraceIterator<T> (buffer, 0, "^string_of_int (event_queue_size-1)^")) {};
+        /* use the function searchIndexForwardUntil to find the index where
+         * t hold and check if proposition is satisfied at time t
+         */
 
-        // pre-indexed search
-        three_valued_type searchOForward(size_t idx, proposition p, timespan t) { return UNKNOWN; }; // [TODO]
-        three_valued_type searchOBackward(size_t idx, proposition p, timespan t) { return UNKNOWN; }; // [TODO]
+        return T_UNKNOWN;
+      }; // [TODO]
+      three_valued_type searchOBackward(size_t idx, proposition p, timespan t) { return T_UNKNOWN; }; // [TODO]
 
-        /** match index with timestamp using forward direction (left-right way) */
-        size_t serachIndexForwardUntil(timespan) { return 0; }; // [TODO]
+      /** get the current maximum duration of the trace */
+      timespan getDuration() { return 0; }; // [TODO]
 
-        /** get the current maximum duration of the trace */
-        timespan getDuration() { return 0; }; // [TODO]
+      TraceIterator<T> getTraceIterator() { return iterator; };
+  };
 
-        TraceIterator<T> getTraceIterator() { return iterator; };
-    };
-
-    #endif //_TRACE_H_
-
+  #endif //_RMTLD3_READER_H_
   " in
   Printf.fprintf stream "%s\n" code;
   close_out stream;
 
 
-  (* Synthesize ocaml formula evaluation algorithm into c++ *)
-  let stream = open_out "eval_formula.h" in
-  Printf.fprintf stream "%s\n" "
-    #ifndef _EVAL_FORMULA_H_
-    #define _EVAL_FORMULA_H_
+  let stream = open_out (cluster_name^"/Rmtld3_reader_it.h") in
+  let code = "
 
-    #include \"eval_environment.h\"
+  #include \"RTEML_reader.h\"
 
-    enum four_valued_type { FV_TRUE, FV_FALSE, FV_UNKNOWN, FV_SYMBOL };
+  // defines an interator for a trace
+  template<typename T>
+  class TraceIterator :  public std::iterator< std::input_iterator_tag, T >
+  {
+    size_t b_lower_bound, b_upper_bound;
+    size_t ibegin, iend, it;
+    int cnt;
 
-    // type conversion from three_valued_type to four_valued_type
-    #define b3_to_b4(b3) (b3 == TRUE) ? FV_TRUE : ( ( b3 == FALSE ) ? FV_FALSE : FV_UNKNOWN )
+    RTEML_reader<T> * __reader;
 
-    // convert four_valued_type into three_valued type
-    #define b4_to_b3(b4) (b4 == FV_TRUE ) ? TRUE : ( ( b4 == FV_FALSE ) ? FALSE : UNKNOWN )
+    public:
+      TraceIterator<T> (RTEML_reader<T> * _l_reader,
+          size_t lb, size_t ub, size_t i, size_t e, size_t iter, int c) :
+        __reader(_l_reader),
+        b_lower_bound(_l_reader->getLowerIdx()),
+        b_upper_bound(_l_reader->getHigherIdx()),
+        ibegin(i), iend(e), it(iter), cnt(c) {};
 
-  ";
-  let r = "auto _compute = "^compute (Or(Until(2.,Proposition("A"),Proposition("C")),Proposition("B")))^";" in
-  Printf.fprintf stream "%s %s\n" r "
-  #endif //_EVAL_FORMULA_H_
-  ";
+      size_t getBegin() { return ibegin; }
+
+      void setBegin(size_t b) { ibegin = b; }
+      void setEnd(size_t e) { iend = e; }
+      void setCnt(int c) { cnt = c; }
+      void setIt(size_t iter) { it = iter; }
+
+      TraceIterator<T> begin() {
+        return TraceIterator<T> (
+          buffer, b_lower_bound, b_upper_bound,
+          ibegin, iend, ibegin, (ibegin <= it ) ? cnt : cnt-1 );
+      } // cnt can be cnt or cnt-1 [CONFIRM]
+
+      TraceIterator<T> end() {
+        return TraceIterator<T> (
+          buffer, b_lower_bound, b_upper_bound,
+          ibegin, iend, iend, (it <= iend) ? cnt : cnt+1 );
+      } // cnt can be cnt or cnt+1  [CONFIRM]
+
+      TraceIterator<T>& operator++() {
+        ++ it;
+        if ( it == b_upper_bound ) {
+           ++ cnt;
+           it = b_lower_bound;
+        }
+        return *this;
+      } // [CONFIRM]
+
+      bool operator==(const TraceIterator<T>& rhs) { return it == rhs.it && cnt == rhs.cnt; } // [CONFIRM]
+      bool operator!=(const TraceIterator<T>& rhs) { return !(it == rhs.it && cnt == rhs.cnt); } // [CONFIRM]
+
+      T& operator*() {
+        Event<T> &event;
+        bool &gap;
+        // here we could adopt a small buffer to avoid sucessive call of dequeues (for instance a local buffer of 10 elements)
+        // dequeue the event of the it index
+        __reader->dequeue(it, event, gap);
+        return event->getData();
+      } // [CONFIRM]
+  };
+  " in
+  Printf.fprintf stream "%s\n" code;
   close_out stream;
+
+
+  let stream = open_out (cluster_name^"/rmtld3.h") in
+  let code = "
+  #ifndef _RMTLD3_H_
+  #define _RMTLD3_H_
+
+  #include \"Event.h\"
+  #include \"time_compat.h\"
+
+  typedef unsigned int duration;
+  typedef unsigned int proposition;
+  typedef unsigned int timespan;
+
+  enum three_valued_type { T_TRUE, T_FALSE, T_UNKNOWN };
+  enum four_valued_type { FV_TRUE, FV_FALSE, FV_UNKNOWN, FV_SYMBOL };
+
+  // type conversion from three_valued_type to four_valued_type
+  #define b3_to_b4(b3) (b3 == T_TRUE) ? FV_TRUE : ( ( b3 == T_FALSE ) ? FV_FALSE : FV_UNKNOWN )
+
+  // convert four_valued_type into three_valued type
+  #define b4_to_b3(b4) (b4 == FV_TRUE ) ? T_TRUE : ( ( b4 == FV_FALSE ) ? T_FALSE : T_UNKNOWN )
+
+
+  /** OR */
+  #define b3_or(b31, b32) \\
+    ( b31 == T_TRUE || b32 == T_TRUE ) ? T_TRUE : \\
+      (( b31 == T_FALSE && b32 == T_FALSE ) ? T_FALSE : T_UNKNOWN)
+
+  /** NOT */
+  #define b3_not(b3) (b3 == T_TRUE) ? T_FALSE : ( (b3 == T_FALSE) ? T_TRUE : T_UNKNOWN )
+
+  /** Relation operator < */
+  #define b3_lessthan(n1,n2)  (n1 < n2) ? T_TRUE : ( (n1 >= n2) ? T_FALSE : T_UNKNOWN )
+
+  #endif //_RMTLD3_H_
+  " in
+  Printf.fprintf stream "%s\n" code;
+  close_out stream;
+
+
+(* this standalone cpp file instantiates the monitors that have been synthesized *)
+  let stream = open_out (cluster_name^"/"^ cluster_name ^".cpp") in
+  let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize monitor_name^".h\"\n" ) "" list_monitor_settings in
+  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"(__buffer, "^string_of_int monitor_period^");\n" ) "" list_monitor_settings in
+  let code = headers ^"
+  #include \"RTEML_buffer.h\"
+
+static RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
+
+"
+^ functions ^
+"
+
+"
+in
+  Printf.fprintf stream "%s\n" code;
+  close_out stream;
+
+let stream = open_out (cluster_name^"/"^ cluster_name ^".h") in
+let propositions = 
+  let tbl = get_proposition_hashtbl helper in
+  Hashtbl.fold (fun a_string b_int prop_list -> prop_list^ "#define P_"^a_string^" "^(string_of_int b_int)^"\n" ) tbl ""
+in
+let code = "#ifndef _"^String.uppercase cluster_name^"_H_
+#define _"^String.uppercase cluster_name^"_H_
+
+#include \"RTEML_buffer.h\"
+
+extern RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
+
+"^propositions^"
+
+#endif //_"^String.uppercase cluster_name^"_H_
+"
+in
+Printf.fprintf stream "%s\n" code;
+close_out stream;
+
+(* the buffers need to be managed according to its size and type; one buffer
+   could be used for several monitors; a monitor is the synthesis of a formula
+ *)

@@ -6,7 +6,7 @@
 class Monitor_One : public Monitor {
 
 private:
-	EventReader<int> eventReader;
+	RTEML_reader<int> _reader;
 
 protected:
 	void run(){
@@ -16,7 +16,7 @@ protected:
 
 public:
 	Monitor_One(IEventBuffer<int> &buffer, useconds_t p): Monitor(p) {
-		configReader<int>(eventReader, buffer);
+		configReader<int>(_reader, buffer);
 	}
 
 };

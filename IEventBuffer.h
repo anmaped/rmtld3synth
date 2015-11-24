@@ -1,9 +1,8 @@
 #ifndef MONITOR_IEVENTBUFFER_H
 #define MONITOR_IEVENTBUFFER_H
 
-#include "EventWriter.h"
-#include "EventReader.h"
-//#include "SynchronizedEventReader.h"
+#include "RTEML_writer.h"
+#include "RTEML_reader.h"
 
 /**
  * IEventBuffer declares an interface for the EventBuffer class.
@@ -29,27 +28,27 @@ template<typename T>
 class IEventBuffer {
 public:
     /**
-    * Configures an EventWriter for this EventBuffer.
+    * Configures an RTEML_writer for this EventBuffer.
     *
-    * Configures an EventWriter to write to this buffer, only one EventWriter for each Buffer may exist, so a check
+    * Configures an RTEML_writer to write to this buffer, only one RTEML_writer for each Buffer may exist, so a check
     * that a writer has not been configured before is done. A writer is only created if no writer has been created
     * before.
     *
-    * @param eventWriter an EventWriter to configure.
+    * @param RTEML_writer an RTEML_writer to configure.
     * @return true if the writer was configured.
     *
-    * @see EventWriter
+    * @see RTEML_writer
     */
-    virtual bool configWriter(EventWriter<T> &eventWriter) = 0;
+    virtual bool configWriter(RTEML_writer<T> &_writer) = 0;
 
     /**
-     * Configures a new EventReader for this buffer.
+     * Configures a new RTEML_reader for this buffer.
      *
-     * @param eventReader the EventReader to configure.
+     * @param _reader the RTEML_reader to configure.
      *
-     * @see EventReader
+     * @see RTEML_reader
      */
-    virtual void configReader(EventReader<T> &eventReader) const = 0;
+    virtual void configReader(RTEML_reader<T> &_reader) const = 0;
 
     /**
      * Gets the EventBuffers length.

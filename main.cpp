@@ -16,34 +16,34 @@
 
 extern "C" __EXPORT int Monitor_main(int argc, char * const argv[]);
 
-static EventBuffer<int, 20> evt_buffer;
-static EventWriter<int> writer;
-static EventReader<int> reader;
+static RTEML_buffer<int, 20> __buffer;
+static RTEML_writer<int> __writer;
+static RTEML_reader<int> __reader;
 
-Monitor_One mon_one(evt_buffer, 1000000); // period in microseconds
+Monitor_One mon_one(__buffer, 1000000); // period in microseconds
 
 static int daemon_task;
 
 static int monitor_main_loop(int argc, char **argv)
 {
 	bool state;
-	evt_buffer.configWriter(writer);
-	evt_buffer.configReader(reader);
+	__buffer.configWriter(__writer);
+	__buffer.configReader(__reader);
 	
 	for (int i=0; i < 15; i++)
 	{
-		writer.enqueue(i);
+		__writer.enqueue(i);
 	}
 
-	evt_buffer.debug();
+	__buffer.debug();
 
-	::printf("%lu\n", evt_buffer.getLength());
+	::printf("%lu\n", __buffer.getLength());
 
 	Event<int> event;
 	bool gap;
 	for (int i=0; i < 20; i++)
 	{
-		state = reader.dequeue(event, gap);
+		state = __reader.dequeue(event, gap);
 		::printf("%lu, %d, %d\n", event.getTime(), event.getData(), state);
 	}
 

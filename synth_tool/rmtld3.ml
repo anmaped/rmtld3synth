@@ -1,3 +1,5 @@
+(*pp camlp4o -I C:/cygwin/home/anmap/.opam/system/lib/type_conv C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma -I C:/cygwin/home/anmap/.opam/system/lib/sexplib C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma -I +camlp4 *)
+
 (* RESTRICTED METRIC TEMPORAL LOGIC WITH DURATIONS EVALUATION MODULE
  *
  * The RMTLD3 syntax and semantics have been implemented in this module. The
@@ -8,16 +10,19 @@
 
 open List
 
+open Sexplib
+open Sexplib.Conv
+
 module RMTLD3 =
 struct
 
-type var_id = string
-type prop   = string
-type time   = float
-type value  = float
+type var_id = string with sexp
+type prop   = string with sexp
+type time   = float with sexp
+type value  = float with sexp
 
 type formula =
-          Proposition of prop
+          Prop of prop
         | Not of formula
         | Or of formula * formula
         | Until of time * formula * formula
@@ -29,6 +34,8 @@ and term =
         | FPlus of term * term
         | FTimes of term * term
         | Duration of term * formula
+with sexp
+(*type foobar = Foo of int | Bar with sexp*)
 
 
 type term_indefeasible = V of value | Indefeasible
@@ -75,7 +82,7 @@ let b3_lessthan n1 n2 = if n1 < n2 then True else (if n1 >= n2 then False else U
 
 (*
  *  trace is a list of n elements of the form,
- *    (proposition, interval_1),...,(proposition, interval_n)
+ *    (prop, interval_1),...,(prop, interval_n)
  *)
 type trace = (prop * (time*time)) list
 
@@ -110,7 +117,7 @@ let count_duration = ref 0
  * For Variable name we use letters of alphabet
  * For Integral Value we use the exponential distribution
  * 
- * For Proposition name we use the alphabet letters
+ * For Prop name we use the alphabet letters
  * For Until Value we use the exponential distribution
  * For Exist name we use the alphabet letters
  *
@@ -140,7 +147,7 @@ and gen_formula size p =
    if size > 0 then
      (* Get sample for formula *)
      match Random.int (if gen_quantifiers = ref true then 6 else 5) with
-     | 0 -> Proposition(
+     | 0 -> Prop(
                         match Random.int 2 with
                         | 0 -> "A"
                         | 1 -> "B"
@@ -158,9 +165,9 @@ and gen_formula size p =
                       | _ -> "vc"
                     ), gen_formula (size-1) p
                    )
-     | _ -> Proposition("exceed")
+     | _ -> Prop("exceed")
    else
-     Proposition("E")
+     Prop("E")
 
 (* generate an until formula *)
 let rec gen_until_formula rl size p =
@@ -168,9 +175,9 @@ let rec gen_until_formula rl size p =
     Until((p), gen_until_formula true (size-1) p, gen_until_formula false (size-1) p)
   else
     if rl then
-      Until((p), Proposition("A"), Proposition("B"))
+      Until((p), Prop("A"), Prop("B"))
     else
-      Until((p), Proposition("A"), Proposition("*"))
+      Until((p), Prop("A"), Prop("*"))
 
 
 (* create an uniform trace of the type
@@ -206,7 +213,7 @@ let rec measure_term term =
                             
 and measure_formula formula =
    match formula with
-   | Proposition p          -> (0,0) 
+   | Prop p          -> (0,0) 
    | Not sf                 -> measure_formula sf
    | Or (sf1, sf2)          -> let x1,y1 = measure_formula sf1 in
                                let x2,y2 = measure_formula sf2 in
@@ -262,7 +269,7 @@ let rec print_latex_term term =
                             
 and print_latex_formula formula =
    match formula with
-   | Proposition p          -> Printf.fprintf stdout "%s " p
+   | Prop p          -> Printf.fprintf stdout "%s " p
 
    | Not sf                 -> Printf.printf "\\neg \\left(" ;
                                print_latex_formula sf ; 
@@ -317,7 +324,7 @@ let rec print_plaintext_term term =
                             
 and print_plaintext_formula formula =
    match formula with
-   | Proposition p          -> Printf.fprintf stdout "%s " p
+   | Prop p          -> Printf.fprintf stdout "%s " p
 
    | Not sf                 -> Printf.printf "~(" ;
                                print_plaintext_formula sf ; 
@@ -501,7 +508,7 @@ and compute_term_duration (k,u) dt formula =
 
 and compute (env, lg_env, t) formula =
         match formula with
-        | Proposition p           -> env.evaluate env.trace p t
+        | Prop p           -> env.evaluate env.trace p t
         | Not sf                  -> b3_not (compute (env, lg_env, t) sf)
         | Or (sf1, sf2)           -> b3_or (compute (env, lg_env, t) sf1) (compute (env, lg_env, t) sf2)
         | Until (gamma, sf1, sf2) -> compute_uless (env, lg_env, t) gamma sf1 sf2
@@ -596,7 +603,7 @@ and compute_uless m gamma phi1 phi2 =
 
 
 (* RMTLD3 abreviations *)
-let mtrue = Or(Proposition "*", Not(Proposition "*"))
+let mtrue = Or(Prop "*", Not(Prop "*"))
 let mfalse = Not(mtrue)
 let mand phi1 phi2 = Not (Or (Not phi1, Not phi2))
 let mimplies phi1 phi2 = Or (Not (phi1), phi2)
@@ -703,62 +710,62 @@ let _ =
     (* basic tests set *)
     pass_test "true " (compute (t_k, t_u, 0.) mtrue) ;
     pass_test "false" (compute (t_k, t_u, 0.) (Not(mfalse)) ) ;
-    pass_test "A    " (compute (t_k, t_u, 0.) (Proposition("A"))) ;
-    pass_test "~C   " (compute (t_k, t_u, 0.) (Not(Proposition("C")))) ;
+    pass_test "A    " (compute (t_k, t_u, 0.) (Prop("A"))) ;
+    pass_test "~C   " (compute (t_k, t_u, 0.) (Not(Prop("C")))) ;
 
     (* duration tests set *)
     pass_test "int 5 A < 2.0(0)1  " (
       compute (t_k, t_u, 0.)
-      (LessThan(Duration(Constant(5.),Proposition("A")), Constant(2. +.
+      (LessThan(Duration(Constant(5.),Prop("A")), Constant(2. +.
       (epsilon_float *. 3.))))
     ) ;
     pass_test "~(int 5 A < 2)     " (
       compute (t_k, t_u, 0.)
-      (Not(LessThan(Duration(Constant(5.),Proposition("A")), Constant(2.))))
+      (Not(LessThan(Duration(Constant(5.),Prop("A")), Constant(2.))))
     ) ;
   
     (* until tests set *)
     pass_test "B U A       " (
-      compute (t_k, t_u, 0.) (Until (3., Proposition("B"), Proposition("A")) )
+      compute (t_k, t_u, 0.) (Until (3., Prop("B"), Prop("A")) )
     ) ;
     pass_test "~(C U B)    " (
-      compute (t_k, t_u, 0.) (Not(Until (3., Proposition("C"), Proposition("B"))))
+      compute (t_k, t_u, 0.) (Not(Until (3., Prop("C"), Prop("B"))))
     ) ;
     pass_test "(A U B)     " (
-      compute (t_k, t_u, 0.) (Until (3., Proposition("A"), Proposition("B")))
+      compute (t_k, t_u, 0.) (Until (3., Prop("A"), Prop("B")))
     ) ;
     pass_test "~(F 6 C)    " (
-      compute (t_k, t_u, 0.) (Not(meventually 6. (Proposition("C"))))
+      compute (t_k, t_u, 0.) (Not(meventually 6. (Prop("C"))))
     ) ;
     pass_test "~(F 5.9 C)  " (
-      compute (t_k, t_u, 0.) (Not(meventually 5.9 (Proposition("C"))))
+      compute (t_k, t_u, 0.) (Not(meventually 5.9 (Prop("C"))))
     ) ;
     pass_test "F 6.0(0)1 C " (
-      compute (t_k, t_u, 0.) (meventually (6. +. (epsilon_float *. 3.)) (Proposition("C")))
+      compute (t_k, t_u, 0.) (meventually (6. +. (epsilon_float *. 3.)) (Prop("C")))
     ) ;
     pass_test "F_1.0(0)1 ~A" (
-      compute (t_k, t_u, 0.) (meventually (1. +. epsilon_float) (Not(Proposition("A"))))
+      compute (t_k, t_u, 0.) (meventually (1. +. epsilon_float) (Not(Prop("A"))))
     ) ;
   
     (* set of tests for temporal formulas *)
     pass_test "~(A -> (F_1 C))   " (
-      compute (t_k, t_u, 0.) (Not(mimplies (Proposition("A"))  (meventually 1.
-      (Proposition("C")))))
+      compute (t_k, t_u, 0.) (Not(mimplies (Prop("A"))  (meventually 1.
+      (Prop("C")))))
     ) ;
     pass_test "A -> (F_1.0(0)1 B)" (
-      compute (t_k, t_u, 0.) (mimplies (Proposition("A"))  (meventually (1. +.
-      epsilon_float) (Proposition("B"))))
+      compute (t_k, t_u, 0.) (mimplies (Prop("A"))  (meventually (1. +.
+      epsilon_float) (Prop("B"))))
     ) ;
     pass_test "G_2 ~A" (
-      compute (t_k2, t_u, 0.)  (malways 2. (Not(Proposition("A"))))
+      compute (t_k2, t_u, 0.)  (malways 2. (Not(Prop("A"))))
     ) ;
     pass_test "G_4 (A -> (F_2 B))" (
-      compute (t_k, t_u, 0.) (malways 4. (mimplies (Proposition("A"))
-      (meventually 2. (Proposition("B")))))
+      compute (t_k, t_u, 0.) (malways 4. (mimplies (Prop("A"))
+      (meventually 2. (Prop("B")))))
     ) ;
     pass_test "G_9.1 (A -> (F_2 B))" (
-      compute (t_k, t_u, 0.) (malways 9.1 (mimplies (Proposition("A"))
-      (meventually 2. (Proposition("B")))))
+      compute (t_k, t_u, 0.) (malways 9.1 (mimplies (Prop("A"))
+      (meventually 2. (Prop("B")))))
     ) ;
 
     (* complexity *)
@@ -767,7 +774,7 @@ let _ =
     (* 2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x+x *)
     pass_test "(A U_10 B) U_10 (A U_10 *)" (
       compute (t_k3, t_u, 0.)
-      (Until(10.,Until(10.,Proposition("A"),Proposition("B")),Until(10.,Proposition("A"),Proposition("*"))))
+      (Until(10.,Until(10.,Prop("A"),Prop("B")),Until(10.,Prop("A"),Prop("*"))))
     ) ;
     Printf.printf "count: %i\n" !count ;
 
@@ -775,10 +782,10 @@ let _ =
     (* 5*(2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x)+4*x *)
     pass_test "((A U_10 B) U_10 (A U_10 *) U_10 ((A U_10 B) U_10 A U_10 *)" (
       compute (t_k3, t_u, 0.)
-      (Until(10.,Until(10.,Until(10.,Proposition("A"),Proposition("B")),
+      (Until(10.,Until(10.,Until(10.,Prop("A"),Prop("B")),
       Until(10.,
-      Proposition("A"),Proposition("B"))),Until(10.,Until(10.,Proposition("A"),Proposition("B")),Until(10.,
-      Proposition("A"),Proposition("*")))))
+      Prop("A"),Prop("B"))),Until(10.,Until(10.,Prop("A"),Prop("B")),Until(10.,
+      Prop("A"),Prop("*")))))
     ) ;
     Printf.printf "count: %i\n" !count ;
 

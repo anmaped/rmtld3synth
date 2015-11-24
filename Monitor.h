@@ -12,7 +12,7 @@
 #include <errno.h>
 
 #include "time_compat.h"
-#include "EventBuffer.h"
+#include "RTEML_buffer.h"
 
 
 #define pcheck(val) \
@@ -97,13 +97,13 @@ private:
 
 protected:
     /**
-     * Configures a EventReader to an IEventBuffer buffer.
+     * Configures a RTEML_reader to an IEventBuffer buffer.
      *
-     * @param eventReader the EventReader to be configured.
+     * @param _reader the RTEML_reader to be configured.
      * @param buffer a reference to an IEventBuffer.
      */
     template<typename T>
-    void configReader(EventReader<T> &eventReader, const IEventBuffer<T> &buffer);
+    void configReader(RTEML_reader<T> &_reader, const IEventBuffer<T> &buffer);
 
     /**
      * The monitor execution code.
@@ -161,11 +161,11 @@ public:
 template<typename T>
 void Monitor::configReader
     (
-        EventReader<T> &eventReader,
+        RTEML_reader<T> &_reader,
         const IEventBuffer<T> &buffer
     )
 {
-    buffer.configReader(eventReader);
+    buffer.configReader(_reader);
 }
 
 #endif //MONITOR_H

@@ -1,5 +1,5 @@
-#ifndef _MONITOR_EVENTREADER_H_
-#define _MONITOR_EVENTREADER_H_
+#ifndef _RTEML_READER_H_
+#define _RTEML_READER_H_
 
 #include <time.h>
 
@@ -10,26 +10,27 @@
 /**
  * Reads events from an EventBuffer.
  *
- * Event Reader reads Events from an EventBuffer FIFO fashion. EventReader does what it can when elements
- * are written faster than it can read. When overflows occurs EventReader tries to find the oldest element it has yet to
+ * Event Reader reads Events from an EventBuffer FIFO fashion. RTEML_reader does what it can when elements
+ * are written faster than it can read. When overflows occurs RTEML_reader tries to find the oldest element it has yet to
  * read and notifies the user of the overflow.
  *
- * EventReaders are instantiated or configured by EventBuffers.
+ * RTEML_readers are instantiated or configured by EventBuffers.
  *
  * @see EventBuffer
  *
+ * @author André Pedro (anmap@isep.ipp.pt)
  * @author Humberto Carvalho (1129498@isep.ipp.pt)
  * @date
  */
 template<typename T>
-class EventReader : public IEventReader<T> {
+class RTEML_reader : public IEventReader<T> {
 private:
-    /**  Constant pointer to a constant circular Buffer this EventReader performs atomic read operations from.
+    /**  Constant pointer to a constant circular Buffer this RTEML_reader performs atomic read operations from.
      * @see Buffer
      */
     const CircularBuffer<T> *buffer;
 
-    /** Pointer to a constant event which is the current index on this EventReader. */
+    /** Pointer to a constant event which is the current index on this RTEML_reader. */
     size_t index;
 
     /** Number of readed elements */
@@ -42,20 +43,20 @@ private:
 
 public:
     /**
-     * Instantiates a new EventReader.
+     * Instantiates a new RTEML_reader.
      *
      * The event reader is blank and should only be configured by calling getEventReader on an EventBuffer.
      */
-    EventReader();
+    RTEML_reader();
 
     /**
-     * Instantiates a new EventReader.
+     * Instantiates a new RTEML_reader.
      *
      * Instantiates a new event reader that reads from buffer.
      *
      * @param buffer a constant pointer that points to a constant buffer.
      */
-    EventReader(const CircularBuffer<T> *const &buffer);
+    RTEML_reader(const CircularBuffer<T> *const &buffer);
 
     /**
      * Dequeue the next event from the buffer.
@@ -73,35 +74,40 @@ public:
     bool dequeueArray(Event<T> * event, bool &isConsitent);
 
     /**
-     * Synchronize the eventReader index according to a timestamp
+     * Synchronize the RTEML_reader index according to a timestamp
      *
      * @param time defines the timestamp to syncronize.
      *
-     * @return true if the eventReader was synchronized, false otherwise.
+     * @return true if the RTEML_reader was synchronized, false otherwise.
      */
     bool synchronize(timeabs time);
 
     /**
-     * Compares the current eventReader absolute timestamp with the
+     * Compares the current RTEML_reader absolute timestamp with the
      * current absolute timestamp of the buffer.
      *
      * @return true if matched, false otherwise.
      */
-    bool consitencyCheck() const;
+    bool consistencyCheck() const;
 
     /**
-     * Sets this EventReader Buffer.
+     * Sets this RTEML_reader Buffer.
      *
-     * Called during EventReader configuration by the EventBuffer. lastread_ts is reset to zero, thus the same EventReader can be reconfigured
+     * Called during RTEML_reader configuration by the EventBuffer. lastread_ts is reset to zero, thus the same RTEML_reader can be reconfigured
      * to read from different buffers
      *
-     * @param buffer a constant pointer to a constant Buffer to configure this EventReader to.
+     * @param buffer a constant pointer to a constant Buffer to configure this RTEML_reader to.
      */
     void setBuffer(const CircularBuffer<T> *const buffer);
+
+
+    size_t getLowerIdx() { return 0; }
+
+    size_t getHigherIdx() { return buffer->getLength(); }
 };
 
 template<typename T>
-EventReader<T>::EventReader() :
+RTEML_reader<T>::RTEML_reader() :
     index(1),
     lastread_ts(0)
 {
@@ -109,7 +115,7 @@ EventReader<T>::EventReader() :
 }
 
 template<typename T>
-EventReader<T>::EventReader(const CircularBuffer<T> *const &bbuffer) :
+RTEML_reader<T>::RTEML_reader(const CircularBuffer<T> *const &bbuffer) :
     buffer(bbuffer),
     index(1),
     lastread_ts(0)
@@ -118,7 +124,7 @@ EventReader<T>::EventReader(const CircularBuffer<T> *const &bbuffer) :
 }
 
 template<typename T>
-bool EventReader<T>::dequeue(Event<T> &event, bool &gap) {
+bool RTEML_reader<T>::dequeue(Event<T> &event, bool &gap) {
 
     Event<T> tempEvent;
     size_t length;
@@ -172,27 +178,27 @@ bool EventReader<T>::dequeue(Event<T> &event, bool &gap) {
 }
 
 template<typename T>
-bool EventReader<T>::dequeueArray(Event<T> * event, bool &isConsitent) {
+bool RTEML_reader<T>::dequeueArray(Event<T> * event, bool &isConsitent) {
     // [todo]
     return false;
 }
 
 template<typename T>
-bool EventReader<T>::synchronize(timeabs time)
+bool RTEML_reader<T>::synchronize(timeabs time)
 {
     // [todo]
     return false;
 }
 
 template<typename T>
-bool EventReader<T>::consitencyCheck() const
+bool RTEML_reader<T>::consistencyCheck() const
 {
     // [todo]
     return false;
 }
 
 template<typename T>
-void EventReader<T>::setBuffer(const CircularBuffer<T> *const bbuffer) {
+void RTEML_reader<T>::setBuffer(const CircularBuffer<T> *const bbuffer) {
 
     this->buffer = bbuffer;
 
@@ -200,4 +206,4 @@ void EventReader<T>::setBuffer(const CircularBuffer<T> *const bbuffer) {
     lastread_ts = 0;
 }
 
-#endif //_MONITOR_EVENTREADER_H_
+#endif //_RTEML_READER_H_
