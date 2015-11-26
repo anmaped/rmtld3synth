@@ -7,6 +7,9 @@ type helper = string * string * int ref * (string, int) t
 let get_event_fulltype (t1,t2,_,_) = 
   t1 ^ "< " ^ t2 ^" >"
 
+let get_event_type (t1,t2,_,_) =
+  t2
+
 let get_proposition_hashtbl (_,_,_,tbl) =
   tbl
 
@@ -30,7 +33,7 @@ let synth_obs_function observation_funcname struct_name =
 let synth_environment helper =
   let struct_name = "Environment" in
   let circular_buffer_varname = "_local_buffer" in
-  let circular_buffer_vartype = "Trace< "^ get_event_fulltype(helper) ^" >" in
+  let circular_buffer_vartype = "RMTLD3_reader< "^ get_event_type(helper) ^" >" in
   let observation_funcname = "__observation" in
   (* object to read traces containing current duration and element numbers (since is a circular buffer then size is constant)*)
   let code_init = "
@@ -69,7 +72,7 @@ let rec compute_term term helper =
     | FTimes (tr1,tr2)     -> compute_term tr1 helper ^" *. "^ compute_term tr2 helper
     | _ -> raise (Failure "compute_terms: missing term")
 and compute formula helper =
-  let compute_function_head = "[](struct Environment env, timespan t)" in
+  let compute_function_head = "[](struct Environment env, timespan t) -> three_valued_type" in
   match formula with
     | Prop p                  -> let tbl = get_proposition_hashtbl helper in
                                  let counter = get_proposition_counter helper in 
@@ -79,14 +82,14 @@ and compute formula helper =
                                                 )^
                                  ", t); }"
     | Not sf                  -> compute_function_head^" { return b3_not ("^ compute sf helper ^"); }"
-    | Or (sf1, sf2)           -> compute_function_head^" { return "^compute_function_head^" { return b3_or ("^ compute sf1 helper ^"(env,t), "^ compute sf2 helper ^"(env,t) ); }; }"
+    | Or (sf1, sf2)           -> compute_function_head^" { return b3_or ("^ compute sf1 helper ^"(env,t), "^ compute sf2 helper ^"(env,t) ); }"
     | Until (gamma, sf1, sf2) -> if gamma > 0. then compute_uless gamma (compute sf1 helper) (compute sf2 helper) helper else raise  (Failure "Gamma of U operator is a non-negative value") 
     | LessThan (tr1,tr2)      -> compute_function_head^" { return "^compute_function_head^" { return b3_lessthan ("^ compute_term tr1 helper ^"(env,t), "^ compute_term tr2 helper ^"(env,t) ); }; }"
     | _ -> raise (Failure "compute: missing formula")
 and compute_uless gamma sf1 sf2 helper =
-  let trace_iterator = "TraceIterator< "^ get_event_fulltype(helper) ^" >" in
-  "
-  []( struct Environment env, timespan t ) -> three_valued_type
+  let compute_function_head = "[](struct Environment env, timespan t) -> three_valued_type" in
+  let trace_iterator = "TraceIterator< "^ get_event_type(helper) ^" >" in
+  compute_function_head ^"
   {
     auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator^" x) -> four_valued_type
     {
@@ -137,13 +140,13 @@ and compute_uless gamma sf1 sf2 helper =
       "^trace_iterator^" it = env.trace->getTraceIterator();
 
       // set TraceIterator for interval [t,t+"^string_of_float (gamma)^"[
-      std::pair<size_t,int> lb = env.trace->searchIndexForwardUntil(t);
+      /*std::pair<size_t,int> lb = env.trace->searchIndexForwardUntil(t);
       std::pair<size_t,int> ub = env.trace->searchIndexForwardUntil(t+"^string_of_float (gamma)^");
 
       it.setBegin( lb.first );
       it.setEnd( ub.first );
       it.setIt( lb.first );
-      it.setCnt( lb.second );
+      it.setCnt( lb.second );*/
 
       // return iterator ... interval length may be zero
       return it;
@@ -279,7 +282,7 @@ let _ =
   #ifndef _"^ String.uppercase (monitor_name^"_compute") ^"_H_
   #define _"^ String.uppercase (monitor_name^"_compute") ^"_H_
 
-  #include \"../rmtld3.h\"
+  #include \"rmtld3.h\"
   
   auto _"^monitor_name^"_compute = "^compute (formula) helper^";
 
@@ -297,22 +300,24 @@ let _ =
   #include \"Rmtld3_reader.h\"
   #include \"Monitor.h\"
 
+  #include \""^monitor_name^"_compute.h\"
+
   class "^String.capitalize monitor_name^" : public Monitor {
 
   private:
     RTEML_reader<int> __reader;
-    RMTLD3_reader< "^ get_event_fulltype(helper) ^" > trace = RMTLD3_reader< "^ get_event_fulltype(helper) ^" >( &__reader, "^ string_of_float (calculate_t_upper_bound formula) ^" );
+    RMTLD3_reader< "^ get_event_type(helper) ^" > trace = RMTLD3_reader< "^ get_event_type(helper) ^" >( &__reader, "^ string_of_float (calculate_t_upper_bound formula) ^" );
 
-    struct Environment env(0, &trace, __observation);
+    struct Environment env;
 
   protected:
     void run(){
 
-      _"^monitor_name^"_compute(,0);
+      _"^monitor_name^"_compute(env,0);
     }
 
   public:
-    "^String.capitalize monitor_name^"(IEventBuffer<int> &buffer, useconds_t p): Monitor(p) {
+    "^String.capitalize monitor_name^"(IEventBuffer<int> &buffer, useconds_t p): Monitor(p), env(0, &trace, __observation) {
       configReader<int>(__reader, buffer);
     }
 
@@ -335,12 +340,13 @@ let _ =
   #define _RMTLD3_READER_H_
 
   #include <functional>
-  #include <iterator>
+  //#include <iterator>
   #include <numeric>
 
-  #include \"rmtld3.h\"
+  #include \"RTEML_reader.h\"
 
-   "^ synth_environment helper ^"
+  #include \"rmtld3.h\"
+  #include \"Rmtld3_reader_it.h\"
 
   template<typename T>
   class RMTLD3_reader 
@@ -358,12 +364,13 @@ let _ =
     timespan formula_t_upper_bound;
 
     public:
-      RMTLD3_reader(RTEML_reader<T> rd, timespan ub) : iterator(TraceIterator<T> (rd, 0, 0, 0, 0)), __reader(rd), formula_t_upper_bound(ub)  {};
+      RMTLD3_reader(RTEML_reader<T> * rd, timespan ub) : iterator(TraceIterator<T> (rd, 0, 0, 0, 0, 0, 0)), __reader(rd), formula_t_upper_bound(ub)  {};
 
       /** match timestamp and return the index using forward direction (iterator++) */
       std::pair<size_t,int> searchIndexForwardUntil(timespan t) {
 
-        inftyBufferState st = trace->getCurrentBufferState();
+        typedef CircularBuffer<T> circular_buffer;
+        typename circular_buffer::inftyBufferState st = __reader->getCurrentBufferState();
 
         /* while current buffer endpoint timestamp is not greater or equal than timespan t then
          * yield (save state and context-switch) else continue 
@@ -400,6 +407,9 @@ let _ =
 
       TraceIterator<T> getTraceIterator() { return iterator; };
   };
+
+
+  "^ synth_environment helper ^"
 
   #endif //_RMTLD3_READER_H_
   " in
@@ -439,13 +449,13 @@ let _ =
 
       TraceIterator<T> begin() {
         return TraceIterator<T> (
-          buffer, b_lower_bound, b_upper_bound,
+          __reader, b_lower_bound, b_upper_bound,
           ibegin, iend, ibegin, (ibegin <= it ) ? cnt : cnt-1 );
       } // cnt can be cnt or cnt-1 [CONFIRM]
 
       TraceIterator<T> end() {
         return TraceIterator<T> (
-          buffer, b_lower_bound, b_upper_bound,
+          __reader, b_lower_bound, b_upper_bound,
           ibegin, iend, iend, (it <= iend) ? cnt : cnt+1 );
       } // cnt can be cnt or cnt+1  [CONFIRM]
 
@@ -461,13 +471,13 @@ let _ =
       bool operator==(const TraceIterator<T>& rhs) { return it == rhs.it && cnt == rhs.cnt; } // [CONFIRM]
       bool operator!=(const TraceIterator<T>& rhs) { return !(it == rhs.it && cnt == rhs.cnt); } // [CONFIRM]
 
-      T& operator*() {
-        Event<T> &event;
-        bool &gap;
-        // here we could adopt a small buffer to avoid sucessive call of dequeues (for instance a local buffer of 10 elements)
+      Event<T> operator*() {
+        Event<T> event;
+        bool gap;
+        // here we could adopt a small buffer to avoid successive call of dequeues (for instance a local buffer of 10 elements)
         // dequeue the event of the it index
-        __reader->dequeue(it, event, gap);
-        return event->getData();
+        __reader->dequeue(event, gap, (int)it);
+        return event;
       } // [CONFIRM]
   };
   " in
@@ -517,7 +527,7 @@ let _ =
 (* this standalone cpp file instantiates the monitors that have been synthesized *)
   let stream = open_out (cluster_name^"/"^ cluster_name ^".cpp") in
   let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize monitor_name^".h\"\n" ) "" list_monitor_settings in
-  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"(__buffer, "^string_of_int monitor_period^");\n" ) "" list_monitor_settings in
+  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"(__buffer_"^ cluster_name ^", "^string_of_int monitor_period^");\n" ) "" list_monitor_settings in
   let code = headers ^"
   #include \"RTEML_buffer.h\"
 
@@ -549,6 +559,16 @@ extern RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buf
 #endif //_"^String.uppercase cluster_name^"_H_
 "
 in
+Printf.fprintf stream "%s\n" code;
+close_out stream;
+
+
+let stream = open_out (cluster_name^"/Makefile") in
+let code =
+"
+monitor-lib:
+\t arm-none-eabi-g++ -std=c++0x -march=armv7-a -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
+" in
 Printf.fprintf stream "%s\n" code;
 close_out stream;
 
