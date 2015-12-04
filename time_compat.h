@@ -26,9 +26,22 @@ typedef uint32_t timespan;
     ((1000000. / SysTick->LOAD) * \
     (SysTick->LOAD - ns));})
 
+#elif defined __x86__
+
+#include <time.h>
+#include <pthread.h>
+
+typedef long long timeabs;
+typedef long timespan;
+
+#define clockgettime() ({ \
+    struct timespec __n; \
+    clock_gettime(CLOCK_REALTIME, &__n); \
+    1;})
+
 #else
 
-    #error "This monitoring library only supports NuttX ARM Cortex-M4 architecture!"
+    #error "This monitoring library only supports NuttX ARM Cortex-M4 and x86 architecture!"
 
 #endif
 

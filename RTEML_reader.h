@@ -69,7 +69,7 @@ public:
      *
      * @see popGap .
      */
-    bool dequeue(Event<T> &event, bool &gap);
+    bool dequeue(Event<T> &event, bool &gap, int idx = -1);
 
     bool dequeueArray(Event<T> * event, bool &isConsitent);
 
@@ -104,6 +104,9 @@ public:
     size_t getLowerIdx() { return 0; }
 
     size_t getHigherIdx() { return buffer->getLength(); }
+
+    typedef CircularBuffer<T> circular_buffer;
+    typename circular_buffer::inftyBufferState getCurrentBufferState() {}
 };
 
 template<typename T>
@@ -124,7 +127,7 @@ RTEML_reader<T>::RTEML_reader(const CircularBuffer<T> *const &bbuffer) :
 }
 
 template<typename T>
-bool RTEML_reader<T>::dequeue(Event<T> &event, bool &gap) {
+bool RTEML_reader<T>::dequeue(Event<T> &event, bool &gap, int idx) {
 
     Event<T> tempEvent;
     size_t length;
@@ -136,7 +139,7 @@ bool RTEML_reader<T>::dequeue(Event<T> &event, bool &gap) {
     
     ATOMIC_begin(new_value, 1+, dest);
 
-        buffer->readEventFromIndex(tempEvent, index);  // unsafe in terms of empty buffer
+        buffer->readEventFromIndex(tempEvent, (idx == -1) ? index : idx );  // unsafe in terms of empty buffer
         n_elems_writer = buffer->getElementsCount();
         length = buffer->getLength();
 
@@ -157,11 +160,16 @@ bool RTEML_reader<T>::dequeue(Event<T> &event, bool &gap) {
 
         // perform dequeue of event
 
-        //increment the index for the next read
-        if (++index >= length) index = 0;
+        if(idx == -1)
+        {
+            //increment the index for the next read
+            if (++index >= length) index = 0;
 
-        // update absolute time state of the monitor
-        lastread_ts = lastread_ts + tempEvent.getTime();
+            // update absolute time state of the monitor
+            lastread_ts = lastread_ts + tempEvent.getTime();
+        }
+
+
         
         event = tempEvent;
 

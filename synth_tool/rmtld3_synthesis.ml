@@ -67,7 +67,7 @@ open Rmtld3.RMTLD3
 let rec compute_term term helper =
   match term with
     | Constant value       -> string_of_float value
-    | Duration (di,phi)    -> "D" (*compute_term_duration m (t,t +. (compute_term m t  di)) phi*)
+    | Duration (di,phi)    -> "D" (*compute_term_duration m (t,t +. (compute_term m t  di)) phi*) (* THIS PART IS NOT FINISHED *)
     | FPlus (tr1,tr2)      -> compute_term tr1 helper ^" +. "^ compute_term tr2 helper
     | FTimes (tr1,tr2)     -> compute_term tr1 helper ^" *. "^ compute_term tr2 helper
     | _ -> raise (Failure "compute_terms: missing term")
@@ -140,13 +140,7 @@ and compute_uless gamma sf1 sf2 helper =
       "^trace_iterator^" it = env.trace->getTraceIterator();
 
       // set TraceIterator for interval [t,t+"^string_of_float (gamma)^"[
-      /*std::pair<size_t,int> lb = env.trace->searchIndexForwardUntil(t);
-      std::pair<size_t,int> ub = env.trace->searchIndexForwardUntil(t+"^string_of_float (gamma)^");
-
-      it.setBegin( lb.first );
-      it.setEnd( ub.first );
-      it.setIt( lb.first );
-      it.setCnt( lb.second );*/
+      it.setBound(env.trace->searchIndexForwardUntil(t), env.trace->searchIndexForwardUntil(t+"^string_of_float (gamma)^"));
 
       // return iterator ... interval length may be zero
       return it;
@@ -329,10 +323,10 @@ let _ =
 
   (* monitor dependent functions ends here *)
 
-) () list_monitor_settings;
+  ) () list_monitor_settings;
 
 
-(* the next functions will be used to manage the buffers assigned to each formula *)
+  (* the next functions will be used to manage the buffers assigned to each formula *)
 
   let stream = open_out (cluster_name^"/Rmtld3_reader.h") in
   let code = "
@@ -364,7 +358,7 @@ let _ =
     timespan formula_t_upper_bound;
 
     public:
-      RMTLD3_reader(RTEML_reader<T> * rd, timespan ub) : iterator(TraceIterator<T> (rd, 0, 0, 0, 0, 0, 0)), __reader(rd), formula_t_upper_bound(ub)  {};
+      RMTLD3_reader(RTEML_reader<T> * rd, timespan ub) : iterator(TraceIterator<T> (rd, 0, 0, 0, 0, 0)), __reader(rd), formula_t_upper_bound(ub)  {};
 
       /** match timestamp and return the index using forward direction (iterator++) */
       std::pair<size_t,int> searchIndexForwardUntil(timespan t) {
@@ -373,12 +367,12 @@ let _ =
         typename circular_buffer::inftyBufferState st = __reader->getCurrentBufferState();
 
         /* while current buffer endpoint timestamp is not greater or equal than timespan t then
-         * yield (save state and context-switch) else continue 
+         * yield (save state and context-switch) else exit
          */
         while( st.lastelementpushed_ts % formula_t_upper_bound < t )
         {
           // wait
-          //yield();
+          //yield(); // [TODO]
           continue;
         }
 
@@ -386,9 +380,19 @@ let _ =
          * and process the iteration until the timespan t is found. After
          * that return the index and cnt where t holds.
          */
+        TraceIterator<T> tmp_it = TraceIterator<T>(__reader, iterator.getIt(), st.writer_index, iterator.getIt(), iterator.getCnt(), iterator.getCurrentAbsoluteTime());
 
+        // lets start the iteration to find the event at time t
+        std::pair<timespan, int> tuple = std::accumulate(
+          tmp_it.begin(),
+          tmp_it.end(),
+          std::pair<timespan, int>( iterator.getCurrentAbsoluteTime(), -1 ),
+           [t, &tmp_it]( const std::pair<timespan, int> a, "^ get_event_fulltype(helper) ^" e ) {
+              return std::make_pair<timespan, int>( a.first + e.getTime() , (int)(( a.first <= t && t < a.first + e.getTime() )? tmp_it.getIt() : a.second) );
+           }
+         );
 
-        return std::make_pair<size_t, int>(0,0);
+        return tuple;
       }; // [TODO]
 
       // pre-indexed search
@@ -430,33 +434,48 @@ let _ =
     size_t ibegin, iend, it;
     int cnt;
 
+    timespan absolute_time;
+
     RTEML_reader<T> * __reader;
 
     public:
       TraceIterator<T> (RTEML_reader<T> * _l_reader,
-          size_t lb, size_t ub, size_t i, size_t e, size_t iter, int c) :
+          size_t i, size_t e, size_t iter, int c, timespan ct) :
         __reader(_l_reader),
         b_lower_bound(_l_reader->getLowerIdx()),
         b_upper_bound(_l_reader->getHigherIdx()),
-        ibegin(i), iend(e), it(iter), cnt(c) {};
+        ibegin(i), iend(e), it(iter), cnt(c), absolute_time(ct) {};
 
       size_t getBegin() { return ibegin; }
+
+      size_t getIt() { return it; }
+
+      int getCnt() { return cnt; }
+
+      timespan getCurrentAbsoluteTime() { return absolute_time; }
 
       void setBegin(size_t b) { ibegin = b; }
       void setEnd(size_t e) { iend = e; }
       void setCnt(int c) { cnt = c; }
       void setIt(size_t iter) { it = iter; }
 
+      void setBound(std::pair<size_t,int> lb, std::pair<size_t,int> ub) {
+        setBegin( lb.first );
+        setEnd( ub.first );
+        setIt( lb.first );
+        setCnt( lb.second );
+      }
+
       TraceIterator<T> begin() {
         return TraceIterator<T> (
-          __reader, b_lower_bound, b_upper_bound,
-          ibegin, iend, ibegin, (ibegin <= it ) ? cnt : cnt-1 );
+          __reader,
+          ibegin, iend, ibegin, (ibegin <= it ) ? cnt : cnt-1, 0); // [TODO] 0 problem
       } // cnt can be cnt or cnt-1 [CONFIRM]
 
       TraceIterator<T> end() {
         return TraceIterator<T> (
-          __reader, b_lower_bound, b_upper_bound,
-          ibegin, iend, iend, (it <= iend) ? cnt : cnt+1 );
+          __reader,
+          ibegin, iend, iend, (it <= iend) ? cnt : cnt+1, 0); // [TODO] 0 problem
       } // cnt can be cnt or cnt+1  [CONFIRM]
 
       TraceIterator<T>& operator++() {
@@ -465,11 +484,15 @@ let _ =
            ++ cnt;
            it = b_lower_bound;
         }
+
+        // update absolute current time of the event
+        absolute_time += operator*().getTime(); // [TODO] [VERIFY]
+
         return *this;
       } // [CONFIRM]
 
       bool operator==(const TraceIterator<T>& rhs) { return it == rhs.it && cnt == rhs.cnt; } // [CONFIRM]
-      bool operator!=(const TraceIterator<T>& rhs) { return !(it == rhs.it && cnt == rhs.cnt); } // [CONFIRM]
+      bool operator!=(const TraceIterator<T>& rhs) { return !(operator==(rhs)); } // [CONFIRM]
 
       Event<T> operator*() {
         Event<T> event;
@@ -528,8 +551,7 @@ let _ =
   let stream = open_out (cluster_name^"/"^ cluster_name ^".cpp") in
   let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize monitor_name^".h\"\n" ) "" list_monitor_settings in
   let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"(__buffer_"^ cluster_name ^", "^string_of_int monitor_period^");\n" ) "" list_monitor_settings in
-  let code = headers ^"
-  #include \"RTEML_buffer.h\"
+  let code = headers ^"#include \"RTEML_buffer.h\"
 
 static RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
 
@@ -566,8 +588,20 @@ close_out stream;
 let stream = open_out (cluster_name^"/Makefile") in
 let code =
 "
-monitor-lib:
+.DEFAULT_GOAL := all
+
+arm-monitor-lib:
 \t arm-none-eabi-g++ -std=c++0x -march=armv7-a -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
+
+x86-monitor-lib:
+\t mingw32-g++ -std=c++0x -I../../ -D__x86__ --verbose -c monitor_set1.cpp
+
+arm-mon: arm-monitor-lib
+
+x86-mon: x86-monitor-lib
+
+all:
+
 " in
 Printf.fprintf stream "%s\n" code;
 close_out stream;

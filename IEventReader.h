@@ -30,7 +30,7 @@ public:
      *
      * @return if an element was popped, false if the RoundBuffer is empty.
      */
-    virtual bool dequeue(Event<T> &event, bool &gap) = 0;
+    virtual bool dequeue(Event<T> &event, bool &gap, int idx = -1) = 0;
     
 };
 
