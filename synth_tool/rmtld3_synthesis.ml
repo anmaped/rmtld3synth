@@ -61,7 +61,7 @@ let synth_environment helper =
 
 
 
-open Rmtld3.RMTLD3
+open Rmtld3
 
 (* Synthesis of the compute function  *)
 let rec compute_term term helper =
@@ -206,14 +206,22 @@ open Unix
 open Sexplib
 open Sexplib.Conv
 
+open Rmtld3_synth_test
+
 (* global_int settings *)
 type global_int = string * int with sexp
 (* global_string settings *)
 type global_string = string * string with sexp
 (* monitor setting entry*)
-type monitor = string * int * Rmtld3.RMTLD3.formula with sexp
+type monitor = string * int * Rmtld3.formula with sexp
 
 exception Settings_Not_Found of string;;
+
+let rec search_settings lst word =
+    if lst = [] then raise (Settings_Not_Found word);
+    let (el_id, el_val) = List.hd lst in
+    if el_id = word then el_val else search_settings (List.tl lst) word
+;;
 
 let _ =
 
@@ -245,12 +253,6 @@ let _ =
   let evt_type = "Event" in
 
   (* monitor synthesis settings *)
-
-  let rec search_settings lst word =
-    if lst = [] then raise (Settings_Not_Found word);
-    let (el_id, el_val) = List.hd lst in
-    if el_id = word then el_val else search_settings (List.tl lst) word
-  in
 
   (* buffer size *)
   let event_queue_size = (search_settings list_global_int_settings "maximum_inter_arrival_time") in
@@ -292,14 +294,15 @@ let _ =
   #define MONITOR_"^String.uppercase monitor_name^"_H
 
   #include \"Rmtld3_reader.h\"
-  #include \"Monitor.h\"
+  #include \"RTEML_monitor.h\"
 
   #include \""^monitor_name^"_compute.h\"
+  #include \""^ cluster_name ^".h\"
 
   class "^String.capitalize monitor_name^" : public Monitor {
 
   private:
-    RTEML_reader<int> __reader;
+    RTEML_reader<int> __reader = RTEML_reader<int>(__buffer_"^ cluster_name ^".getBuffer());
     RMTLD3_reader< "^ get_event_type(helper) ^" > trace = RMTLD3_reader< "^ get_event_type(helper) ^" >( &__reader, "^ string_of_float (calculate_t_upper_bound formula) ^" );
 
     struct Environment env;
@@ -307,12 +310,13 @@ let _ =
   protected:
     void run(){
 
-      _"^monitor_name^"_compute(env,0);
+      three_valued_type _out = _"^monitor_name^"_compute(env,0);
+      ::printf(\"Veredict:%d\\n\", _out);
     }
 
   public:
-    "^String.capitalize monitor_name^"(IEventBuffer<int> &buffer, useconds_t p): Monitor(p), env(0, &trace, __observation) {
-      configReader<int>(__reader, buffer);
+    "^String.capitalize monitor_name^"(IEventBuffer<int> &buffer, useconds_t p): Monitor(p,SCHED_FIFO,5), env(0, &trace, __observation) {
+      //configReader<int>(__reader, buffer); [IS NOT REQUIRED... BUFFER IS STATICALLY ASSIGNED]
     }
 
   };
@@ -363,24 +367,30 @@ let _ =
       /** match timestamp and return the index using forward direction (iterator++) */
       std::pair<size_t,int> searchIndexForwardUntil(timespan t) {
 
-        typedef CircularBuffer<T> circular_buffer;
-        typename circular_buffer::inftyBufferState st = __reader->getCurrentBufferState();
+        timeabs current_time;
+        size_t current_idx;
+        __reader->getCurrentBufferState(current_time, current_idx);
 
         /* while current buffer endpoint timestamp is not greater or equal than timespan t then
          * yield (save state and context-switch) else exit
          */
-        while( st.lastelementpushed_ts % formula_t_upper_bound < t )
+        /*while( current_time % formula_t_upper_bound < t )
         {
           // wait
           //yield(); // [TODO]
           continue;
+        }*/
+
+        if (current_time % formula_t_upper_bound < t)
+        {
+          return std::pair<timespan, int>(0, 0);
         }
 
         /* create an iterator where its end is the endpoint of the buffer
          * and process the iteration until the timespan t is found. After
          * that return the index and cnt where t holds.
          */
-        TraceIterator<T> tmp_it = TraceIterator<T>(__reader, iterator.getIt(), st.writer_index, iterator.getIt(), iterator.getCnt(), iterator.getCurrentAbsoluteTime());
+        TraceIterator<T> tmp_it = TraceIterator<T>(__reader, iterator.getIt(), current_idx, iterator.getIt(), iterator.getCnt(), iterator.getCurrentAbsoluteTime());
 
         // lets start the iteration to find the event at time t
         std::pair<timespan, int> tuple = std::accumulate(
@@ -441,10 +451,10 @@ let _ =
     public:
       TraceIterator<T> (RTEML_reader<T> * _l_reader,
           size_t i, size_t e, size_t iter, int c, timespan ct) :
-        __reader(_l_reader),
         b_lower_bound(_l_reader->getLowerIdx()),
         b_upper_bound(_l_reader->getHigherIdx()),
-        ibegin(i), iend(e), it(iter), cnt(c), absolute_time(ct) {};
+        ibegin(i), iend(e), it(iter), cnt(c), absolute_time(ct),
+        __reader(_l_reader) {};
 
       size_t getBegin() { return ibegin; }
 
@@ -496,11 +506,12 @@ let _ =
 
       Event<T> operator*() {
         Event<T> event;
-        bool gap;
+
         // here we could adopt a small buffer to avoid successive call of dequeues (for instance a local buffer of 10 elements)
         // dequeue the event of the it index
-        __reader->dequeue(event, gap, (int)it);
-        return event;
+        std::pair<state_rd_t,Event<T> &> x = __reader->dequeue((int)it);
+
+        return x.second;
       } // [CONFIRM]
   };
   " in
@@ -518,7 +529,7 @@ let _ =
 
   typedef unsigned int duration;
   typedef unsigned int proposition;
-  typedef unsigned int timespan;
+  //typedef unsigned int timespan;
 
   enum three_valued_type { T_TRUE, T_FALSE, T_UNKNOWN };
   enum four_valued_type { FV_TRUE, FV_FALSE, FV_UNKNOWN, FV_SYMBOL };
@@ -553,12 +564,15 @@ let _ =
   let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"(__buffer_"^ cluster_name ^", "^string_of_int monitor_period^");\n" ) "" list_monitor_settings in
   let code = headers ^"#include \"RTEML_buffer.h\"
 
-static RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
+RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
 
 "
 ^ functions ^
 "
-
+void __start_periodic_monitors()
+{
+"^ List.fold_left (fun f (monitor_name,monitor_period,_) -> f^"  if (mon_"^monitor_name^".enable()) {::printf(\"ERROR\\n\");}\n" ) "" list_monitor_settings ^"
+}
 "
 in
   Printf.fprintf stream "%s\n" code;
@@ -573,6 +587,8 @@ let code = "#ifndef _"^String.uppercase cluster_name^"_H_
 #define _"^String.uppercase cluster_name^"_H_
 
 #include \"RTEML_buffer.h\"
+
+extern void __start_periodic_monitors();
 
 extern RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
 
@@ -590,11 +606,20 @@ let code =
 "
 .DEFAULT_GOAL := all
 
+DIR = tests
+
 arm-monitor-lib:
 \t arm-none-eabi-g++ -std=c++0x -march=armv7-a -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
 
 x86-monitor-lib:
-\t mingw32-g++ -std=c++0x -I../../ -D__x86__ --verbose -c monitor_set1.cpp
+\t g++ -Wall -g -O0 -std=c++0x -I../../ -D__x86__ --verbose -c "^cluster_name^".cpp
+
+.PHONY: tests
+tests:
+\t make -C $(DIR)
+
+x86-test: x86-monitor-lib tests
+\t g++ "^cluster_name^".o tests/tests.o -L../../ -lrteml -pthread -o "^cluster_name^"
 
 arm-mon: arm-monitor-lib
 
@@ -609,3 +634,10 @@ close_out stream;
 (* the buffers need to be managed according to its size and type; one buffer
    could be used for several monitors; a monitor is the synthesis of a formula
  *)
+
+(* lets generate the tests *)
+if (search_settings list_global_string_settings "gen_tests") = "true" then
+begin
+  create_dir (cluster_name^"/tests");
+  Rmtld3_synth_test.test () cluster_name;
+end

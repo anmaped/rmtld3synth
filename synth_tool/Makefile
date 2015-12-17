@@ -1,6 +1,6 @@
 RESULT = rmtld3synthcpp
 SOURCES = \
-  rmtld3.ml rmtld3_synthesis.ml
+  rmtld3.ml rmtld3_synth_test.ml rmtld3_synthesis.ml
 
 #LIBS= unix
 
