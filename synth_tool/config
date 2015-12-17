@@ -1,0 +1,12 @@
+
+(gen_tests true)
+
+(maximum_inter_arrival_time 102)
+(maximum_period 2000000)
+(event_subtype int)
+(cluster_name monitor_set1)
+
+(m_simple 1000000 (Or (Until 200000 (Prop A) (Prop C)) (Prop B)))
+(m_morecomplex 500000 (Or (Until 200000 (Prop set_off) (Or (Until 200 (Prop A) (Prop C)) (Prop B))) (Prop B)))
+
+(a b c)
