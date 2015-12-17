@@ -1,7 +1,11 @@
 #ifndef MONITOR_IEVENTREADER_H
 #define MONITOR_IEVENTREADER_H
 
+#include <utility>
+
 #include "Event.h"
+
+enum state_rd_t {AVAILABLE, UNAVAILABLE, OVERWRITEN};
 
 /**
  * IEventReader declares an interface to read Events from EventBuffers. This allows clients to decouple from a specific
@@ -30,7 +34,7 @@ public:
      *
      * @return if an element was popped, false if the RoundBuffer is empty.
      */
-    virtual bool dequeue(Event<T> &event, bool &gap, int idx = -1) = 0;
+    virtual std::pair<state_rd_t,Event<T> &> dequeue(int idx = -1) = 0;
     
 };
 

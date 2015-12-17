@@ -20,22 +20,19 @@ private:
      * Pointer to a circular buffer this RTEML_writer writes to.
      * @see RTEML_buffer
      */
-    CircularBuffer<T> *buffer;
+    CircularBuffer<T> *const buffer;
+
+    typedef CircularBuffer<T> cb;
+    typename cb::tm_page new_tm_page;
 
 public:
-    /**
-     * Instantiates a new RTEML_writer.
-     *
-     * The event writer is blank and should only be configured by calling configWriter on an RTEML_buffer.
-     */
-    RTEML_writer();
 
     /**
      * Instantiates a new RTEML_writer.
      *
      * @param buffer the Buffer to write to.
      */
-    RTEML_writer(CircularBuffer<T> *buffer);
+    RTEML_writer(CircularBuffer<T> *const buffer);
 
     /**
     * enqueues an event to the Buffer.
@@ -55,25 +52,20 @@ public:
 };
 
 template<typename T>
-RTEML_writer<T>::RTEML_writer() : buffer(NULL)
-{
-
-}
-
-template<typename T>
-RTEML_writer<T>::RTEML_writer(CircularBuffer<T> *bbuffer) : buffer(bbuffer)
+RTEML_writer<T>::RTEML_writer(CircularBuffer<T> *const bbuffer) : buffer(bbuffer), new_tm_page(0)
 {
 
 }
 
 template<typename T>
 void RTEML_writer<T>::enqueue(const T &data) {
-    buffer->enqueue(data);
+    // lets use the available page
+    buffer->enqueue(data, &new_tm_page);
 }
 
 template<typename T>
-void RTEML_writer<T>::setBuffer(CircularBuffer<T> *bbuffer) {
-    this->buffer = bbuffer;
+void RTEML_writer<T>::setBuffer(CircularBuffer<T> * const bbuffer) {
+    //buffer = bbuffer;
 }
 
 #endif //_RTEML_WRITER_H_

@@ -14,24 +14,7 @@
 #include "time_compat.h"
 #include "RTEML_buffer.h"
 
-
-#define pcheck(val) \
-    if (val != OK) \
-        return val;
-
-#define pcheck_print(val, checkval, extra_action) \
-    if (val != checkval) \
-    { \
-        ::printf("Error: %d\n", val); \
-        extra_action \
-    }
-
-#define pcheck_attr(val, attr) \
-    if (val != OK) \
-    { \
-        pthread_attr_destroy(attr); \
-         return val; \
-    }
+#include "task_compat.h"
 
 /**
  * Represents a periodic Monitor.
@@ -103,7 +86,7 @@ protected:
      * @param buffer a reference to an IEventBuffer.
      */
     template<typename T>
-    void configReader(RTEML_reader<T> &_reader, const IEventBuffer<T> &buffer);
+    void configReader(RTEML_reader<T> &_reader, IEventBuffer<T> &buffer);
 
     /**
      * The monitor execution code.
@@ -162,7 +145,7 @@ template<typename T>
 void Monitor::configReader
     (
         RTEML_reader<T> &_reader,
-        const IEventBuffer<T> &buffer
+        IEventBuffer<T> &buffer
     )
 {
     buffer.configReader(_reader);

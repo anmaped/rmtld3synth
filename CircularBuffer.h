@@ -24,6 +24,7 @@
 #ifndef _CIRCULAR_BUFFER_H_
 #define _CIRCULAR_BUFFER_H_
 
+#include <stdio.h>
 #include <time.h>
 
 #include "Event.h"
@@ -43,34 +44,51 @@ template<typename T>
 class CircularBuffer {
 private:
 
-    /** CircularBuffer write operations state */
-    struct circular_array_state {
-        /** The index the writer is writing at */
-        size_t writer_index;
-        
-        /** element counting */
-        size_t el_count;
+    enum st {UPDATABLE=0, READY};
 
-        /** Store the absolute time of the last element pushed */
-        timeabs lastelementpushed_ts;
+    struct nd {
+        std::atomic<st> state;
+        Event<T> ev;
+    };
 
-    } ca_state[2];
-
-    /** atomic variable */
-    bool atomic_current_idx = false;
+    union cnt {
+        uint64_t ct64;
+        struct {
+            uint32_t idx;
+            uint32_t t;
+        };
+    };
     
     /** Constant pointer to the start of the array */
-    const Event<T> * ca_accesspointer;
+    struct nd *const ca_accesspointer;
 
     /** Array Length */
     const size_t ca_length;
 
-    size_t getPrevIndex(size_t idx) const;
 
-    size_t getNextIndex(size_t idx) const;
+    uint64_t getCounterCurrentTimestamp(uint64_t counter) const;
+    size_t getCounterValue(uint64_t counter) const;
+    uint32_t getCounterCurrentPage(uint64_t counter) const;
+
+    void setCounterCurrentPage(uint64_t &counter, uint32_t t) const;
+    void setCounterValue(uint64_t &counter, size_t idx) const;
 
 public:
-    typedef struct circular_array_state inftyBufferState;
+
+    std::atomic<uint64_t> counter; // counter for node assignment
+
+    typedef struct nd node;
+
+    struct timming_page {
+        uint64_t current_time;
+
+        timming_page() {}
+        timming_page(uint64_t t) :  current_time(t) {}
+    };
+
+    typedef struct timming_page tm_page;
+
+    tm_page local_tm_page;
 
     /**
      * Instantiates a new buffer using external memory allocation.
@@ -78,7 +96,7 @@ public:
      * @param array a reference to a constant pointer that points to the array.
      * @param length the length of the array.
      */
-    CircularBuffer(const Event<T>* const &array, const size_t length);
+    CircularBuffer(node * const &array, const size_t length);
 
     /**
      * Atomically enqueues data into the circular buffer.
@@ -89,7 +107,7 @@ public:
      *
      * @param data the data to be pushed.
      */
-    void enqueue(const T &data);
+    void enqueue(const T &data, tm_page * new_tm_page);
 
     /**
      * Reads an index from the buffer.
@@ -99,6 +117,10 @@ public:
      */
     void readEventFromIndex(Event<T> &event, const size_t index) const;
 
+    void getState(timeabs &time, size_t &idx) const;
+
+    size_t counterToIndex(uint32_t lcounter) const;
+
     /**
      * Reads an absolute timestamp given an index.
      *
@@ -107,7 +129,7 @@ public:
      * @param time A reference to a time span where the data will be stored.
      * @param index the index to read from.
      */
-    void readTimeabsFromIndex(timeabs &time, const size_t index) const;
+    //void readTimeabsFromIndex(timeabs &time, const size_t index) const;
 
     /**
      * Gets the number of enqued events.
@@ -123,6 +145,8 @@ public:
      */
     size_t getHead() const;
 
+    bool nodeIsReady(const size_t idx) const;
+
     /**
      * Gets the array length.
      *
@@ -133,84 +157,168 @@ public:
 };
 
 template<typename T>
-CircularBuffer<T>::CircularBuffer(const Event<T>* const &array, const size_t length) :
+CircularBuffer<T>::CircularBuffer(node* const &array, const size_t length) :
     ca_accesspointer(array),
-    ca_length(length)
+    ca_length(length),
+    local_tm_page(tm_page(clockgettime()))
 {
-    // initialize states for swaping
-    ca_state[0].writer_index = 0;
-    ca_state[0].lastelementpushed_ts = clockgettime();
-    ca_state[0].el_count = 0;
-
-    ca_state[1].writer_index = 0;
-    ca_state[1].lastelementpushed_ts = ca_state[0].lastelementpushed_ts;
-    ca_state[1].el_count = 0;
+    union cnt x;
+    x.t = (uint32_t)&local_tm_page;
+    x.idx = 0;
+    counter.store((uint64_t)x.ct64);
 }
 
 template<typename T>
-size_t CircularBuffer<T>::getNextIndex(size_t idx) const {
-    size_t tmpval = idx + 1;
-
-    if (tmpval >= ca_length)
-        return 0;
-
-    return tmpval;
+size_t CircularBuffer<T>::counterToIndex(uint32_t lcounter) const {
+    return lcounter % getLength();
 }
 
 template<typename T>
-size_t CircularBuffer<T>::getPrevIndex(size_t idx) const {
+uint64_t CircularBuffer<T>::getCounterCurrentTimestamp(uint64_t counter) const
+{
+    union cnt x {.ct64 = counter}; // [TODO: we need to confirm...]
+    tm_page * previous_tm_page = (tm_page *) x.t;
 
-    if ((int)(idx) - 1 < 0)
-        return ca_length;
-
-    return (size_t)(idx - 1);
+    return previous_tm_page->current_time;
 }
 
 template<typename T>
-void CircularBuffer<T>::enqueue(const T &data) {
+size_t CircularBuffer<T>::getCounterValue(uint64_t counter) const
+{
+    union cnt x {.ct64 = counter}; // [TODO: we need to confirm...]
+    return x.idx;
+}
 
+template<typename T>
+uint32_t CircularBuffer<T>::getCounterCurrentPage(uint64_t counter) const
+{
+    union cnt x {.ct64 = counter}; // [TODO: we need to confirm...]
+    return x.t;
+}
+
+template<typename T>
+void CircularBuffer<T>::setCounterCurrentPage(uint64_t &counter, uint32_t t) const
+{
+    union cnt x {.ct64 = counter}; // [TODO: we need to confirm...]
+    x.t = t;
+    counter = x.ct64;
+}
+
+template<typename T>
+void CircularBuffer<T>::setCounterValue(uint64_t &counter, size_t idx) const
+{
+    union cnt x {.ct64 = counter}; // [TODO: we need to confirm...]
+    x.idx = idx;
+    counter = x.ct64;
+}
+
+template<typename T>
+void CircularBuffer<T>::enqueue(const T &data, tm_page * new_tm_page) { // [TODO FRAME FOR EACH WRITER]
+
+    uint32_t tempCounter;
     size_t tempIndex;
     Event<T> *tempEvent;
+    uint64_t tmptime;
+    timespan nextTime;
+
+    // this part need to be processed atomically (set timestamp and increment the counter)
+    // since several less significant bytes are available in one 64 bit word, we will use
+    // it to store the counter. the counter should be larger as much as the buffer size.
+    uint64_t new_value;
+
+    ATOMIC_begin_VALUE64(counter);
+
+        // lets increment and get the counter atomically
+        tempCounter = getCounterValue(old_value64);
+        // map counter to buffer index
+        tempIndex = counterToIndex(tempCounter);
+
+        // get timestamp
+        tmptime = clockgettime();
+
+        ::printf("Time:%lld - %lld = %lld : Pointer: %p _> %p\n", tmptime, getCounterCurrentTimestamp(old_value64), tmptime - getCounterCurrentTimestamp(old_value64), new_tm_page, &local_tm_page );
+        nextTime = tmptime - getCounterCurrentTimestamp(old_value64) ;
+
+        // case new_tm_page is currently in use then swap it with the local_tm_page
+        if ( getCounterCurrentPage(old_value64) == (uint32_t)new_tm_page )
+        {
+            ::printf("using main page\n");
+            new_tm_page = &local_tm_page;
+        }
+
+        new_tm_page->current_time = tmptime;
+
+        // lets create the new value using the old value with incremented counter and new page
+        uint32_t newtempCounter = tempCounter + 1;
+        setCounterValue(new_value, newtempCounter);
+        setCounterCurrentPage(new_value, (uint32_t)new_tm_page);
+
+        // lets mark the event updatable
+        ca_accesspointer[tempIndex].state.store(UPDATABLE);
+
+        ::printf("Time:%lld -- %ld : Pointer: %p\n", new_tm_page->current_time, nextTime, new_tm_page);
+
+    ATOMIC_end_VALUE64(new_value, counter);
+
+    // now we know the new index and timestamp
+    // lets modify the new event and set it to ready state
+
+    tempEvent = &ca_accesspointer[tempIndex].ev;
+    tempEvent->setTime( (timespan) nextTime );
+    tempEvent->getData() = data;
+
+    ca_accesspointer[tempIndex].state.store(READY);
+
+    /*// now we have reserved the position for this push operation
 
     // atomic operations (interface with the buffer)
-    uint32_t new_value;
-    static uint32_t * dest = (uint32_t *) &atomic_current_idx; // static is ensuring that anyone can modify it (stack could be optimized for others)
-    
-    ATOMIC_begin(new_value, !, dest);
+    ATOMIC_begin(atomic_ca_state_pointer);
+        inftyBufferState * tmp_point = (inftyBufferState *)atomic_ca_state_pointer.load();
 
-        //::printf("%d\n", new_value);
-        tempIndex = getNextIndex( ca_state[!new_value].writer_index );
+        //tempIndex = getNextIndex( tmp_point->writer_index );
         tempEvent = (Event<T> *) &ca_accesspointer[tempIndex];
-        // get time
-        timeabs tmptime = clockgettime();
-        tempEvent->setTime( (timespan) tmptime - ca_state[!new_value].lastelementpushed_ts );
+        
+        tempEvent->setTime( (timespan) nextTime );
         tempEvent->getData() = data;
-        // for swaping
-        ca_state[new_value].writer_index = tempIndex;
-        ca_state[new_value].lastelementpushed_ts = tmptime;
-        ca_state[new_value].el_count = ca_state[!new_value].el_count + 1;
+        // for swapping
+        ca_state_p->writer_index = tempIndex;
+        ca_state_p->lastelementpushed_ts = tmptime;
+        ca_state_p->el_count = tmp_point->el_count + 1;
 
-    ATOMIC_end(new_value, dest);
+        ca_state_p_old = tmp_point;
+
+    ATOMIC_end(ca_state_p, atomic_ca_state_pointer);
 
     // swap state done.
     
-    // end of atomic operations
+    // end of atomic operations*/
+
 }
 
 template<typename T>
 void CircularBuffer<T>::readEventFromIndex(Event<T> &event, const size_t index) const
 {
-    event = ca_accesspointer[index];
+    event = ca_accesspointer[index].ev;
+}
+
+template<typename T>
+void CircularBuffer<T>::getState(timeabs &time, size_t &idx) const
+{
+    uint64_t tempCounter = counter.load();
+    time = getCounterCurrentTimestamp(tempCounter);
+    idx = getCounterValue(tempCounter);
 }
    
-template<typename T>
+/*template<typename T>
 void CircularBuffer<T>::readTimeabsFromIndex(timeabs &time, const size_t index) const
 {
     timeabs cumulate;
     size_t tmp_idx;
 
-    cumulate = ca_state[atomic_current_idx].lastelementpushed_ts;
-    tmp_idx = ca_state[atomic_current_idx].writer_index;
+    inftyBufferState * tmp_point = (inftyBufferState *)atomic_ca_state_pointer.load();
+
+    cumulate = tmp_point->lastelementpushed_ts;
+    tmp_idx = tmp_point->writer_index;
 
     // requirement: reconstruct the absolute timestamp
     // reconstruction is backwards
@@ -223,18 +331,26 @@ void CircularBuffer<T>::readTimeabsFromIndex(timeabs &time, const size_t index) 
     }
 
     time = cumulate;
-}
+}*/
 
 template<typename T>
 size_t CircularBuffer<T>::getElementsCount() const
 {
-    return ca_state[atomic_current_idx].el_count;
+    //uint64_t tempCounter = (counter.load() & 0xFFFFFFFF00000000) >> 32;
+
+    return getCounterValue(counter.load());
 }
 
 template<typename T>
 size_t CircularBuffer<T>::getHead() const
 {
-    return ca_state[atomic_current_idx].writer_index;
+    return counterToIndex(getElementsCount());
+}
+
+template<typename T>
+bool CircularBuffer<T>::nodeIsReady(const size_t idx) const
+{
+    return ca_accesspointer[idx].state.load() == READY;
 }
 
 template<typename T>

@@ -27,28 +27,6 @@
 template<typename T>
 class IEventBuffer {
 public:
-    /**
-    * Configures an RTEML_writer for this EventBuffer.
-    *
-    * Configures an RTEML_writer to write to this buffer, only one RTEML_writer for each Buffer may exist, so a check
-    * that a writer has not been configured before is done. A writer is only created if no writer has been created
-    * before.
-    *
-    * @param RTEML_writer an RTEML_writer to configure.
-    * @return true if the writer was configured.
-    *
-    * @see RTEML_writer
-    */
-    virtual bool configWriter(RTEML_writer<T> &_writer) = 0;
-
-    /**
-     * Configures a new RTEML_reader for this buffer.
-     *
-     * @param _reader the RTEML_reader to configure.
-     *
-     * @see RTEML_reader
-     */
-    virtual void configReader(RTEML_reader<T> &_reader) const = 0;
 
     /**
      * Gets the EventBuffers length.

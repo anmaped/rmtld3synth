@@ -1,5 +1,5 @@
 
-#include "Monitor.h"
+#include "RTEML_monitor.h"
 
 Monitor::Monitor(const useconds_t period) :
     m_state(Monitor_state(SCHED_FIFO, 1, period))
@@ -15,11 +15,11 @@ Monitor::Monitor(const useconds_t period, unsigned int schedule_policy, unsigned
 
 void* Monitor::loop(void* ptr) {
     Monitor *monitor = (Monitor *) ptr;
-    struct timespec now, next, tmp;
+    struct timespec now = {}, next = {}, tmp = {};
 
     // Mutex and conditional variables for pthread_cond_timedwait
-    pcheck_print( pthread_mutex_init ( &monitor->m_state.fmtx, NULL ), OK, return NULL; );
-    pcheck_print( pthread_cond_init ( &monitor->m_state.cond, NULL ), OK, return NULL; );
+    pcheck_print( pthread_mutex_init ( &monitor->m_state.fmtx, NULL ), P_OK, return NULL; );
+    pcheck_print( pthread_cond_init ( &monitor->m_state.cond, NULL ), P_OK, return NULL; );
 
     clock_gettime(CLOCK_REALTIME, &next);
 
@@ -32,7 +32,7 @@ void* Monitor::loop(void* ptr) {
         // convert useconds_t to struct timespec
         struct timespec p;
 
-        ::printf("nseconds: %lu\n", monitor->m_state.period);
+        ::printf("useconds: %lu\n", monitor->m_state.period);
 
         useconds_t2timespec( &monitor->m_state.period, &p );
 
@@ -73,12 +73,12 @@ void* Monitor::loop(void* ptr) {
 
 int Monitor::enable()
 {
-    pthread_attr_t attribute;
+    pthread_attr_t attribute = {};
     struct sched_param parameter;
 
     ::printf( "Monitor started!\n" );
 
-    if ( !(m_state.status == RUNNING) ) {
+    if ( !isRunning() ) {
 
         pcheck( pthread_attr_init( &attribute ) );
 
@@ -90,6 +90,8 @@ int Monitor::enable()
 
         pcheck_attr( pthread_create( &thread, &attribute, &loop, (void *) this ), &attribute );
 
+        pcheck( pthread_attr_destroy( &attribute ) );
+
         m_state.status = RUNNING;
 
     } else {
@@ -97,7 +99,7 @@ int Monitor::enable()
         return -1;
     }
 
-    return OK;
+    return P_OK;
 }
 
 bool Monitor::isRunning() const

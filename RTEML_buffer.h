@@ -19,7 +19,7 @@
  * @see IEventBuffer
  * @see IEventReader
  * @see RTEML_reader
- * @see Monitor
+ * @see RTEML_monitor
  *
  * @author André Pedro (anmap@isep.ipp.pt)
  * @author Humberto Carvalho (1129498@isep.ipp.pt)
@@ -33,7 +33,8 @@ private:
      * parameter N, avoiding dynamic memory usage.
      * @see Event
      */
-    Event<T> array[N];
+    typedef CircularBuffer<T> cb;
+    typename cb::node array[N];
 
     /**
      * The infinite buffer that is used for readers and writers of the RTEML.
@@ -53,33 +54,13 @@ public:
     RTEML_buffer();
 
     /**
-     * Attaches the buffer to a writer.
-     *
-     * Configures an RTEML_writer to perform write operations to this buffer.
-     * A writer is only created if no other writer has been created before.
-     *
-     * @param writer an RTEML_writer to configure.
-     * @return true if the writer was configured.
-     *
-     * @see RTEML_writer
-     */
-    bool configWriter(RTEML_writer<T> &writer);
-
-    /**
-     * Attaches the buffer to a reader.
-     *
-     * @param reader the RTEML_reader to configure.
-     *
-     * @see RTEML_reader
-     */
-    void configReader(RTEML_reader<T> &reader) const;
-
-    /**
      * Gets the static length of the buffer.
      *
      * @return the template parameter N.
      */
     size_t getLength() const;
+
+    CircularBuffer<T> *const getBuffer() const;
 
     /**
      * Debugs the infinite buffer into the stdout
@@ -96,32 +77,20 @@ RTEML_buffer<T, N>::RTEML_buffer() :
 }
 
 template<typename T, size_t N>
-bool RTEML_buffer<T, N>::configWriter(RTEML_writer<T> &_writer)
-{
-    // only one writer is allowed
-    if (!writer) {
-        writer = true;
-        _writer.setBuffer(&buffer);
-        return true;
-    } else
-        return false;
-}
-
-template<typename T, size_t N>
-void RTEML_buffer<T, N>::configReader(RTEML_reader<T> &_reader) const {
-    _reader.setBuffer(&buffer);
-}
-
-template<typename T, size_t N>
 size_t RTEML_buffer<T, N>::getLength() const {
     return N;
+}
+
+template<typename T, size_t N>
+CircularBuffer<T> *const RTEML_buffer<T, N>::getBuffer() const {
+    return (CircularBuffer<T> *const)&buffer;
 }
 
 template<typename T, size_t N>
 void RTEML_buffer<T, N>::debug() const
 {
     for (unsigned int idx=0; idx < N; idx++)
-        ::printf("%lu,%d; ", array[idx].getTime(), array[idx].getData());
+        ::printf("%lu,%d; ", array[idx].ev.getTime(), array[idx].ev.getData());
 }
 
 #endif //_RTML_BUFFER_H_
