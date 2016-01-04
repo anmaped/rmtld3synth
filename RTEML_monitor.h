@@ -17,7 +17,7 @@
 #include "task_compat.h"
 
 /**
- * Represents a periodic Monitor.
+ * Represents a periodic RTEML_monitor.
  *
  * This class represents a periodic monitor, capable of monitoring several EventBuffers.  The monitor creates a periodic
  * pthread that executes the code on the pure virtual function run.
@@ -31,7 +31,7 @@
  * @author Humberto Carvalho (1129498@isep.ipp.pt)
  * @date
  */
-class Monitor {
+class RTEML_monitor {
 private:
 
     /** The Monitors pthread. */
@@ -42,7 +42,7 @@ private:
 
     struct Monitor_state
     {
-        /** The schedule policy of this Monitor. Can be: SCHED_OTHER, SCHED_FIFO, SCHED_RR, SCHED_BATCH, SCHED_IDLE as defined in pthread. */
+        /** The schedule policy for the current RTEML_monitor as defined in pthread. */
         const int sched_policy;
 
         /** The priority for the schedule policy, please see the pthread documentation for more information. */
@@ -106,16 +106,16 @@ public:
      *
      * @param period the monitors period.
      */
-    Monitor(const useconds_t period);
+    RTEML_monitor(const useconds_t period);
 
     /**
-     * Instantiates a new monitor with a period of timespec, with schedule policy schedule_policy and priority priority. Can be: SCHED_OTHER, SCHED_FIFO, SCHED_RR, SCHED_BATCH, SCHED_IDLE as defined in pthread.
+     * Instantiates a new monitor with a certain period, a schedule policy and one priority.
      *
-     * @param period the monitors period.
-     * @param schedule_policy the posix schedule policy for this monitor.
-     * @param priority the priority for this monitor, should match the schedule policy.
+     * @param period the RTEML_monitor period.
+     * @param policy the posix schedule policy for this monitor.
+     * @param priority the priority for this RTEML_monitor.
      */
-    Monitor(const useconds_t period, unsigned int schedule_policy, unsigned int priority);
+    RTEML_monitor(const useconds_t period, unsigned int policy, unsigned int priority);
 
     /**
      * Creates a thread for this monitor which will run function f.
@@ -125,7 +125,7 @@ public:
     int enable();
 
     /**
-     * Checks whether this Monitor is running.
+     * Checks whether this RTEML_monitor is running.
      *
      * @returns true if the monitor is running.
      */
@@ -142,7 +142,7 @@ public:
 };
 
 template<typename T>
-void Monitor::configReader
+void RTEML_monitor::configReader
     (
         RTEML_reader<T> &_reader,
         IEventBuffer<T> &buffer

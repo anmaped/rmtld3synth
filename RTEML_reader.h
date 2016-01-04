@@ -98,8 +98,8 @@ std::pair<state_rd_t,Event<T> &> RTEML_reader<T>::dequeue(int idx) {
     
     ATOMIC_begin_VALUE64_NOEXCHANGE(buffer->counter);
 
-        buffer->readEventFromIndex(tempEvent, index_for_event);  // unsafe in terms of empty buffer
-        n_elems_writer = buffer->getElementsCount();
+        buffer->readEvent(tempEvent, index_for_event);  // unsafe in terms of empty buffer
+        n_elems_writer = buffer->getCounterId();
 
         if (!buffer->nodeIsReady(index_for_event))
         {

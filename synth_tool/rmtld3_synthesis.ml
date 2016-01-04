@@ -299,7 +299,7 @@ let _ =
   #include \""^monitor_name^"_compute.h\"
   #include \""^ cluster_name ^".h\"
 
-  class "^String.capitalize monitor_name^" : public Monitor {
+  class "^String.capitalize monitor_name^" : public RTEML_monitor {
 
   private:
     RTEML_reader<int> __reader = RTEML_reader<int>(__buffer_"^ cluster_name ^".getBuffer());
@@ -315,7 +315,7 @@ let _ =
     }
 
   public:
-    "^String.capitalize monitor_name^"(IEventBuffer<int> &buffer, useconds_t p): Monitor(p,SCHED_FIFO,5), env(0, &trace, __observation) {
+    "^String.capitalize monitor_name^"(IEventBuffer<int> &buffer, useconds_t p): RTEML_monitor(p,SCHED_FIFO,5), env(0, &trace, __observation) {
       //configReader<int>(__reader, buffer); [IS NOT REQUIRED... BUFFER IS STATICALLY ASSIGNED]
     }
 

@@ -1,0 +1,17 @@
+PROJECT_NAME     = RTEMLib
+FILE_PATTERNS    = *.cpp *.h *.md
+INPUT = ../ ./
+OUTPUT_DIRECTORY = ./
+USE_MDFILE_AS_MAINPAGE = readme.md
+EXTRACT_ALL            = YES
+HAVE_DOT               = YES
+UML_LOOK               = YES
+COLLABORATION_GRAPH    = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+CLASS_DIAGRAMS         = YES
+GENERATE_XML = YES
+DOTFILE_DIRS = ./
+HTML_EXTRA_STYLESHEET = cdoxygen.css 

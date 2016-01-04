@@ -1,20 +1,20 @@
 
 #include "RTEML_monitor.h"
 
-Monitor::Monitor(const useconds_t period) :
+RTEML_monitor::RTEML_monitor(const useconds_t period) :
     m_state(Monitor_state(SCHED_FIFO, 1, period))
 {
 
 }
 
-Monitor::Monitor(const useconds_t period, unsigned int schedule_policy, unsigned int priority) :
+RTEML_monitor::RTEML_monitor(const useconds_t period, unsigned int schedule_policy, unsigned int priority) :
     m_state(Monitor_state(schedule_policy, priority, period))
 {
-
+    
 }
 
-void* Monitor::loop(void* ptr) {
-    Monitor *monitor = (Monitor *) ptr;
+void* RTEML_monitor::loop(void* ptr) {
+    RTEML_monitor *monitor = (RTEML_monitor *) ptr;
     struct timespec now = {}, next = {}, tmp = {};
 
     // Mutex and conditional variables for pthread_cond_timedwait
@@ -51,7 +51,7 @@ void* Monitor::loop(void* ptr) {
         if ( timespeccmp( &now, &next, > ) ) {
 
             timespecsub(&next, &now, &tmp);
-            ::printf("Monitor is missing their deadline for %lu s.%lu ns\n", tmp.tv_sec, tmp.tv_nsec);
+            ::printf("RTEML_monitor is missing their deadline for %lu s.%lu ns\n", tmp.tv_sec, tmp.tv_nsec);
 
         }
 
@@ -71,12 +71,12 @@ void* Monitor::loop(void* ptr) {
     return NULL;
 }
 
-int Monitor::enable()
+int RTEML_monitor::enable()
 {
     pthread_attr_t attribute = {};
     struct sched_param parameter;
 
-    ::printf( "Monitor started!\n" );
+    ::printf( "RTEML_monitor started!\n" );
 
     if ( !isRunning() ) {
 
@@ -102,17 +102,17 @@ int Monitor::enable()
     return P_OK;
 }
 
-bool Monitor::isRunning() const
+bool RTEML_monitor::isRunning() const
 {
     return m_state.status == RUNNING;
 }
 
-const useconds_t & Monitor::getPeriod() const
+const useconds_t & RTEML_monitor::getPeriod() const
 {
     return m_state.period;
 }
 
-void Monitor::setPeriod(const useconds_t & p)
+void RTEML_monitor::setPeriod(const useconds_t & p)
 {
     m_state.period = p;
 }

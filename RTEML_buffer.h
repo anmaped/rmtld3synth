@@ -11,9 +11,10 @@
 
 /**
  * RTEML_buffer allows instrumented applications and monitors to share the
- * the same buffer by splinting the read and write operations. Monitor
- * uses RTEML_reader, and RTEML_writer is used for software modules under
- * observation.
+ * the same buffer by splinting it into read and write operations.
+ *
+ * Monitor uses RTEML_reader, and RTEML_writer is reserved for software modules
+ * under observation.
  *
  * @see Event
  * @see IEventBuffer
