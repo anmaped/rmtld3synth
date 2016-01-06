@@ -5,7 +5,6 @@
 #include <time.h>
 
 #include "CircularBuffer.h"
-#include "IEventBuffer.h"
 #include "RTEML_writer.h"
 #include "RTEML_reader.h"
 
@@ -17,8 +16,6 @@
  * under observation.
  *
  * @see Event
- * @see IEventBuffer
- * @see IEventReader
  * @see RTEML_reader
  * @see RTEML_monitor
  *
@@ -27,7 +24,7 @@
  * @date
  */
 template<typename T, size_t N>
-class RTEML_buffer : public IEventBuffer<T> {
+class RTEML_buffer {
 private:
     /**
      * The Event array where events are kept. Size is defined via template
@@ -91,7 +88,8 @@ template<typename T, size_t N>
 void RTEML_buffer<T, N>::debug() const
 {
     for (unsigned int idx=0; idx < N; idx++)
-        ::printf("%lu,%d; ", array[idx].ev.getTime(), array[idx].ev.getData());
+        DEBUGV3("%lu,%d; ", array[idx].ev.getTime(), array[idx].ev.getData());
+    DEBUGV3("\n");
 }
 
 #endif //_RTML_BUFFER_H_

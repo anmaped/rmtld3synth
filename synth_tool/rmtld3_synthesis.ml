@@ -315,9 +315,7 @@ let _ =
     }
 
   public:
-    "^String.capitalize monitor_name^"(IEventBuffer<int> &buffer, useconds_t p): RTEML_monitor(p,SCHED_FIFO,5), env(0, &trace, __observation) {
-      //configReader<int>(__reader, buffer); [IS NOT REQUIRED... BUFFER IS STATICALLY ASSIGNED]
-    }
+    "^String.capitalize monitor_name^"(useconds_t p): RTEML_monitor(p,SCHED_FIFO,5), env(0, &trace, __observation) {}
 
   };
 
@@ -561,7 +559,7 @@ let _ =
 (* this standalone cpp file instantiates the monitors that have been synthesized *)
   let stream = open_out (cluster_name^"/"^ cluster_name ^".cpp") in
   let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize monitor_name^".h\"\n" ) "" list_monitor_settings in
-  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"(__buffer_"^ cluster_name ^", "^string_of_int monitor_period^");\n" ) "" list_monitor_settings in
+  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"("^string_of_int monitor_period^");\n" ) "" list_monitor_settings in
   let code = headers ^"#include \"RTEML_buffer.h\"
 
 RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
@@ -608,22 +606,22 @@ let code =
 
 DIR = tests
 
-arm-monitor-lib:
+arm-monitor:
 \t arm-none-eabi-g++ -std=c++0x -march=armv7-a -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
 
-x86-monitor-lib:
+x86-monitor:
 \t g++ -Wall -g -O0 -std=c++0x -I../../ -D__x86__ --verbose -c "^cluster_name^".cpp
 
 .PHONY: tests
 tests:
 \t make -C $(DIR)
 
-x86-test: x86-monitor-lib tests
+x86-mtest: x86-monitor tests
 \t g++ "^cluster_name^".o tests/tests.o -L../../ -lrteml -pthread -o "^cluster_name^"
 
-arm-mon: arm-monitor-lib
+arm-mon: arm-monitor
 
-x86-mon: x86-monitor-lib
+x86-mon: x86-monitor
 
 all:
 

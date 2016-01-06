@@ -4,7 +4,12 @@
 #include <time.h>
 
 #include "CircularBuffer.h"
-#include "IEventReader.h"
+
+#include <utility>
+
+#include "Event.h"
+
+enum state_rd_t {AVAILABLE, UNAVAILABLE, OVERWRITEN};
 
 
 /**
@@ -14,7 +19,7 @@
  * @date
  */
 template<typename T>
-class RTEML_reader : public IEventReader<T> {
+class RTEML_reader {
 private:
     /**  Constant pointer to a constant circular Buffer this RTEML_reader performs atomic read operations from.
      * @see CircularBuffer

@@ -29,6 +29,7 @@
 
 #include "Event.h"
 #include "atomic_compat.h"
+#include "debug_compat.h"
 
 /**
  * Ring buffer for RTEML_reader and RTEML_writer.
@@ -167,7 +168,8 @@ size_t CircularBuffer<T>::counterToIndex(uint32_t lcounter) const {
 template<typename T>
 uint64_t CircularBuffer<T>::getCounterCurrentTimestamp(uint64_t counter) const
 {
-    union cnt x {.ct64 = counter}; // [TODO: we need to confirm...]
+    union cnt x; // [TODO: we need to confirm...]
+    x.ct64 = counter;
     tm_page * previous_tm_page = (tm_page *) x.t;
 
     return previous_tm_page->current_time;
@@ -176,7 +178,8 @@ uint64_t CircularBuffer<T>::getCounterCurrentTimestamp(uint64_t counter) const
 template<typename T>
 size_t CircularBuffer<T>::getCounterValue(uint64_t counter) const
 {
-    union cnt x {.ct64 = counter}; // [TODO: we need to confirm...]
+    union cnt x; // [TODO: we need to confirm...]
+    x.ct64 = counter;
     return x.idx;
 }
 
@@ -217,7 +220,12 @@ void CircularBuffer<T>::enqueue(const T &data, tm_page * new_tm_page) { // [TODO
     // it to store the counter. the counter should be larger as much as the buffer size.
     uint64_t new_value;
 
+    // instructions for measure time and number of tries
+    START_MEASURE();
+
     ATOMIC_begin_VALUE64(counter);
+        
+        COUNT_CYCLE();
 
         // lets increment and get the counter atomically
         tempCounter = getCounterValue(old_value64);
@@ -227,7 +235,7 @@ void CircularBuffer<T>::enqueue(const T &data, tm_page * new_tm_page) { // [TODO
         // get timestamp
         tmptime = clockgettime();
 
-        ::printf("Time:%lld - %lld = %lld : Pointer: %p _> %p\n",
+        DEBUGV3("Time:%lld - %lld = %lld : Pointer: %p _> %p\n",
             tmptime,
             getCounterCurrentTimestamp(old_value64),
             tmptime - getCounterCurrentTimestamp(old_value64),
@@ -240,7 +248,7 @@ void CircularBuffer<T>::enqueue(const T &data, tm_page * new_tm_page) { // [TODO
         // case new_tm_page is currently in use then swap it with the local_tm_page
         if ( getCounterCurrentPage(old_value64) == (uint32_t)new_tm_page )
         {
-            ::printf("using main page\n");
+            DEBUGV3("using main page\n");
             new_tm_page = &local_tm_page;
         }
 
@@ -254,7 +262,7 @@ void CircularBuffer<T>::enqueue(const T &data, tm_page * new_tm_page) { // [TODO
         // lets mark the event updatable
         ca_accesspointer[tempIndex].state.store(UPDATABLE);
 
-        ::printf("Time:%lld -- %ld : Pointer: %p\n",
+        DEBUGV3("Time:%lld -- %ld : Pointer: %p\n",
             new_tm_page->current_time,
             nextTime,
             new_tm_page
@@ -270,6 +278,8 @@ void CircularBuffer<T>::enqueue(const T &data, tm_page * new_tm_page) { // [TODO
     tempEvent->getData() = data;
 
     ca_accesspointer[tempIndex].state.store(READY);
+
+    STOP_MEASURE();
 }
 
 template<typename T>

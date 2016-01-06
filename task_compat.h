@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include "time_compat.h"
+#include "debug_compat.h"
 
 #define P_OK 0
 
@@ -29,6 +30,7 @@
 
 enum status {ACTIVATION, RUNNING, DELAY, ABORT, ABORTED, UNACTIVATE};
 
+
 struct task {
 	
 	pthread_t thread;
@@ -36,6 +38,8 @@ struct task {
 	pthread_mutex_t fmtx;
 
 	pthread_cond_t cond;
+
+	char * tid;
 
 	const useconds_t period;
 
@@ -49,12 +53,14 @@ struct task {
 
 	void* (*run)(void *);
 
+	
+
 	int create_task(void* (*loop)(void *), const int priority, const int sched_policy, int stack_size = 1000000)
 	{
 		pthread_attr_t attribute = {0};
 	    struct sched_param parameter;
 
-	    ::printf( "Task started!\n" );
+	    DEBUGV("Task %s started!\n", tid);
 
 	    pcheck( pthread_attr_init( &attribute ) );
 
@@ -62,7 +68,7 @@ struct task {
 
 	    pcheck_attr( pthread_attr_setstacksize(&attribute, stack_size),  &attribute );
 	    
-	    ::printf("Priority:%d\n", priority);
+	    DEBUGV("Priority:%d\n", priority);
 	    parameter.sched_priority = priority;
 
 	    pcheck_attr( pthread_attr_setschedparam( &attribute, &parameter ), &attribute );
@@ -76,7 +82,7 @@ struct task {
 	    return 0;
 	}
 
-	task(void* (*loop)(void *), const int prio, const int sch_policy, const useconds_t p) : period(p), sched_policy(sch_policy), priority(prio), run(loop)
+	task(char * id, void* (*loop)(void *), const int prio, const int sch_policy, const useconds_t p) : tid(id), period(p), sched_policy(sch_policy), priority(prio), run(loop)
 	{
 		create_task([](void *tsk)-> void*
 		{
@@ -91,33 +97,31 @@ struct task {
 
 		    for (;;) {
 
-		        ::printf("loop+...\n");
+		        DEBUGV("#loop+_%s\n", ttask->tid);
 
 		        clock_gettime(CLOCK_REALTIME, &now);
 
 		        // convert useconds_t to struct timespec
 		        struct timespec p;
 
-		        ::printf("useconds: %lu\n", ttask->period);
+		        DEBUGV("useconds: %lu\n", ttask->period);
 
 		        useconds_t2timespec( &ttask->period, &p );
 
-		        ::printf("timespecp: %lu,%lu\n", p.tv_sec, p.tv_nsec);
-
-		        ::printf("timespec: %lu,%lu\n", next.tv_sec, next.tv_nsec);
+		        DEBUGV("timespecp: %lu,%lu\n", p.tv_sec, p.tv_nsec);
+		        DEBUGV("timespec: %lu,%lu\n", next.tv_sec, next.tv_nsec);
 
 		        timespecadd( &next, &p, &next );
 
-		        ::printf("timespec2: %lu,%lu\n", next.tv_sec, next.tv_nsec);
-
-		        ::printf("timespecnow: %lu,%lu\n", now.tv_sec, now.tv_nsec);
+		        DEBUGV("timespec2: %lu,%lu\n", next.tv_sec, next.tv_nsec);
+		        DEBUGV("timespecnow: %lu,%lu\n", now.tv_sec, now.tv_nsec);
 		        
 		        
 
 		        if ( timespeccmp( &now, &next, > ) ) {
 
 		            timespecsub(&next, &now, &tmp);
-		            ::printf("Task is missing their deadline for %lu s.%lu ns\n", tmp.tv_sec, tmp.tv_nsec);
+		            DEBUGV_ERROR("Task is missing their deadline for %lu s.%lu ns\n", tmp.tv_sec, tmp.tv_nsec);
 
 		        }
 

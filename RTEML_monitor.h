@@ -79,14 +79,6 @@ private:
     static void* loop(void*);
 
 protected:
-    /**
-     * Configures a RTEML_reader to an IEventBuffer buffer.
-     *
-     * @param _reader the RTEML_reader to be configured.
-     * @param buffer a reference to an IEventBuffer.
-     */
-    template<typename T>
-    void configReader(RTEML_reader<T> &_reader, IEventBuffer<T> &buffer);
 
     /**
      * The monitor execution code.
@@ -140,15 +132,5 @@ public:
     /** Sets new monitor period. */
     void setPeriod(const useconds_t & p);
 };
-
-template<typename T>
-void RTEML_monitor::configReader
-    (
-        RTEML_reader<T> &_reader,
-        IEventBuffer<T> &buffer
-    )
-{
-    buffer.configReader(_reader);
-}
 
 #endif //MONITOR_H
