@@ -367,8 +367,10 @@ let _ =
 
         timeabs current_time;
         size_t current_idx;
-        __reader->getCurrentBufferState(current_time, current_idx);
-
+        std::pair<timeabs, size_t> pair_state =  __reader->getCurrentBufferState();
+        current_time = pair_state.first;
+        current_idx = pair_state.second;
+        
         /* while current buffer endpoint timestamp is not greater or equal than timespan t then
          * yield (save state and context-switch) else exit
          */
@@ -507,7 +509,7 @@ let _ =
 
         // here we could adopt a small buffer to avoid successive call of dequeues (for instance a local buffer of 10 elements)
         // dequeue the event of the it index
-        std::pair<state_rd_t,Event<T> &> x = __reader->dequeue((int)it);
+        std::pair<state_rd_t,Event<T> > x = __reader->dequeue((int)it);
 
         return x.second;
       } // [CONFIRM]
@@ -607,7 +609,7 @@ let code =
 DIR = tests
 
 arm-monitor:
-\t arm-none-eabi-g++ -std=c++0x -march=armv7-a -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
+\t arm-none-eabi-g++ -std=c++0x -march=armv7-m -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
 
 x86-monitor:
 \t g++ -Wall -g -O0 -std=c++0x -I../../ -D__x86__ --verbose -c "^cluster_name^".cpp

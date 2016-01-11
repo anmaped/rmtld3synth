@@ -25,7 +25,7 @@ x86-test:
 		static RTEML_reader<int> __reader = RTEML_reader<int>(__buffer_"^ cluster_name ^".getBuffer());
 		Event<int> tmpEvent;
 
-		std::pair<state_rd_t,Event<int> &> rd_tuple = __reader.dequeue();
+		std::pair<state_rd_t,Event<int> > rd_tuple = __reader.dequeue();
 		tmpEvent = rd_tuple.second;
 		::printf(\"Event_consumed: %lu, %d code: %d\\n\", tmpEvent.getTime(), tmpEvent.getData(), rd_tuple.first);
 
@@ -77,7 +77,7 @@ int main( int argc, const char* argv[] )
 	"^consumer_lambda_function consumers_ids^"
 
 	// lets create three producers
-	"^List.fold_left (fun a (id,p) -> "__task producer_"^string_of_int id^" = __task(\"producer"^string_of_int id^"\", producer"^string_of_int id^", sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, "^string_of_int p^");
+	"^List.fold_left (fun a (id,p) -> "__attribute__ ((unused)) __task producer_"^string_of_int id^" = __task(\"producer"^string_of_int id^"\", producer"^string_of_int id^", sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, "^string_of_int p^");
 	"^a) "" producers_ids^"
 
 	// and two consumers
@@ -86,7 +86,7 @@ int main( int argc, const char* argv[] )
 	 * - producer is faster than consumer (it will cause overwritten of buffer)
 	 */
 
-	"^List.fold_left (fun a (id,p) -> "__task consumer_"^string_of_int id^" = __task(\"consumer"^string_of_int id^"\", consumer"^string_of_int id^", sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, "^string_of_int p^");
+	"^List.fold_left (fun a (id,p) -> "__attribute__ ((unused)) __task consumer_"^string_of_int id^" = __task(\"consumer"^string_of_int id^"\", consumer"^string_of_int id^", sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, "^string_of_int p^");
 	"^a) "" consumers_ids^"
 
 	while(true) {sleep(1);}; // do sleep (delay)
