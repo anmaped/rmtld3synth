@@ -77,6 +77,9 @@ public:
 
     void setTime(timespan t);
 
+    void setData(const T &dd) { data = dd; };
+
+
     /**
     * Gets the event creation time.
     *

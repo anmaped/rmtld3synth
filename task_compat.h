@@ -39,7 +39,7 @@ struct task {
 
 	pthread_cond_t cond;
 
-	char * tid;
+	char const * tid;
 
 	const useconds_t period;
 
@@ -55,7 +55,7 @@ struct task {
 
 	
 
-	int create_task(void* (*loop)(void *), const int priority, const int sched_policy, int stack_size = 1000000)
+	int create_task(void* (*loop)(void *), const int pri, const int s_policy, int stack_size = 1000000)
 	{
 		pthread_attr_t attribute = {0};
 	    struct sched_param parameter;
@@ -66,7 +66,7 @@ struct task {
 
 	    pcheck_attr( pthread_attr_setschedpolicy( &attribute, sched_policy ), &attribute );
 
-	    pcheck_attr( pthread_attr_setstacksize(&attribute, stack_size),  &attribute );
+	    //pcheck_attr( pthread_attr_setstacksize(&attribute, stack_size),  &attribute );
 	    
 	    DEBUGV("Priority:%d\n", priority);
 	    parameter.sched_priority = priority;
@@ -82,7 +82,7 @@ struct task {
 	    return 0;
 	}
 
-	task(char * id, void* (*loop)(void *), const int prio, const int sch_policy, const useconds_t p) : tid(id), period(p), sched_policy(sch_policy), priority(prio), run(loop)
+	task(char const * id, void* (*loop)(void *), const int prio, const int sch_policy, const useconds_t p) : tid(id), period(p), sched_policy(sch_policy), priority(prio), run(loop)
 	{
 		create_task([](void *tsk)-> void*
 		{
@@ -97,24 +97,24 @@ struct task {
 
 		    for (;;) {
 
-		        DEBUGV("#loop+_%s\n", ttask->tid);
+		        DEBUGV3("#loop+_%s\n", ttask->tid);
 
 		        clock_gettime(CLOCK_REALTIME, &now);
 
 		        // convert useconds_t to struct timespec
-		        struct timespec p;
+		        struct timespec spec_p;
 
-		        DEBUGV("useconds: %lu\n", ttask->period);
+		        DEBUGV3("useconds: %lu\n", ttask->period);
 
-		        useconds_t2timespec( &ttask->period, &p );
+		        useconds_t2timespec( &ttask->period, &spec_p );
 
-		        DEBUGV("timespecp: %lu,%lu\n", p.tv_sec, p.tv_nsec);
-		        DEBUGV("timespec: %lu,%lu\n", next.tv_sec, next.tv_nsec);
+		        DEBUGV3("timespecp: %lu,%lu\n", spec_p.tv_sec, spec_p.tv_nsec);
+		        DEBUGV3("timespec: %lu,%lu\n", next.tv_sec, next.tv_nsec);
 
-		        timespecadd( &next, &p, &next );
+		        timespecadd( &next, &spec_p, &next );
 
-		        DEBUGV("timespec2: %lu,%lu\n", next.tv_sec, next.tv_nsec);
-		        DEBUGV("timespecnow: %lu,%lu\n", now.tv_sec, now.tv_nsec);
+		        DEBUGV3("timespec2: %lu,%lu\n", next.tv_sec, next.tv_nsec);
+		        DEBUGV3("timespecnow: %lu,%lu\n", now.tv_sec, now.tv_nsec);
 		        
 		        
 

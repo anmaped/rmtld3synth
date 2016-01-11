@@ -22,8 +22,13 @@ private:
      */
     CircularBuffer<T> *const buffer;
 
+    /*
+     * Reference to the local page frame. Each writer will provide a proper
+     * frame to be swaped with the global frame.
+     */
     typedef CircularBuffer<T> cb;
     typename cb::tm_page new_tm_page;
+    typename cb::tm_page & new_tm_page_ref = new_tm_page;
 
 public:
 
@@ -60,7 +65,7 @@ RTEML_writer<T>::RTEML_writer(CircularBuffer<T> *const bbuffer) : buffer(bbuffer
 template<typename T>
 void RTEML_writer<T>::enqueue(const T &data) {
     // lets use the available page
-    buffer->enqueue(data, &new_tm_page);
+    buffer->enqueue(data, new_tm_page_ref);
 }
 
 template<typename T>

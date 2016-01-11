@@ -58,7 +58,7 @@ public:
      */
     size_t getLength() const;
 
-    CircularBuffer<T> *const getBuffer() const;
+    CircularBuffer<T> * getBuffer() const;
 
     /**
      * Debugs the infinite buffer into the stdout
@@ -80,16 +80,17 @@ size_t RTEML_buffer<T, N>::getLength() const {
 }
 
 template<typename T, size_t N>
-CircularBuffer<T> *const RTEML_buffer<T, N>::getBuffer() const {
-    return (CircularBuffer<T> *const)&buffer;
+CircularBuffer<T> * RTEML_buffer<T, N>::getBuffer() const {
+    return (CircularBuffer<T> *)&buffer;
 }
 
 template<typename T, size_t N>
 void RTEML_buffer<T, N>::debug() const
 {
+    DEBUGV3(" ");
     for (unsigned int idx=0; idx < N; idx++)
-        DEBUGV3("%lu,%d; ", array[idx].ev.getTime(), array[idx].ev.getData());
-    DEBUGV3("\n");
+        DEBUGV3_APPEND("%lu,%d; ", array[idx].ev.getTime(), array[idx].ev.getData());
+    DEBUGV3_APPEND("\n");
 }
 
 #endif //_RTML_BUFFER_H_

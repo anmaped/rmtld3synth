@@ -2,7 +2,7 @@
 #ifndef _TIME_COMPAT_H_
 #define _TIME_COMPAT_H_
 
-//#include "atomic_compat.h"
+#include "atomic_compat.h"
 
 #ifdef __NUTTX__
 #include <nuttx/clock.h>
@@ -19,12 +19,22 @@
 typedef uint64_t timeabs;
 typedef uint32_t timespan;
 
+
+#define NOP __NOP()
+
+// we need to adjust the systick when is triggering the IRQ
 #define clockgettime()  ({ \
-    timespan ms = g_system_timer; \
+    ISB \
     timespan ns = SysTick->VAL; \
+    uint64_t ms = g_system_timer; \
+    ISB \
     (ms * 1000000) +  \
     ((1000000. / SysTick->LOAD) * \
     (SysTick->LOAD - ns));})
+
+// get cpu_clock
+// assuming 168mhz 1000000000/(168000000/167999)
+// (1000000000/(clock/SysTick->LOAD))/SysTick->LOAD currently ~= 5.5(5)ns
 
 #elif defined __x86__
 

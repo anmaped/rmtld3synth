@@ -5,7 +5,7 @@
 
 /* there is a big difference between __x86__ implementation and __ARM_CM4__
  * arm implements the atomic operations using Load-link/store-conditional
- * instructions and __x86__ implements it using compare-and-swap (CAS)
+ * instructions and __x86__ implements it using compare-exchange.
  *
  * ARM implementation is too restrictive. it ensures that any inter-living
  *   is detected from any source (e.g., interrupts and shared memory among cores).
@@ -15,69 +15,91 @@
  *  Contention may be an issue... [TO CONFIRM]
  */
 
-
 #ifdef ARM_CM4_FP
+
 
 	#include <ARMCM4_FP.h>
 
  	#include <atomic>
 
-	/*#define ATOMIC_begin(new_value, expression, dest) \
+	#define ATOMIC_begin(expression, dest) \
+ 		uint32_t __lst_; \
 		__DMB(); \
 	    do { \
-	        new_value = expression __LDREXW((uint32_t *) dest);
+	        __lst_ = expression __LDREXW((uint32_t *) dest);
 
-	#define ATOMIC_end(new_value, dest) \
-	       } while ( __STREXW(new_value, (uint32_t *) dest) );*/
+	#define ATOMIC_end(dest) \
+	       } while ( __STREXW(__lst_, (uint32_t *) dest) );
+
+	#define DMB __DMB();
+	#define DSB __DSB();
+	#define ISB __ISB();
+
+	#define FRAME_ADDRESS \
+	    frame_address
+
+	#define OLD_FRAME_ADDRESS \
+	    __old_value32
+
+	#define FRAME_ADDRESS_type \
+	    std::atomic<uint32_t>
+
+	#define FRAME_ADDRESS_subtype uint32_t
+	
 
 	#define ATOMIC_begin_VALUE64(dest) \
 		bool fail = false; \
-        uint64_t old_value64 = (uint64_t) std::atomic_load(&dest); \
+        uint32_t OLD_FRAME_ADDRESS = (uint32_t) std::atomic_load(&dest); \
         do { \
         	if(fail) { pthread_yield(); }
 
-
 	#define ATOMIC_end_VALUE64(new_value, dest) \
-	} while((fail = !std::atomic_compare_exchange_strong(&dest, &old_value64, (uint64_t)new_value)));
+	} while((fail = !std::atomic_compare_exchange_strong(&dest, &OLD_FRAME_ADDRESS, (uint32_t)new_value)));
+
 
 	#define ATOMIC_begin_VALUE64_NOEXCHANGE(dest) \
-        uint64_t old_value64 = (uint64_t) std::atomic_load(&dest); \
+        uint32_t OLD_FRAME_ADDRESS = (uint32_t) std::atomic_load(&dest); \
         do { 
 
 	#define ATOMIC_end_VALUE64_NOEXCHANGE(dest) \
-	} while( !( std::atomic_load(&dest) == old_value64 ) );
+	} while( !( std::atomic_load(&dest) == OLD_FRAME_ADDRESS ) );
+
 
 #elif defined __x86__
 
+
 	#include <atomic>
 
-	// code for x86
+	#define DMB 
 
-	/*#define ATOMIC_begin(dest) \
-        uint32_t * old_value = (uint32_t *) std::atomic_load(&dest); \
-        do { 
+	#define FRAME_ADDRESS \
+	    __counter
 
+	#define OLD_FRAME_ADDRESS \
+	    __old_value64
 
-	#define ATOMIC_end(new_value, dest) \
-	} while(!std::atomic_compare_exchange_strong(&dest, &old_value, (uint32_t*)new_value));*/
+	#define FRAME_ADDRESS_type \
+	    std::atomic<uint64_t>
+
+	#define FRAME_ADDRESS_subtype uint64_t
 
 
 	#define ATOMIC_begin_VALUE64(dest) \
 		bool fail = false; \
-        uint64_t old_value64 = (uint64_t) std::atomic_load(&dest); \
+        uint64_t OLD_FRAME_ADDRESS = (uint64_t) std::atomic_load(&dest); \
         do { \
         	if(fail) { pthread_yield(); }
 
 
 	#define ATOMIC_end_VALUE64(new_value, dest) \
-	} while((fail = !std::atomic_compare_exchange_strong(&dest, &old_value64, (uint64_t)new_value)));
+	} while((fail = !std::atomic_compare_exchange_strong(&dest, &OLD_FRAME_ADDRESS, (uint64_t)new_value)));
 
 	#define ATOMIC_begin_VALUE64_NOEXCHANGE(dest) \
-        uint64_t old_value64 = (uint64_t) std::atomic_load(&dest); \
+        uint64_t OLD_FRAME_ADDRESS = (uint64_t) std::atomic_load(&dest); \
         do { 
 
 	#define ATOMIC_end_VALUE64_NOEXCHANGE(dest) \
-	} while( !( std::atomic_load(&dest) == old_value64 ) );
+	} while( !( std::atomic_load(&dest) == OLD_FRAME_ADDRESS ) );
 
 #else
 
