@@ -44,6 +44,7 @@ typedef uint32_t timespan;
 typedef long long timeabs;
 typedef long timespan;
 
+
 #define clockgettime() ({ \
     struct timespec __n; \
     clock_gettime(CLOCK_REALTIME, &__n); \
@@ -56,6 +57,7 @@ typedef long timespan;
 
 #endif
 
+typedef timeabs timespanw;
 
 /* Operations on timespecs. */
 #define timespecclear(tsp)      (tsp)->tv_sec = (tsp)->tv_nsec = 0

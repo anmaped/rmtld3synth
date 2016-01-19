@@ -68,7 +68,33 @@
 #define DEBUGV3_APPEND(...)
 
 
+#endif
 
+
+/*
+ * Circular buffer debug helper functions
+ */
+#if defined(DEBUG) && DEBUG > 0 
+    #define DEBUG_HELPER_BUFFER_FUNCTIONS() \
+        void writeEvent(T data, timespan t, const size_t index) \
+        { \
+            ca_accesspointer[index].ev.setTime(t); \
+            ca_accesspointer[index].ev.setData(data); \
+            FRAME_ADDRESS_subtype f = frame.load(); \
+            setCounterValue(f,getCounterValue(f) + 1); \
+            frame.store(f); \
+            local_tm_page.current_time = local_tm_page.current_time + t; \
+        } \
+        \
+        void resetFrameCounter() \
+        { \
+            FRAME_ADDRESS_subtype f = frame.load(); \
+            setCounterValue(f, 0); \
+            frame.store(f); \
+            local_tm_page.current_time = initial_clock; \
+        }
+#else
+    #define DEBUG_HELPER_BUFFER_FUNCTIONS()
 #endif
 
 

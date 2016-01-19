@@ -1,8 +1,18 @@
 
+#ifndef _TASK_COMPAT_H_
+#define _TASK_COMPAT_H_
+
 #include <pthread.h>
 #include <errno.h>
 #include "time_compat.h"
 #include "debug_compat.h"
+
+#ifdef __NUTTX__
+	#define STACK_SIZE 6000
+#elif defined __x86__
+	#define STACK_SIZE 1000000
+#endif
+
 
 #define P_OK 0
 
@@ -55,7 +65,7 @@ struct task {
 
 	
 
-	int create_task(void* (*loop)(void *), const int pri, const int s_policy, int stack_size = 1000000)
+	int create_task(void* (*loop)(void *), const int pri, const int s_policy, int stack_size = STACK_SIZE)
 	{
 		pthread_attr_t attribute = {0};
 	    struct sched_param parameter;
@@ -66,7 +76,7 @@ struct task {
 
 	    pcheck_attr( pthread_attr_setschedpolicy( &attribute, sched_policy ), &attribute );
 
-	    //pcheck_attr( pthread_attr_setstacksize(&attribute, stack_size),  &attribute );
+	    pcheck_attr( pthread_attr_setstacksize(&attribute, stack_size),  &attribute );
 	    
 	    DEBUGV("Priority:%d\n", priority);
 	    parameter.sched_priority = priority;
@@ -147,3 +157,5 @@ struct task {
 };
 
 typedef struct task __task;
+
+#endif //_TASK_COMPAT_H_

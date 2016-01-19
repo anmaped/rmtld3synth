@@ -78,9 +78,12 @@ private:
         uint64_t current_time;
         uint32_t counter;
 
-        timming_page() {}
+        //timming_page() {}
         timming_page(uint64_t t) :  current_time(t) {}
     };
+
+    // the absolute time when buffer is ready to accept nodes
+    const timespanw initial_clock;
 
     // global page frame
     struct timming_page local_tm_page;
@@ -101,8 +104,8 @@ private:
     FRAME_ADDRESS_type & frame = FRAME_ADDRESS;
 
 
-    uint64_t getCounterCurrentTimestamp(uint64_t counter) const;
-    uint32_t getCounterCurrentTimestamp(uint32_t counter) const;
+    timeabs getCounterCurrentTimestamp(uint64_t counter) const;
+    timeabs getCounterCurrentTimestamp(uint32_t counter) const;
 
     size_t   getCounterValue(uint64_t counter) const;
     size_t   getCounterValue(uint32_t counter) const;
@@ -177,35 +180,54 @@ public:
      */
     size_t getHead() const;
 
+    /**
+     * Checks the availability of the node to be read.
+     *
+     * @param idx the index of the node
+     *
+     * @return true if the node is available, and false otherwise
+     */
     bool nodeIsReady(const size_t idx) const;
+
+    /**
+     * Gets the difference of the current time with the initial absolute time
+     * when buffer is created.
+     *
+     * @param unaligned_time the time to be aligned with the initial clock
+     * @return the time input time aligned
+     */
+    timespanw getTimeAlignment(timespanw unaligned_time) const;
 
     /**
      * Gets the array length.
      *
      * @return the array length.
      */
-    size_t getLength() const;
+    size_t getLength() const { return ca_length; };
 
     /**
      * Gets the frame by reference.
      *
      * @return the frame reference.
      */
-    FRAME_ADDRESS_type & getFrameReference() const;
+    FRAME_ADDRESS_type & getFrameReference() const { return frame; };
 
+    // functions for debug purposes only
+    DEBUG_HELPER_BUFFER_FUNCTIONS();
 };
 
 template<typename T>
 CircularBuffer<T>::CircularBuffer(node* const &array, const size_t length) :
+    initial_clock(clockgettime()),
+    local_tm_page(initial_clock),
     ca_accesspointer(array),
-    ca_length(length),
-    local_tm_page(clockgettime())
+    ca_length(length)
 {
     FRAME_ADDRESS_subtype x;
 
     setCounterCurrentPage(x, (uint32_t)&local_tm_page);
     setCounterValue(x, 0);
-    
+
     getFrameReference().store(x);
 }
 
@@ -215,7 +237,7 @@ size_t CircularBuffer<T>::counterToIndex(uint32_t lcounter) const {
 }
 
 template<typename T>
-uint64_t CircularBuffer<T>::getCounterCurrentTimestamp(uint64_t lcounter) const
+timeabs CircularBuffer<T>::getCounterCurrentTimestamp(uint64_t lcounter) const
 {
     union cnt x;
     x.ct64 = lcounter;
@@ -259,7 +281,7 @@ void CircularBuffer<T>::setCounterValue(uint64_t &lcounter, size_t idx) const
 }
 
 template<typename T>
-uint32_t CircularBuffer<T>::getCounterCurrentTimestamp(uint32_t lcounter) const
+timeabs CircularBuffer<T>::getCounterCurrentTimestamp(uint32_t lcounter) const
 {
     tm_page * previous_tm_page = (tm_page *) lcounter;
 
@@ -402,7 +424,7 @@ template<typename T>
 size_t CircularBuffer<T>::getCounterId() const
 {
     size_t idx;
-    
+
     /* Frame can be swapped when frame and idx are retrieved; a guarantee for
      * frame swapping is ensured by comparing the frame address before and
      * after the assignment.
@@ -427,15 +449,10 @@ bool CircularBuffer<T>::nodeIsReady(const size_t idx) const
 }
 
 template<typename T>
-size_t CircularBuffer<T>::getLength() const
+timespanw CircularBuffer<T>::getTimeAlignment(timespanw unaligned_time) const
 {
-    return ca_length;
-}
+    return (unaligned_time >= initial_clock)? unaligned_time - initial_clock : 0;
+};
 
-template<typename T>
-FRAME_ADDRESS_type & CircularBuffer<T>::getFrameReference() const
-{
-    return frame;
-}
 
 #endif //_CIRCULAR_BUFFER_H_

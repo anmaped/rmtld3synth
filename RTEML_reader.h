@@ -25,7 +25,7 @@
         std::array<Event<T>, size> local_buffer; 
 
 
-enum state_rd_t {AVAILABLE, AVAILABLE_PARTIALLY, UNAVAILABLE, OVERWRITEN};
+enum state_rd_t {AVAILABLE, AVAILABLE_PARTIALLY, UNAVAILABLE, OVERWRITTEN};
 
 
 /**
@@ -121,6 +121,8 @@ public:
         size_t idx; buffer->getState(time, idx);
         return std::make_pair (time,idx);
     };
+
+    timespanw getTimeAlignment(timespanw time) const { return buffer->getTimeAlignment(time); }
 };
 
 template<typename T>
@@ -165,7 +167,7 @@ std::pair<state_rd_t,Event<T> > RTEML_reader<T>::dequeue(int idx) {
         if(n_elems_writer-n_elems_reader > buffer->getLength())
         {
             // when there is an overwrite of the events
-            return std::make_pair (OVERWRITEN, tempEvent);
+            return std::make_pair (OVERWRITTEN, tempEvent);
         }
 
         if(idx == -1)
@@ -209,7 +211,12 @@ dequeue_n(20)
         if (code != AVAILABLE)
         {
             if(i == 0)
-                return std::make_tuple (UNAVAILABLE, 0, local_buffer);
+            {
+                if(code == OVERWRITTEN)
+                    return std::make_tuple (OVERWRITTEN, 0, local_buffer);
+                else
+                    return std::make_tuple (UNAVAILABLE, 0, local_buffer);
+            }
             else
                 return std::make_tuple (AVAILABLE_PARTIALLY, i, local_buffer);
         }
@@ -241,10 +248,16 @@ bool RTEML_reader<T>::synchronize()
     g_ts = pair.first; // global timestamp
     g_index = pair.second; // global index --- note that this index can overload ... How to treat that circumstances?
 
+    DEBUGV("time:%llu,%llu\n", g_ts, lastread_ts);
+    DEBUGV("idx:%lu,%lu\n", g_index, n_elems_reader);
+
     if (g_ts > lastread_ts)
     {
+        DEBUGV("lost elements:%d\n", g_index - n_elems_reader);
+
         lastread_ts = g_ts;
         n_elems_reader = g_index; // this is not the best time stamp (it skips the old events of the buffer)
+
         return true;
     }
     else

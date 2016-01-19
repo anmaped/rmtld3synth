@@ -10,9 +10,10 @@
 #include <poll.h>
 #include <drivers/drv_hrt.h>
 
-// sample monitor
+// sample monitor (MANUAL SETTINGS)
 #include "monitor_set1.h"
 #include "task_compat.h"
+#include "unit_test_cases.h"
 
 
 extern "C" __EXPORT int rtemlib_main(int argc, char * const argv[]);
@@ -100,29 +101,46 @@ static int monitor_main_loop(int argc, char **argv)
 
 		// lets get a set of values instead of only one
 		auto rd_tuple_10 = __reader.dequeue_20();
+		auto code = std::get<0>(rd_tuple_10);
 		uint32_t to_consume = std::get<1>(rd_tuple_10);
 		auto rd_tuple_array = std::get<2>(rd_tuple_10);
-		
-		uint32_t consumed = 0;
 
-		for (auto i=rd_tuple_array.begin(); i != rd_tuple_array.end(); i++)
+		if(code == AVAILABLE || code == AVAILABLE_PARTIALLY)
 		{
-			if(consumed >= to_consume)
-				break;
-			
-			consumed++;
+			uint32_t consumed = 0;
 
-			tmpEvent = *i;
-			::printf("Event_consumed_n: %lu, %d\n", tmpEvent.getTime(), tmpEvent.getData());
+			for (auto i=rd_tuple_array.begin(); i != rd_tuple_array.end(); i++)
+			{
+				if(consumed >= to_consume)
+					break;
+				
+				consumed++;
+
+				tmpEvent = *i;
+				::printf("Event_consumed_n: %lu, %d\n", tmpEvent.getTime(), tmpEvent.getData());
+			}
+		}
+		else if(code == OVERWRITTEN)
+		{
+			DEBUGV("SYNC:%d\n", __reader.synchronize());
+			
 		}
 
 		return NULL;
 	};
 
-	__attribute__ ((unused)) __task producer_1 = __task("producer1", producer1, 242, SCHED_FIFO, 1000000);
+	//__attribute__ ((unused)) __task producer_1 = __task("producer1", producer1, 242, SCHED_FIFO, 1000000);
 
-	__attribute__ ((unused)) __task consumer_1 = __task("consumer1", consumer1, sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, 2350000);
+	//__attribute__ ((unused)) __task consumer_1 = __task("consumer1", consumer1, sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, 2350000);
 
+	auto __run = [](void*) -> void*
+	{
+		__run_unit_tests();
+		while(true){sleep(1);}
+	};
+
+	// lets run the unit tests
+	__attribute__ ((unused)) __task task_unit_tests = __task("task_unit_tests", __run, 50, SCHED_FIFO, 2000000);
 
 	while(true) {sleep(1);}; // do sleep (delay)
 
