@@ -478,10 +478,10 @@ let sub_k (k,u,t) gamma =
 let rec compute_term m t term =
 	match term with
 	| Constant value       -> value
-	| Duration (di,phi)    -> compute_term_duration m (t,t +. (compute_term m t  di)) phi
+	| Duration (di,phi)    -> compute_term_duration m (t, t +. (compute_term m t  di)) phi
 	| FPlus (tr1,tr2)      -> compute_term m t tr1 +. compute_term m t tr2
-        | FTimes (tr1,tr2)     -> compute_term m t tr1 *. compute_term m t tr2
-	| _ -> raise (Failure "compute_terms: missing term") 
+  | FTimes (tr1,tr2)     -> compute_term m t tr1 *. compute_term m t tr2
+	| _ -> raise (Failure "compute_terms: missing term")
 
 and compute_term_duration (k,u) dt formula =
         let indicator_function (k,u) t phi = if compute (k,u,t) phi = True then 1. else 0. in
@@ -497,7 +497,7 @@ and compute_term_duration (k,u) dt formula =
               (* upper bound *)
               (t'-.i) *. (indicator_function m t' phi)
             else
-              (i'-.i) *. (indicator_function m i' phi) 
+              (i'-.i) *. (indicator_function m i' phi)
           ) in
         let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
         m dt (i,t') phi) +. s) 0. x in
