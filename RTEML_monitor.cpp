@@ -84,7 +84,12 @@ int RTEML_monitor::enable()
 
         pcheck_attr( pthread_attr_setschedpolicy( &attribute, m_state.sched_policy ), &attribute );
 
+        int stack_size = 5000;
+        pcheck_attr( pthread_attr_setstacksize(&attribute, stack_size),  &attribute );
+        DEBUGV("Stack:%d\n", stack_size);
+
         parameter.sched_priority = m_state.priority;
+        DEBUGV("Priority:%d\n", m_state.priority);
 
         pcheck_attr( pthread_attr_setschedparam( &attribute, &parameter ), &attribute );
 

@@ -77,6 +77,7 @@ struct task {
 	    pcheck_attr( pthread_attr_setschedpolicy( &attribute, sched_policy ), &attribute );
 
 	    pcheck_attr( pthread_attr_setstacksize(&attribute, stack_size),  &attribute );
+	    DEBUGV("Stack:%d\n", stack_size);
 	    
 	    DEBUGV("Priority:%d\n", priority);
 	    parameter.sched_priority = priority;

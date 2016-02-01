@@ -104,7 +104,7 @@
 	uint64_t start, stop; \
     volatile int cycle_count=0; \
     start = clockgettime(); \
-    DEBUGV3("START_TIME: %lld\n", start);
+    //DEBUGV3("START_TIME: %lld\n", start);
 
 #define COUNT_CYCLE() \
     cycle_count++;

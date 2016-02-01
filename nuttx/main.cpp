@@ -135,12 +135,15 @@ static int monitor_main_loop(int argc, char **argv)
 
 	auto __run = [](void*) -> void*
 	{
-		__run_unit_tests();
+		//__run_unit_tests();
 		while(true){sleep(1);}
 	};
 
 	// lets run the unit tests
-	__attribute__ ((unused)) __task task_unit_tests = __task("task_unit_tests", __run, 50, SCHED_FIFO, 2000000);
+	//__attribute__ ((unused)) __task task_unit_tests = __task("task_unit_tests", __run, 50, SCHED_FIFO, 2000000);
+
+	// enable native monitors
+	__start_periodic_monitors();
 
 	while(true) {sleep(1);}; // do sleep (delay)
 
