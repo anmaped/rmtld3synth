@@ -7,7 +7,7 @@ let synth_obs_function observation_funcname struct_name =
   (* *)
   let code = "
   // obs lambda function
-  auto "^observation_funcname^" = []( struct "^struct_name^" env, proposition p, timespan t) -> three_valued_type
+  auto "^observation_funcname^" = []( struct "^struct_name^" &env, proposition p, timespan t) mutable -> three_valued_type
   {
     DEBUGV_RTEMLD3(\"  eval: %lu prop:%d\\n\", t, p);
     return b3_or ( env.trace->searchOForward(env.state, p, t), env.trace->searchOBackward(env.state, p, t) );
@@ -24,13 +24,13 @@ let synth_environment helper =
   let code_init = "
   struct "^struct_name^" {
     std::pair <size_t, timespanw> state;
-    "^circular_buffer_vartype^" *trace;
-    three_valued_type (*evaluate)(struct Environment, proposition, timespan);
+    "^circular_buffer_vartype^" * const trace;
+    three_valued_type (*const evaluate)(struct Environment &, proposition, timespan);
 
     "^struct_name^"(
       std::pair <size_t, timespanw> st,
-      "^circular_buffer_vartype^" * t,
-      three_valued_type (*ev)(struct Environment, proposition, timespan)
+      "^circular_buffer_vartype^" * const t,
+      three_valued_type (*const ev)(struct Environment &, proposition, timespan)
     ) :
       state(st),
       trace(t),
@@ -50,35 +50,38 @@ open Rmtld3
 
 let compute_function_head = "[](struct Environment env, timespan t) -> three_valued_type";;
 
+let compute_function_head_mutable = "[](struct Environment &env, timespan t) mutable -> three_valued_type";;
+
 let compute_term_function_head = "[](struct Environment env, timespan t) -> duration";;
+
+let trace_iterator helper = "TraceIterator< "^ get_event_type(helper) ^" >";;
 
 (* Synthesis of the compute function  *)
 let rec compute_term term helper =
   match term with
-    | Constant value       -> "std::make_pair("^string_of_float value^",false)"
-    | Duration (di,phi)    -> compute_term_duration (compute_term di helper) (compute phi helper)
-    | FPlus (tr1,tr2)      -> "std::make_pair("^compute_term tr1 helper ^" + "^ compute_term tr2 helper^",false)"
-    | FTimes (tr1,tr2)     -> "std::make_pair("^compute_term tr1 helper ^" * "^ compute_term tr2 helper^",false)"
+    | Constant value       -> "make_duration("^string_of_float value^",false)"
+    | Duration (di,phi)    -> compute_term_duration (compute_term di helper) (compute phi helper) helper
+    | FPlus (tr1,tr2)      -> "make_duration("^compute_term tr1 helper ^" + "^ compute_term tr2 helper^",false)"
+    | FTimes (tr1,tr2)     -> "make_duration("^compute_term tr1 helper ^" * "^ compute_term tr2 helper^",false)"
     | _ -> raise (Failure "compute_terms: missing term")
 and compute formula helper =
   match formula with
     | Prop p                  -> let tbl = get_proposition_hashtbl helper in
                                  let counter = get_proposition_counter helper in 
-                                 compute_function_head^" { return env.evaluate(env, "^
+                                 compute_function_head_mutable^" { return env.evaluate(env, "^
                                   string_of_int (
                                     try Hashtbl.find tbl p with Not_found -> Hashtbl.add tbl p counter; counter 
                                                 )^
                                  ", t); }"
-    | Not sf                  -> compute_function_head^" { return b3_not ("^ compute sf helper ^"(env,t)); }"
-    | Or (sf1, sf2)           -> compute_function_head^" { return b3_or ("^ compute sf1 helper ^"(env,t), "^ compute sf2 helper ^"(env,t) ); }"
+    | Not sf                  -> compute_function_head_mutable^" { auto sf = "^ compute sf helper ^"(env,t); return b3_not (sf); }"
+    | Or (sf1, sf2)           -> compute_function_head_mutable^" { auto sf1 = "^ compute sf1 helper ^"(env,t); auto sf2 = "^ compute sf2 helper ^"(env,t); return b3_or (sf1, sf2); }"
     | Until (gamma, sf1, sf2) -> if gamma > 0. then compute_uless gamma (compute sf1 helper) (compute sf2 helper) helper else raise  (Failure "Gamma of U operator is a non-negative value") 
-    | LessThan (tr1,tr2)      -> compute_function_head^" { return "^compute_function_head^" { return b3_lessthan ("^ compute_term tr1 helper ^", "^ compute_term tr2 helper ^" ); }(env,t); }"
+    | LessThan (tr1,tr2)      -> compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ compute_term tr1 helper ^"; auto tr2 = "^ compute_term tr2 helper ^"; return b3_lessthan (tr1, tr2); }(env,t); }"
     | _ -> raise (Failure "compute: missing formula")
 and compute_uless gamma sf1 sf2 helper =
-  let trace_iterator = "TraceIterator< "^ get_event_type(helper) ^" >" in
   compute_function_head ^"
   {
-    auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator^" iter) -> four_valued_type
+    auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator helper^" iter) -> four_valued_type
     {
 
       // eval_b lambda function
@@ -90,8 +93,9 @@ and compute_uless gamma sf1 sf2 helper =
           return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE && b2 == T_FALSE) ? b3_to_b4(b1) : FV_SYMBOL );
         };
 
-        if ( v == FV_SYMBOL )
-        {
+        // change this (trying to get the maximum complexity)
+        //if ( v == FV_SYMBOL )
+        //{
           DEBUGV_RTEMLD3(\"  compute phi1\\n\");
           // compute phi1
           three_valued_type cmpphi1 = "^sf1^"(env, t);
@@ -102,6 +106,10 @@ and compute_uless gamma sf1 sf2 helper =
 
           four_valued_type rs = eval_i(cmpphi1, cmpphi2);
 
+          DEBUGV_RTEMLD3(\" phi1=%s UNTIL phi2=%s\\n\", out_p(cmpphi1), out_p(cmpphi2) );
+
+        if ( v == FV_SYMBOL )
+        {
           return rs;
         }
         else
@@ -110,16 +118,28 @@ and compute_uless gamma sf1 sf2 helper =
         }
       };
 
-      DEBUGV_RTEMLD3(\"until_op: \");
+      DEBUGV_RTEMLD3(\"BEGIN until_op.\\n\\n \");
       iter.debug();
+
+      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
+
+      auto cos = iter.getBegin();
 
       four_valued_type s = std::accumulate(
         iter.begin(),
         iter.end(),
         std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
-          [env, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype(helper) ^" e ) {
+          [&env, &cos, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype(helper) ^" e ) {
             
-            DEBUGV_RTEMLD3(\"  until++\\n\");
+            DEBUGV_RTEMLD3(\"  until++ (%s)\\n\", out_fv(a.first));
+
+            count_until_iterations += 1;
+
+            /* update the new state based on the sub_k calculate iterator.
+             * optimization step: update current index to avoid re-read/evaluate events several times
+             */
+            env.state = std::make_pair ( cos,  a.second);
+            cos++;
 
             return std::make_pair( eval_b( env, a.second, a.first ), a.second + e.getTime() );
           }
@@ -130,17 +150,19 @@ and compute_uless gamma sf1 sf2 helper =
 
 
     // sub_k function defines a sub-trace
-    auto sub_k = []( struct Environment env, timespan t) -> "^trace_iterator^"
+    auto sub_k = []( struct Environment env, timespan t) -> "^trace_iterator helper^"
     {
 
       // use env.state to speedup the calculation of the new bounds
-      "^trace_iterator^" iter = "^trace_iterator^" (env.trace, env.state.first, 0, env.state.first, env.state.second, env.state.second, 0 );
+      "^trace_iterator helper^" iter = "^trace_iterator helper^" (env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
 
       // to use the iterator for both searches we use one reference
-      "^trace_iterator^" &it = iter;
+      "^trace_iterator helper^" &it = iter;
+
+      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
 
       auto lower = env.trace->searchIndexForwardUntil( it, t);
-      auto upper = env.trace->searchIndexForwardUntil( it, t + "^string_of_float (gamma)^" );
+      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") - 1 );
 
       // set TraceIterator for interval [t, t+"^string_of_float (gamma)^"[
       it.setBound(lower, upper);
@@ -149,14 +171,11 @@ and compute_uless gamma sf1 sf2 helper =
       return it;
     };
 
-    "^trace_iterator^" subk = sub_k(env, t);
-    
-    /* update the new state based on the sub_k calculate iterator.
-     * optimization step: update current index to avoid re-read events several times
-     */
-    env.state = std::make_pair ( subk.getBegin(),  subk.getLowerAbsoluteTime());
+    "^trace_iterator helper^" subk = sub_k(env, t);
 
     four_valued_type eval_c = eval_fold(env, t, subk );
+
+    DEBUGV_RTEMLD3(\"END until_op (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
     
     return ( eval_c == FV_SYMBOL ) ?
       ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
@@ -165,20 +184,84 @@ and compute_uless gamma sf1 sf2 helper =
   }
 
   "
-  and compute_term_duration di tf =
+  and compute_term_duration di tf helper =
     compute_term_function_head^" {
     
-    auto indicator_function = [](struct Environment env, timespan t) -> duration {
-      auto formula = "^tf^"(env, t);
+    auto eval_eta =  [](struct Environment env, timespan t, timespan t_upper, "^trace_iterator helper^" iter) -> duration
+    {
+      auto indicator_function = [](struct Environment env, timespan t) -> duration {
+        auto formula = "^tf^"(env, t);
 
-      return (formula == T_TRUE)? std::make_pair (1,false) : ( (formula == T_FALSE)? std::make_pair (0,false) : std::make_pair (0,true)) ;
+        return (formula == T_TRUE)? std::make_pair (1,false) : ( (formula == T_FALSE)? std::make_pair (0,false) : std::make_pair (0,true)) ;
 
+      };
+
+
+      // compare if t is equal to the lower bound
+      auto lower = iter.getLowerAbsoluteTime();
+      // compare if t is equal to the upper bound
+      auto upper = iter.getUpperAbsoluteTime();
+
+      timespan val1 = ( t == lower )? 0 : t - lower;
+      timespan val2 = ( t_upper == upper )? 0 : t_upper - upper;
+
+      DEBUGV_RTEMLD3(\"dur lower(%ld) upper(%ld)\\n\", val1, val2);
+
+      auto cum = lower;
+
+      // lets do the fold over the trace
+      return std::accumulate(
+        iter.begin(),
+        iter.end(),
+        std::make_pair (make_duration (0, false), (timespan)lower), // initial fold data (duration starts at 0)
+        [&env, val1, val2, &cum, t, t_upper, indicator_function]( const std::pair<duration,timespan> p, "^ get_event_fulltype(helper) ^" e )
+        {
+          auto d = p.first;
+
+          auto t_begin = cum;
+          auto t_end = t_begin + e.getTime();
+          cum = t_end;
+
+          auto cond1 = t_begin <= t && t < t_end;
+          auto cond2 = t_begin <= t_upper && t_upper < t_end;
+
+          auto valx = ((cond1)? val1 : 0 ) + ((cond2)? val2 : 0);
+
+          auto x = indicator_function(env, p.second);
+
+          DEBUGV_RTEMLD3(\"dur=%f bottom=%d\\n\", d.first + (x.first * ( e.getTime() - valx )), d.second || x.second);
+
+          return std::make_pair (make_duration (d.first + (x.first * ( e.getTime() - valx )), d.second || x.second), p.second + e.getTime());
+        }
+      ).first;
+      
     };
 
-    indicator_function(env,t);
+    // sub_k function defines a sub-trace
+    auto sub_k = []( struct Environment env, timespan t, timespan t_upper) -> "^trace_iterator helper^"
+    {
 
-    // lets calculate the duration
-    return std::make_pair (0,false);
+      // use env.state to speedup the calculation of the new bounds
+      "^trace_iterator helper^" iter = "^trace_iterator helper^" ( env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
+
+      // to use the iterator for both searches we use one reference
+      "^trace_iterator helper^" &it = iter;
+
+      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
+
+      auto lower = env.trace->searchIndexForwardUntil( it, t);
+      auto upper = env.trace->searchIndexForwardUntil( it, t_upper - 1 );
+
+      // set TraceIterator for interval [t, t + di[
+      it.setBound(lower, upper);
+
+      // return iterator ... interval length may be zero
+      return it;
+    };
+
+    auto t_upper = t + "^di^".first;
+
+    return eval_eta(env, t, t_upper, sub_k(env, t, t_upper));
 
     /*let indicator_function (k,u) t phi = if compute (k,u,t) phi = True then 1. else 0. in
         let riemann_sum m dt (i,i') phi =
@@ -219,7 +302,7 @@ and calculate_t_upper_bound_term term =
     | Duration (di,phi)    -> 0.
     | FPlus (tr1,tr2)      -> 0.
     | FTimes (tr1,tr2)     -> 0.
-    | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.") 
+    | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
 
 
 (* rmtld3 synthesis interface *)
@@ -237,20 +320,6 @@ open Sexplib.Conv
 
 open Rmtld3_synth_test
 
-(* global_int settings *)
-type global_int = string * int with sexp
-(* global_string settings *)
-type global_string = string * string with sexp
-(* monitor setting entry*)
-type monitor = string * int * Rmtld3.formula with sexp
-
-exception Settings_Not_Found of string;;
-
-let rec search_settings lst word =
-    if lst = [] then raise (Settings_Not_Found word);
-    let (el_id, el_val) = List.hd lst in
-    if el_id = word then el_val else search_settings (List.tl lst) word
-;;
 
 let _ =
 
@@ -266,31 +335,29 @@ let _ =
 
   let create_dir dir_name = try let state = Sys.is_directory dir_name in if state then () else  Unix.mkdir dir_name 0o666; with _ -> Unix.mkdir dir_name 0o666 in
 
-  (* lets parsing configuration file into global_int and monitor type variables *)
-  let remainig_elements = Sexp.load_sexps !mon_filename in
-  let list_global_int_settings, remainig_elements = List.fold_left (
-    fun (lst,lst2) sexp_el -> ( try (global_int_of_sexp sexp_el) :: lst, lst2 with _ -> (lst, sexp_el::lst2) ) ) ([],[]) remainig_elements in
-  let list_global_string_settings, remainig_elements = List.fold_left (
-    fun (lst,lst2) sexp_el -> ( try (global_string_of_sexp sexp_el) :: lst, lst2 with _ -> (lst, sexp_el::lst2) ) ) ([],[]) remainig_elements in
-  let list_monitor_settings, remainig_elements = List.fold_left (
-    fun (lst,lst2) sexp_el -> ( try (monitor_of_sexp sexp_el) :: lst, lst2 with _ -> (lst, sexp_el::lst2) ) ) ([],[]) remainig_elements in
-  (* lets draw the settings that are not recognized *)
-  List.fold_left (fun lst sexp_el -> print_endline ( ( Sexp.to_string_hum sexp_el ) ^ " setting is not recognized.");  ) () remainig_elements;
-
   (* c++ type templates *)
   let evt_subtype = "int" in
   let evt_type = "Event" in
 
-  (* monitor synthesis settings *)
-
-  (* buffer size *)
-  let event_queue_size = (search_settings list_global_int_settings "maximum_inter_arrival_time") in
-  (* monitor cluster name *)
-  let cluster_name = search_settings list_global_string_settings "cluster_name" in (* search that in global_string parameters *)
-  create_dir cluster_name;
 
   (* manage helpers *)
-  let helper = (evt_type, evt_subtype, ref 0, Hashtbl.create 10, ref 0) in
+  let helper = (evt_type, evt_subtype, ref 0, Hashtbl.create 10, ref 0, (settings mon_filename)) in
+
+
+  (* monitor synthesis settings *)
+  (* buffer size *)
+  let event_queue_size = 
+      max (search_settings_int "buffer_size" helper)
+      (* compute the buffer size based on inter-arrival time *)
+      ((List.fold_left (fun v (_,_,formula) -> let value = int_of_float (calculate_t_upper_bound formula) in if value > v then value else v ) 0 (get_settings_monitor helper))
+        / (search_settings_int "maximum_inter_arrival_time" helper))
+  in
+  Printf.printf "Buffer is defined as length %d\n" event_queue_size;
+  (* monitor cluster name *)
+  let cluster_name = search_settings_string "cluster_name" helper in (* search that in global_string parameters *)
+  create_dir cluster_name;
+
+
 
   (* generate monitors *)
   List.fold_left (fun _ (monitor_name,monitor_period,formula) ->
@@ -343,7 +410,7 @@ let _ =
     }
 
   public:
-    "^String.capitalize monitor_name^"(useconds_t p): RTEML_monitor(p,SCHED_FIFO,5), env(std::make_pair (0, 0), &trace, __observation) {}
+    "^String.capitalize monitor_name^"(useconds_t p): RTEML_monitor(p,SCHED_FIFO,50), env(std::make_pair (0, 0), &trace, __observation) {}
 
   };
 
@@ -353,7 +420,7 @@ let _ =
 
   (* monitor dependent functions ends here *)
 
-  ) () list_monitor_settings;
+  ) () (get_settings_monitor helper);
 
 
   (* the next functions will be used to manage the buffers assigned to each formula *)
@@ -414,11 +481,11 @@ let _ =
 
           iterator.getCurrentAbsoluteTime(), // set lower abs time to the old current abs time
           aligned_time,                      // set the new upper abs time
-          iterator.getCurrentAbsoluteTime() // begin iterator at lower abs time
+          iterator.getCurrentAbsoluteTime()  // begin iterator at lower abs time
         );
 
-        iterator.debug();
-        tmp_it.debug();
+        //iterator.debug();
+        //tmp_it.debug();
 
         /* lets start the iteration to find the event at time t.
          * the tuple consists of the cumulative timestamp, the event, the
@@ -428,9 +495,9 @@ let _ =
         auto event_find_tuple = std::accumulate(
           tmp_it.begin(),
           tmp_it.end(),
-          std::make_tuple ( iterator.getCurrentAbsoluteTime(), "^ get_event_fulltype(helper) ^"(), 0, false ), // [TODO] change 0
-           [t, &tmp_it]( const std::tuple<timespanw, "^ get_event_fulltype(helper) ^", size_t, bool> a, "^ get_event_fulltype(helper) ^" e )
-           {
+          std::make_tuple ( tmp_it.getCurrentAbsoluteTime(), "^ get_event_fulltype(helper) ^"(), tmp_it.getIt(), false ),
+            [t]( const std::tuple<timespanw, "^ get_event_fulltype(helper) ^", size_t, bool> a, "^ get_event_fulltype(helper) ^" e )
+            {
               timespanw time_lowerbound = std::get<0>(a);
               timespanw time_upperbound = time_lowerbound + e.getTime();
 
@@ -443,20 +510,15 @@ let _ =
                 (found || cdt)? std::get<2>(a) : std::get<2>(a) + 1, // increment it or hold it
                 (cdt)? true : found // the test for the existence of the event
               );
-          }
+            }
         );
 
-        DEBUGV_RTEMLD3(\"aligned_time:%llu found_time:%llu \\n\", aligned_time, std::get<0>(event_find_tuple));
+        //::printf(\"aligned_time:%llu found_time:%llu init_value(%llu)\\n\", aligned_time, std::get<0>(event_find_tuple), tmp_it.getCurrentAbsoluteTime());
 
         // assert if there is no event found then timestamps should be equal
-        ASSERT( (std::get<3>(event_find_tuple)) || (aligned_time == std::get<0>(event_find_tuple)) );
+        ASSERT_RMTLD3( (std::get<3>(event_find_tuple)) || (aligned_time == std::get<0>(event_find_tuple)) );
 
-        //if(std::get<2>(event_find_tuple) > 0)
-        //  std::get<2>(event_find_tuple) = std::get<2>(event_find_tuple) - 1;
-
-        //std::get<0>(event_find_tuple) = std::get<0>(event_find_tuple) - std::get<1>(event_find_tuple).getTime();
-
-        DEBUGV_RTEMLD3(\"    EXIT_searchindex: find:%d %llu t=%llu cycle=%d\\n\", std::get<3>(event_find_tuple), std::get<0>(event_find_tuple), t, std::get<2>(event_find_tuple));
+        DEBUGV_RTEMLD3(\"    EXIT_searchindex: find(%d) time(%llu) t=%llu idx(%d)\\n\", std::get<3>(event_find_tuple), std::get<0>(event_find_tuple), t, std::get<2>(event_find_tuple));
 
         
 
@@ -464,14 +526,14 @@ let _ =
       }; // [TODO]
 
       // pre-indexed search
-      three_valued_type searchOForward(std::pair <size_t, timespanw> state, proposition p, timespan t) {
+      three_valued_type searchOForward(std::pair <size_t, timespanw> &state, proposition p, timespan t) {
 
         // construct iterator based on the state [TODO]
         // use env.state to speedup the calculation of the new bounds
         TraceIterator<T> it = TraceIterator<T> (this, state.first, 0, state.first, state.second, 0, state.second );
 
         DEBUGV_RTEMLD3(\"  searchOForward: \");
-        it.debug();
+        //it.debug();
 
         /* use the function searchIndexForwardUntil to find the index where
          * t hold and check if proposition is satisfied at time t
@@ -493,27 +555,29 @@ let _ =
           }
           else
           {
-            DEBUGV_RTEMLD3(\"    Unknown\\n\");
+            //DEBUGV_RTEMLD3(\"    Unknown\\n\");
             return T_UNKNOWN;
           }
         }
         
         proposition new_p = std::get<1>(event_tuple).getData();
 
+        DEBUGV_RTEMLD3(\"end searchOForward\\n\");
+
         if(new_p == p)
         {
-          DEBUGV_RTEMLD3(\"    True\\n\");
+          //DEBUGV_RTEMLD3(\"    True\\n\");
           return T_TRUE;
         }
         else
         {
-          DEBUGV_RTEMLD3(\"    False\\n\");
+          //DEBUGV_RTEMLD3(\"    False\\n\");
           return T_FALSE;
         }
 
       }; // [TODO]
 
-      three_valued_type searchOBackward(std::pair <size_t, timespanw> state, proposition p, timespan t) { return T_FALSE; }; // [TODO]
+      three_valued_type searchOBackward(std::pair <size_t, timespanw> &state, proposition p, timespan t) { return T_FALSE; }; // [TODO]
 
   };
 
@@ -580,7 +644,7 @@ let _ =
         std::tuple<timespanw, "^ get_event_fulltype(helper) ^", size_t, bool> ub) {
 
         auto lb_absolute_idx = std::get<2>(lb);
-        auto ub_absolute_idx = std::get<2>(ub);
+        auto ub_absolute_idx = std::get<2>(ub) + 1;
 
         auto lower_abs_time = std::get<0>(lb);
         auto upper_abs_time = std::get<0>(ub);
@@ -625,7 +689,6 @@ let _ =
       bool operator!=(const TraceIterator<T>& rhs) { return !(operator==(rhs)); } // [CONFIRM]
 
       Event<T> operator*() {
-        Event<T> event;
 
         // here we could adopt a small buffer to avoid successive call of dequeues (for instance a local buffer of 10 elements)
         // dequeue the event of the it index
@@ -662,6 +725,8 @@ let _ =
   enum three_valued_type { T_TRUE, T_FALSE, T_UNKNOWN };
   enum four_valued_type { FV_TRUE, FV_FALSE, FV_UNKNOWN, FV_SYMBOL };
 
+  #define make_duration(r,b) std::make_pair ((realnumber)r,b)
+
   // type conversion from three_valued_type to four_valued_type
   #define b3_to_b4(b3) (b3 == T_TRUE) ? FV_TRUE : ( ( b3 == T_FALSE ) ? FV_FALSE : FV_UNKNOWN )
 
@@ -681,9 +746,10 @@ let _ =
   #define b3_lessthan(n1,n2) \\
     ( (std::get<1>(n1) || std::get<1>(n2))? T_UNKNOWN : ( ( std::get<0>(n1) < std::get<0>(n2) )? T_TRUE : T_FALSE ) )
 
-  #define ASSERT(l) \
+  #define ASSERT_RMTLD3(l) \
     if(!(l)) ::printf(\"assert failed.\\n\")
 
+  //#define DEBUG_VERBOSE
 
   #ifndef DEBUG_VERBOSE
     #define DEBUGV_RTEMLD3(...)
@@ -694,6 +760,13 @@ let _ =
 
   #define DEBUG_RTEMLD3(args ...) ::printf(args)
 
+  #define out_p(res) \
+  (res == T_TRUE)? \"true\" : ((res == T_FALSE)? \"false\": \"unknown\")
+
+  #define out_fv(fv) \
+  (fv == FV_TRUE)? \"true\" : ((fv == FV_FALSE)? \"false\" : ((fv == FV_UNKNOWN)? \"unknown\" : \"symbol\" ) )
+
+  extern int count_until_iterations;
 
   #endif //_RMTLD3_H_
   " in
@@ -703,18 +776,23 @@ let _ =
 
 (* this standalone cpp file instantiates the monitors that have been synthesized *)
   let stream = open_out (cluster_name^"/"^ cluster_name ^".cpp") in
-  let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize monitor_name^".h\"\n" ) "" list_monitor_settings in
-  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"("^string_of_int monitor_period^");\n" ) "" list_monitor_settings in
+  let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize monitor_name^".h\"\n" ) "" (get_settings_monitor helper) in
+  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"("^string_of_int monitor_period^");\n" ) "" (get_settings_monitor helper) in
   let code = headers ^"#include \"RTEML_buffer.h\"
 
-RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
+int count_until_iterations;
 
+#ifdef __NUTTX__
+__EXPORT RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^" __attribute__((used));
+#else
+RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^" __attribute__((used));
+#endif
 "
 ^ functions ^
 "
 void __start_periodic_monitors()
 {
-"^ List.fold_left (fun f (monitor_name,monitor_period,_) -> f^"  if (mon_"^monitor_name^".enable()) {::printf(\"ERROR\\n\");}\n" ) "" list_monitor_settings ^"
+"^ List.fold_left (fun f (monitor_name,monitor_period,_) -> f^"  if (mon_"^monitor_name^".enable()) {::printf(\"ERROR\\n\");}\n" ) "" (get_settings_monitor helper) ^"
 }
 "
 in
@@ -779,12 +857,10 @@ close_out stream;
  *)
 
 (* lets generate the tests *)
-if (search_settings list_global_string_settings "gen_tests") = "true" then
+if (search_settings_string "gen_tests" helper) = "true" then
 begin
   create_dir (cluster_name^"/tests");
-  Rmtld3_synth_test.test () cluster_name
-  (search_settings list_global_string_settings "gen_concurrency_tests")
-  (search_settings list_global_string_settings "gen_unit_tests");
+  Rmtld3_synth_test.test () cluster_name helper;
 
-  Rmtld3_synth_test.rmtld3_unit_test_generation () compute helper cluster_name;
+  Rmtld3_synth_test.rmtld3_unit_test_generation () compute helper cluster_name helper;
 end

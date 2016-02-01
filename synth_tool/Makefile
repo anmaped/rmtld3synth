@@ -11,5 +11,7 @@ PACKS = unix sexplib type_conv
 PP = camlp4find $(PACKS)
 export PP
 
+all: native-code
+
 OCAMLMAKEFILE = OCamlMakefile
 include $(OCAMLMAKEFILE)

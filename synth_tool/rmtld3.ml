@@ -478,7 +478,7 @@ let sub_k (k,u,t) gamma =
 let rec compute_term m t term =
 	match term with
 	| Constant value       -> value
-	| Duration (di,phi)    -> compute_term_duration m (t, t +. (compute_term m t  di)) phi
+	| Duration (di,phi)    -> compute_term_duration m (t, (compute_term m t  di)) phi
 	| FPlus (tr1,tr2)      -> compute_term m t tr1 +. compute_term m t tr2
   | FTimes (tr1,tr2)     -> compute_term m t tr1 *. compute_term m t tr2
 	| _ -> raise (Failure "compute_terms: missing term")
@@ -491,13 +491,13 @@ and compute_term_duration (k,u) dt formula =
           let t,t' = dt in
           if i <= t && t < i' then
             (* lower bound *)
-            (i'-.t) *. (indicator_function m i' phi)
+            (i'-.t) *. (indicator_function m t phi)
           else (
             if i <= t' && t' < i' then
               (* upper bound *)
               (t'-.i) *. (indicator_function m t' phi)
             else
-              (i'-.i) *. (indicator_function m i' phi)
+              (i'-.i) *. (indicator_function m i phi)
           ) in
         let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
         m dt (i,t') phi) +. s) 0. x in
@@ -601,7 +601,7 @@ and compute_uless m gamma phi1 phi2 =
 
 
 (* RMTLD3 abreviations *)
-let mtrue = Or(Prop "*", Not(Prop "*"))
+let mtrue = Or(Prop "NOSYMBOL", Not(Prop "NOSYMBOL"))
 let mfalse = Not(mtrue)
 let mand phi1 phi2 = Not (Or (Not phi1, Not phi2))
 let mimplies phi1 phi2 = Or (Not (phi1), phi2)
