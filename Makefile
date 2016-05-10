@@ -1,23 +1,17 @@
-CC = g++
-RANLIB = ranlib
+RESULT = rmtld3synthcpp
+SOURCES = \
+  rmtld3.ml helper.ml rmtld3_synth_test.ml rmtld3_synthesis.ml
 
-LIBSRC = Monitor.cpp
-LIBOBJ=$(LIBSRC:.cpp=.o)
+#LIBS= unix
 
-CFLAGS = -Wall -g -O0 -std=c++0x -D__x86__ --verbose
-LOADLIBS = -L./
+USE_CAMLP4 = yes
 
-RTEMLLIB = librteml.a
-TARGETS = $(RTEMLLIB)
+PACKS = unix sexplib type_conv
 
-all: $(TARGETS)
+PP = camlp4find $(PACKS)
+export PP
 
-rteml.o: RTEML_monitor.cpp
-	$(CC) $(CFLAGS) $(LOADLIBS) -c RTEML_monitor.cpp -o rteml.o
+all: native-code
 
-$(TARGETS): rteml.o
-	ar rcs $(RTEMLLIB) rteml.o
-	ranlib $(RTEMLLIB)
-
-clean:
-	rm rteml.o $(TARGETS) $(RTEMLLIB) $(LIBOBJ)
+OCAMLMAKEFILE = OCamlMakefile
+include $(OCAMLMAKEFILE)
