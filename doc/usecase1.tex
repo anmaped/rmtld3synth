@@ -1,0 +1,48 @@
+\newcommand\acp{}
+\newcommand\ac{}
+\newcommand\ref{}
+
+  \ac{RM} are mechanisms provided to establish amounts of shared resources to be consumed by working tasks in \ac{RTS}s.  Normally, these mechanisms focus on time consumption and ensure \emph{time isolation} between different tasks or sets of tasks. %, allowing the isolation of a certain set of components with different criticalities~\cite{}.
+  \emph{Periodic \acp{RM}} are defined by their \emph{replenishment period} and \emph{budget supply}. Budgets are dynamically available as the time elapses and are replenished at certain defined periods.
+% introduce the elastic coefficients
+\emph{Elastic \acp{RM}} are an extension of periodic \acp{RM} containing \emph{elastic coefficients}, similar to {\em spring coefficients} in physics. They describe how the execution time of a task can be temporally deflated or inflated by applying n-D geometric region constraints (polynomial inequalities) over resource budgets. These restricted coefficients allow for the system's under-load and over-load to be controlled.
+Spring coefficients, which are seen as logic variables, define the rate (or constraint) of inflation and deflation of a resource (in our case, processing time) and can be changed during execution. In this use case, these coefficients are governed by linear inequality constraints which dictate the under- and over-loading conditions of a certain set of tasks.
+
+Consider the formula {\small
+$$
+0 \leq a\times \int^{\pi_1} \psi_1 + b\times \int^{\pi_2} \psi_2 \leq \frac{1}{4}\theta
+$$}%
+that specifies the resource constraints of two \acp{RM} where coefficients are managed according to the linear equation $a=1-b$ for $a,b \geq \frac{1}{4}$, that $\psi_1$,$\psi_2$ are two formulas describing the event releases of two distinct tasks, and that $\theta$ is the allowed execution time for the \acp{RM}. %\todo{verify...}
+Informally, the formula specifies that both resource models have different budgets when both execute at the same time, which in practice is the case when both \ac{RM}s interfere	 in the system.
+To find the conditions for monitoring we need to quantify the formula, yielding a new formula%
+%\par\noindent%
+\begin{small}
+$
+\exists _{\{a,b\}}\left(a=1-b\land a>\frac{1}{4}\land b>\frac{1}{4}\land 0 \leq a\times \int^{\pi_1} \psi_1 + b\times \int^{\pi_2} \psi_2 \leq \frac{\theta}{4}\right).
+$
+\end{small}%
+Later, after applying the simplification algorithm described in~\cite{MatosPedro2015}, we generate the monitoring conditions from Example~\ref{ex:durational}, as follows:
+{
+\begin{align*}
+%&\scriptstyle(\int^{\pi_1} \psi_1=0\land 0\leq \int^{\pi_2} \psi_2<40) &\lor \\
+%&\scriptstyle(0<\int^{\pi_1} \psi_1<10\land 0\leq \int^{\pi_2} \psi_2<40-3 \int^{\pi_1} \psi_1) &\lor \\
+%&\scriptstyle(\int^{\pi_1} \psi_1=10\land 0\leq \int^{\pi_2} \psi_2\leq 10) &\lor \\
+%&\scriptstyle\left(10<\int^{\pi_1} \psi_1<\frac{40}{3}\land 0\leq \int^{\pi_2} \psi_2<\frac{40-\int^{\pi_1} \psi_1}{3}\right) & \lor \\
+%&\scriptstyle\left(\int^{\pi_1} \psi_1=\frac{40}{3}\land 0\leq \int^{\pi_2} \psi_2<\frac{80}{9}\right) & \lor \\
+%&\scriptstyle \left(\frac{40}{3}<\int^{\pi_1} \psi_1<40\land 0\leq \int^{\pi_2} \psi_2<\frac{40-\int^{\pi_1} \psi_1}{3}\right)
+&\scriptstyle( \int^{\pi_1} \psi_1=0\land 0\leq \int^{\pi_2} \psi_2<\theta )&\lor \ \ %\\
+&\scriptstyle\left(0<\int^{\pi_1} \psi_1<\frac{\theta }{4}\land 0\leq \int^{\pi_2} \psi_2<\theta -3 \int^{\pi_1} \psi_1\right)&\lor \\
+&\scriptstyle\left(\int^{\pi_1} \psi_1=\frac{\theta }{4}\land 0\leq \int^{\pi_2} \psi_2\leq \frac{\theta }{4}\right)&\lor \ \ %\\
+&\scriptstyle\left(\frac{\theta }{4}<\int^{\pi_1} \psi_1<\frac{\theta }{3}\land 0\leq \int^{\pi_2} \psi_2<\frac{\theta -\int^{\pi_1} \psi_1}{3}\right)&\lor \\
+&\scriptstyle\left(\int^{\pi_1} \psi_1=\frac{\theta }{3}\land \theta -3 \int^{\pi_1} \psi_1\leq \int^{\pi_2} \psi_2<\frac{\theta -\int^{\pi_1} \psi_1}{3}\right)&\lor \ \ %\\
+&\scriptstyle\left(\frac{\theta }{3}<\int^{\pi_1} \psi_1<\theta \land 0\leq \int^{\pi_2} \psi_2<\frac{\theta -\int^{\pi_1} \psi_1}{3}\right),
+\end{align*}
+}%
+where $\psi_1$ and $\psi_2$ are both simplified formulas.
+
+In Figure~\ref{fig:regionsample} we can see regions where the \ac{RM}s are able to consume resources or not. For instance, the resource $B$ cannot consume any resource if resource $A$ consumes $10$ units, and the resource $A$ can only consume more than $4$ units if the resource $B$ consumes less than $2$ time units, due to resource constraints.  For the case of both resources consuming $2.5$ units each, the difference between the sum and the execution time indicates that the interference of both resource models executing concurrently is at most $5$ time units (it is identified by the hashed region). Intuitively, this constraint means that one resource needs to be deflated when the other resource is inflated and conversely.
+%
+Note that different regions can be found by modifying the constraints of the scale factor $\frac{1}{4}$, or any of the $\theta$, $a$ or $b$ parameters.
+
+
+
