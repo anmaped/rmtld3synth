@@ -1,0 +1,5 @@
+README
+
+To execute the generation of monitors based on the 'config' file, please type 'rmtld3synthcpp.exe' in Windows command prompt.
+
+The binary shall execute and generate a folder with name 'monitor_set1' containing the source files of the partial monitor of the use case one.
