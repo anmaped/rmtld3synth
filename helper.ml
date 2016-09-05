@@ -1,4 +1,4 @@
-(*pp camlp4o -I C:/cygwin/home/anmap/.opam/system/lib/type_conv C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma -I C:/cygwin/home/anmap/.opam/system/lib/sexplib C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma -I +camlp4 *)
+(*pp camlp4o C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma *)
 
 open Hashtbl
 open Sexplib
@@ -17,39 +17,46 @@ type formula = Rmtld3.formula with sexp
 
 exception Settings_Not_Found of string;;
 
+(* reformulate this rmtld3synth state *)
+type helper = string * string * int ref * ( global_int list * global_string list * monitor list ) * ((int ref * (string, int) t) list)
 
-type helper = string * string * int ref * (string, int) t * int ref * ( global_int list * global_string list * monitor list )
-
-let get_event_fulltype (t1,t2,_,_,_,_) = 
+let get_event_fulltype (t1,t2,_,_,_) = 
   t1 ^ "< " ^ t2 ^" >"
 
-let get_event_type (t1,t2,_,_,_,_) =
+let get_event_type (t1,t2,_,_,_) =
   t2
 
-let get_proposition_hashtbl (_,_,_,tbl,_,_) =
+let get_proposition_hashtbl (_,_,_,_,list) =
+  let _, tbl = List.hd list in
   tbl
 
-let get_proposition_counter (_,_,count,_,_,_) =
+let get_proposition_counter (_,_,_,_,list) =
+  let count,_ = List.hd list in
   count := !count + 1;
   !count
 
-let get_inc_counter_test_cases (_,_,_,_,count,_) =
+let get_until_counter (_,_,_,_,list) =
+  let count,_ = List.hd (List.tl list) in
   count := !count + 1;
   !count
 
-let get_counter_test_cases (_,_,_,_,count,_) =
+let get_inc_counter_test_cases (_,_,count,_,_) =
+  count := !count + 1;
   !count
 
-let get_settings_int (_,_,_,_,_,(a,_,_)) =
+let get_counter_test_cases (_,_,count,_,_) =
+  !count
+
+let get_settings_int (_,_,_,(a,_,_),_) =
 	a
 
-let get_settings_string (_,_,_,_,_,(_,b,_)) =
+let get_settings_string (_,_,_,(_,b,_),_) =
 	b
 
-let get_settings_monitor (_,_,_,_,_,(_,_,c)) =
+let get_settings_monitor (_,_,_,(_,_,c),_) =
 	c
 
-let set_counter_test_cases n (_,_,_,_,count,_) =
+let set_counter_test_cases n (_,_,count,_,_) =
 	count := n;
 ;;
 

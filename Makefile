@@ -1,17 +1,23 @@
-RESULT = rmtld3synthcpp
-SOURCES = \
-  rmtld3.ml helper.ml rmtld3_synth_test.ml rmtld3_synthesis.ml
+RESULT := rmtld3synth
+SOURCES := \
+  rmtld3.ml \
+  helper.ml \
+  rmtld3_synth_test.ml \
+  rmtld3synthsmt.ml \
+  rmtld3_synthesis.ml
+  
 
 #LIBS= unix
 
-USE_CAMLP4 = yes
+ANNOTATE := yes
+USE_CAMLP4 := yes
 
-PACKS = unix sexplib type_conv
+PACKS := unix type_conv sexplib batteries
 
-PP = camlp4find $(PACKS)
-export PP
+#PP = camlp4find -echo $(PACKS)
+export PP := camlp4find -echo $(PACKS)
 
 all: native-code
 
-OCAMLMAKEFILE = OCamlMakefile
+OCAMLMAKEFILE := OCamlMakefile
 include $(OCAMLMAKEFILE)

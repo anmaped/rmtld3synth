@@ -1,0 +1,52 @@
+(set-option :produce-models true)
+
+
+(set-option :print-success true) ; Boogie: false
+(set-option :global-decls true) ; Boogie: default
+(set-option :auto_config false) ; Usually a good idea
+;(set-option :smt.mbqi false)
+(set-option :model.v2 true)
+(set-option :smt.phase_selection 0)
+(set-option :smt.restart_strategy 0)
+(set-option :smt.restart_factor |1.5|)
+(set-option :smt.arith.random_initial_value true)
+(set-option :smt.case_split 5)
+(set-option :smt.delay_units true)
+(set-option :smt.delay_units_threshold 16)
+(set-option :nnf.sk_hack true)
+(set-option :smt.qi.eager_threshold 100)
+(set-option :smt.qi.cost "(+ weight generation)")
+(set-option :type_check true)
+(set-option :smt.bv.reflect true)
+(set-option :smt.qi.profile true)
+
+
+(define-sort proparray () (Array Int Bool) )
+(declare-const a1 proparray ) ; array identifying the truth value of the proposition one
+(declare-const a2 proparray )
+(declare-const a3 proparray )
+
+(define-fun eval ((y Bool)) Int
+  (ite y 1 0)
+)
+
+;define other function to eval array
+(define-fun eval_array ( (x Int) ) Int
+	(eval (and (or (select a1 x) (select a2 x)) (select a3 x)) )
+)
+
+(declare-fun accumulator ( (Int) ) Int )
+(assert (= 0 (accumulator 0)))
+(assert (= (eval_array 0) (accumulator 1) ))
+(assert (forall ((x Int)) (=> (and (> x 1) (< x 100)) (= (accumulator x) (+ (accumulator (- x 1) ) (eval_array  x) ) ) )) )
+
+(assert (= 80 (accumulator 100)))
+
+
+(check-sat)
+
+(get-model)
+
+(get-info :all-statistics)
+
+;(help-tactic)

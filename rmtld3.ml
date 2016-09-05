@@ -1,4 +1,4 @@
-(*pp camlp4o -I C:/cygwin/home/anmap/.opam/system/lib/type_conv C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma -I C:/cygwin/home/anmap/.opam/system/lib/sexplib C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma -I +camlp4 *)
+(*pp camlp4o C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma *)
 
 (* RESTRICTED METRIC TEMPORAL LOGIC WITH DURATIONS EVALUATION MODULE
  *

@@ -1,4 +1,4 @@
-(*pp camlp4o -I C:/cygwin/home/anmap/.opam/system/lib/type_conv C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma -I C:/cygwin/home/anmap/.opam/system/lib/sexplib C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma -I +camlp4 *)
+(*pp camlp4o C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma *)
 
 open Helper
 
@@ -308,32 +308,24 @@ and calculate_t_upper_bound_term term =
 (* rmtld3 synthesis interface *)
 
 let verbose = ref false
-let mon_filename = ref "config"
+let config_mon_filename = ref ""
 let mon_formulas = ref ""
+let sat_formula = ref ""
 
-let set_config_file file = mon_filename := file
+let set_config_file file = config_mon_filename := file
 let set_formulas f = mon_formulas := f
+let set_sat_formula f = sat_formula := f
 
 open Unix
 open Sexplib
 open Sexplib.Conv
 
 open Rmtld3_synth_test
+open Rmtld3synthsmt
 
 
-let _ =
-
-  let speclist = [
-    ("-f", Arg.String (set_formulas), "Formula(s) to be synthesized");
-    ("-n", Arg.String (set_config_file), "File containing synthesis settings");
-    ("-v", Arg.Set verbose, "Enables verbose mode");
-  ]
-  in let usage_msg = "rmtld3synthcpp [options]"
-  in Arg.parse speclist print_endline usage_msg;
-
-  print_endline ("Default synthesis filename: " ^ !mon_filename);
-
-  let create_dir dir_name = try let state = Sys.is_directory dir_name in if state then () else  Unix.mkdir dir_name 0o666; with _ -> Unix.mkdir dir_name 0o666 in
+let mon_gen () =
+let create_dir dir_name = try let state = Sys.is_directory dir_name in if state then () else  Unix.mkdir dir_name 0o666; with _ -> Unix.mkdir dir_name 0o666 in
 
   (* c++ type templates *)
   let evt_subtype = "int" in
@@ -341,7 +333,7 @@ let _ =
 
 
   (* manage helpers *)
-  let helper = (evt_type, evt_subtype, ref 0, Hashtbl.create 10, ref 0, (settings mon_filename)) in
+  let helper = (evt_type, evt_subtype, ref 0, (settings config_mon_filename), [(ref 0, Hashtbl.create 10); (ref 0, Hashtbl.create 10)]) in
 
 
   (* monitor synthesis settings *)
@@ -864,3 +856,38 @@ begin
 
   Rmtld3_synth_test.rmtld3_unit_test_generation () compute helper cluster_name helper;
 end
+
+let sat_gen formula =
+begin
+  let stream = open_out ("smt/sat_formula_example.smt2") in
+  Printf.fprintf stream "%s\n" (rmtld3synthsmt formula);
+  close_out stream;
+end
+
+
+let _ =
+
+  let speclist = [
+    ("-f", Arg.String (set_formulas), "Formula(s) to be synthesized");
+    ("-n", Arg.String (set_config_file), "File containing synthesis settings");
+    ("-sat", Arg.String (set_sat_formula), "Formula for satisfability check");
+    ("-v", Arg.Set verbose, "Enables verbose mode");
+  ]
+  in let usage_msg = "rmtld3synth [options]"
+  in Arg.parse speclist print_endline usage_msg;
+
+  
+
+  (* for sat case *)
+  if !sat_formula <> "" then
+    begin
+      sat_gen (formula_of_sexp (Sexp.of_string !sat_formula));
+    end
+
+  if !config_mon_filename <> "" then
+    begin
+      print_endline ("Default synthesis filename: " ^ !config_mon_filename);
+      mon_gen ();
+    end
+
+  
