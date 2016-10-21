@@ -1,10 +1,10 @@
 RESULT := rmtld3synth
 SOURCES := \
   rmtld3.ml \
-  helper.ml \
-  rmtld3_synth_test.ml \
-  rmtld3synthsmt.ml \
-  rmtld3_synthesis.ml
+  rmtld3synth_helper.ml \
+  rmtld3synth_unittest.ml \
+  rmtld3synth_smt.ml \
+  rmtld3synth.ml
   
 
 #LIBS= unix

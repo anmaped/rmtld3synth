@@ -1,0 +1,3 @@
+[submodule "rtmlib"]
+	path = rtmlib
+	url = https://github.com/anmaped/rtmlib.git

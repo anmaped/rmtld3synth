@@ -138,13 +138,13 @@ and calculate_cycle_cost_term term l =
 (* trace generation helpers *)
 
 let rec strategic_uniform_trace value samples factor trace =
-    let trace_size =  List.length trace in
     (*let timestamp = (Random.float factor) +. value in*)
     let timestamp = factor +. value in
     if samples = 0 then
       (("B", (value,timestamp))::trace)
     else
-      (*if samples <= trace_size then
+      (*let trace_size =  List.length trace in
+      if samples <= trace_size then
         strategic_uniform_trace timestamp (samples-1) factor (("B",(value,timestamp))::trace)
       else*)
         strategic_uniform_trace timestamp (samples-1) factor (("A",(value,timestamp))::trace)

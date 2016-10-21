@@ -1,7 +1,7 @@
 
 open Rmtld3
 
-open Helper
+open Rmtld3synth_helper
 
 open Sexplib
 open Sexplib.Conv
@@ -137,7 +137,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 		(*for rep = 1 to d do
 			compute (k, t_u, 0.) formula;
 		done;*)
-		let t_value = repeat (k, t_u, 0.) formula d in
+		let _t_value = repeat (k, t_u, 0.) formula d in
 		let time_end = Sys.time () in
 		let delta_t = (time_end -. time_start) /. float_of_int d in
 		(* end of the measure part *)
@@ -286,15 +286,12 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 	(* setting: gen_paper_results true *)
 	if (search_settings_string "gen_paper_results" helper) = "true" then
 	begin
-		let sample_trace = [("A",(0.,1.)); ("A",(1.,2.)); ("A",(2.,3.)); ("A",(3.,4.));
-			("A",(4.,5.)); ("A",(5.,6.)); ("A",(6.,9.)); ("B",(9.,20.));] in
-		let sample_trace2 = [("B",(0.,1.)); ("B",(1.,2.)); ("B",(2.,3.)); ("A",(3.,4.));
+		let sample_trace = [("B",(0.,1.)); ("B",(1.,2.)); ("B",(2.,3.)); ("A",(3.,4.));
 			("B",(4.,5.)); ("B",(5.,6.)); ("B",(6.,9.)); ("B",(9.,20.));] in
 
-		let counter = get_counter_test_cases helper in
 		let lst = [10; 100; 1000] in
 		(* check if buffer has 1000 length *)
-		if (search_settings_int "buffer_size" helper) < 1000 then  raise (Failure "rmtld3_synth_test: buffer length is not enough.") ;
+		if (search_settings_int "buffer_size" helper) < 1000 then  raise (Failure "rmtld3synth_unittest: buffer length is not enough.") ;
 		for trace_size = 1 to 3 do
 		(* let generate big traces *)
 		let new_trace = List.rev (strategic_uniform_trace 0. ((List.nth lst (trace_size-1) )-1) 1. []) in
@@ -311,7 +308,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 
 		for trace_size = 1 to 3 do
 
-		let new_trace2 = repeat_trace ( (List.nth lst (trace_size-1))/8)  sample_trace2 [] 0. 20. in
+		let new_trace2 = repeat_trace ( (List.nth lst (trace_size-1))/8)  sample_trace [] 0. 20. in
 		pass_test_n True ("A->always "^(string_of_int (List.nth lst (trace_size-1)))^". B") new_trace2
 		(
 			mimplies (Prop("A")) (malways (float_of_int (List.nth lst (trace_size-1))) (Prop("B")))
@@ -323,7 +320,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 		(* this results is equal to the previous one *)
 		(*for trace_size = 1 to 3 do
 
-		let new_trace3 = repeat_trace ( (List.nth lst (trace_size-1))/8)  sample_trace2 [] in
+		let new_trace3 = repeat_trace ( (List.nth lst (trace_size-1))/8)  sample_trace [] in
 		pass_test_n True ("A->eventually "^(string_of_int (List.nth lst (trace_size-1)))^". B") new_trace3
 		(
 			mimplies (Prop("A")) (meventually (float_of_int (List.nth lst (trace_size-1))) (Prop("B")))
@@ -334,7 +331,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 
 		for trace_size = 1 to 3 do
 
-		let new_trace4 = repeat_trace ( (List.nth lst (trace_size-1))/8)  sample_trace2 [] 0. 20. in
+		let new_trace4 = repeat_trace ( (List.nth lst (trace_size-1))/8)  sample_trace [] 0. 20. in
 		(*print_trace new_trace4;*)
 		pass_test_n True ("always "^(string_of_int (List.nth lst (trace_size-1)))^". ((int 4. A) < 2.)") new_trace4
 		(
@@ -346,7 +343,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 
 		for trace_size = 1 to 3 do
 
-		let new_trace5 = repeat_trace ( (List.nth lst (trace_size-1))/8)  sample_trace2 [] 0. 20. in
+		let new_trace5 = repeat_trace ( (List.nth lst (trace_size-1))/8)  sample_trace [] 0. 20. in
 		pass_test_n True ("A -> int "^(string_of_int (List.nth lst (trace_size-1)))^". A < 2.") new_trace5
 		(
 			mimplies (Prop("A")) (LessThan(Duration(Constant(float_of_int (List.nth lst (trace_size-1))), Prop("A")), Constant(2.)))
@@ -399,13 +396,11 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 	(* <--- TO CHANGE TO CONFIG FILE *)
 
 
-	let rec ones n l = (if n <> 0 then ones (n-1) ((if List.length l = 0 then 1 else (List.hd l)+1)::l) else l) in
-	let list_id = ones (get_counter_test_cases helper) [] in
 	(* lets create a function to run all tests *)
 	let oc = open_out_gen [Open_creat; Open_text; Open_append] 0o640 filename in
     output_string oc ("
 auto __run_unit_tests = []() {"^
-	(*List.fold_left (fun a b -> "\n__unit_test_"^cluster_name^"_c"^string_of_int b^"();"^a) "" list_id*) !call_list^"
+	!call_list^"
 };");
     close_out oc;
 ;;
@@ -510,7 +505,7 @@ int main( int argc, const char* argv[] )
 
 	"^
 	(* begins the test for units if enabled *)
-	(if (search_settings_string "gen_unit_tests" helper) = "true" || (search_settings_string "gen_paper_results" helper) = "true" then "
+	(if unit_on = "true" || (search_settings_string "gen_paper_results" helper) = "true" then "
 	// if unit tests on then do that
 	__run_unit_tests();
 	" else "") ^

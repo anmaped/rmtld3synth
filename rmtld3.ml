@@ -827,7 +827,7 @@ Metrics:
         count := 0;
 
         let time_start = Sys.time () in
-        let ev = compute (env, lg_env, 0.) formula in
+        let _ev = compute (env, lg_env, 0.) formula in
         let time_end = Sys.time () in
         let delta_t = (time_end -. time_start) in
         Printf.fprintf linear_plot_file "%i %f %i %i %f\\\\ %!" !count delta_t height sizeof_trace (2. ** (float_of_int height)) ;
@@ -839,7 +839,7 @@ Metrics:
     close_out linear_plot_file ;
 
 
-    (*let oc = open_out "data.tex" in
+    let oc = open_out "data.tex" in
     let nsamples = 1000 in
     let sizeof_trace = 100 in
     (* Calculate the execution time of the formula with height 5 *)
@@ -859,7 +859,7 @@ Metrics:
        count_duration := 0;
 
        let time_start = Sys.time () in
-       let ev = compute (env, lg_env, 0.) formula in
+       let _ev = compute (env, lg_env, 0.) formula in
        let time_end = Sys.time () in
        let n_du, n_to = measure_formula formula in
        let delta_t = (time_end -. time_start) in 
@@ -875,7 +875,7 @@ Metrics:
 
     fprint_metrics oc ;
     
-    close_out oc;*)
+    close_out oc;
     
   end;
 

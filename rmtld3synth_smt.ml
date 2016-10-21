@@ -2,7 +2,7 @@
 open Rmtld3
 open Batteries
 
-open Helper
+open Rmtld3synth_helper
 
 let rmtld3synthsmt formula = 
 

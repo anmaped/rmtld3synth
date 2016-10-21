@@ -1,6 +1,6 @@
 (*pp camlp4o C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma *)
 
-open Helper
+open Rmtld3synth_helper
 
 (* function that pretty prints 'observation' function as a lambda functions in c++ *)
 let synth_obs_function observation_funcname struct_name =
@@ -320,8 +320,8 @@ open Unix
 open Sexplib
 open Sexplib.Conv
 
-open Rmtld3_synth_test
-open Rmtld3synthsmt
+open Rmtld3synth_unittest
+open Rmtld3synth_smt
 
 
 let mon_gen () =
@@ -852,9 +852,9 @@ close_out stream;
 if (search_settings_string "gen_tests" helper) = "true" then
 begin
   create_dir (cluster_name^"/tests");
-  Rmtld3_synth_test.test () cluster_name helper;
+  Rmtld3synth_unittest.test () cluster_name helper;
 
-  Rmtld3_synth_test.rmtld3_unit_test_generation () compute helper cluster_name helper;
+  Rmtld3synth_unittest.rmtld3_unit_test_generation () compute helper cluster_name helper;
 end
 
 let sat_gen formula =
