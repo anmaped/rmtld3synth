@@ -110,7 +110,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 	let oc = open_out filename in
     output_string oc ("
 #include \"Rmtld3_reader.h\"
-#include \"RTEML_monitor.h\"
+#include \"RTML_monitor.h\"
 #include \""^ cluster_name ^".h\"
 
 #ifdef __NUTTX__
@@ -446,7 +446,7 @@ x86-test:
 	List.fold_left (fun a (b,_) -> "
 	auto producer"^string_of_int b^" = [](void *) -> void*
 	{
-		static RTEML_writer<int> __writer = RTEML_writer<int>(__buffer_"^ cluster_name ^".getBuffer());
+		static RTML_writer<int> __writer = RTML_writer<int>(__buffer_"^ cluster_name ^".getBuffer());
 
 		__writer.enqueue("^string_of_int b^");
 

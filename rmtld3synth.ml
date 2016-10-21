@@ -382,12 +382,12 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
   #define MONITOR_"^String.uppercase monitor_name^"_H
 
   #include \"Rmtld3_reader.h\"
-  #include \"RTEML_monitor.h\"
+  #include \"RTML_monitor.h\"
 
   #include \""^monitor_name^"_compute.h\"
   #include \""^ cluster_name ^".h\"
 
-  class "^String.capitalize monitor_name^" : public RTEML_monitor {
+  class "^String.capitalize monitor_name^" : public RTML_monitor {
 
   private:
     RMTLD3_reader< "^ get_event_type(helper) ^" > trace = RMTLD3_reader< "^ get_event_type(helper) ^" >( __buffer_"^ cluster_name ^".getBuffer(), "^ string_of_float (calculate_t_upper_bound formula) ^" );
@@ -402,7 +402,7 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
     }
 
   public:
-    "^String.capitalize monitor_name^"(useconds_t p): RTEML_monitor(p,SCHED_FIFO,50), env(std::make_pair (0, 0), &trace, __observation) {}
+    "^String.capitalize monitor_name^"(useconds_t p): RTML_monitor(p,SCHED_FIFO,50), env(std::make_pair (0, 0), &trace, __observation) {}
 
   };
 
@@ -426,13 +426,13 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
   //#include <iterator>
   #include <numeric>
 
-  #include \"RTEML_reader.h\"
+  #include \"RTML_reader.h\"
 
   #include \"rmtld3.h\"
   #include \"Rmtld3_reader_it.h\"
 
   template<typename T>
-  class RMTLD3_reader : public RTEML_reader<T>
+  class RMTLD3_reader : public RTML_reader<T>
   {
     // current buffer state (idx and cnt)
     int state_cnt;
@@ -442,7 +442,7 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
 
     public:
       RMTLD3_reader(CircularBuffer<T> * const buffer, timespan ub) :
-        RTEML_reader<T>(buffer),
+        RTML_reader<T>(buffer),
         formula_t_upper_bound(ub)
       {};
 
@@ -585,7 +585,7 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
   let stream = open_out (cluster_name^"/Rmtld3_reader_it.h") in
   let code = "
 
-  #include \"RTEML_reader.h\"
+  #include \"RTML_reader.h\"
 
   // defines an interator for a trace
   template<typename T>
@@ -594,7 +594,7 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
     /*
      * Lets define the reader for communication with the rtemlib
      */
-    RTEML_reader<T> * __reader;
+    RTML_reader<T> * __reader;
 
     size_t ibegin, iend, it;
 
@@ -614,7 +614,7 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
     void setCurrentAbsTime(timespanw curr_t) { current_abstime = curr_t; }
 
     public:
-      TraceIterator<T> (RTEML_reader<T> * _l_reader,
+      TraceIterator<T> (RTML_reader<T> * _l_reader,
         size_t i, size_t e, size_t iter,
         timespanw t_l, timespanw t_u, timespanw ct) :
         __reader(_l_reader),
@@ -622,7 +622,7 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
         lower_abstime(t_l), upper_abstime(t_u), current_abstime(ct)
       {};
 
-      RTEML_reader<T> * getReader() { return __reader; }
+      RTML_reader<T> * getReader() { return __reader; }
 
       size_t getBegin() { return ibegin; }
       size_t getIt() { return it; }
@@ -770,14 +770,14 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
   let stream = open_out (cluster_name^"/"^ cluster_name ^".cpp") in
   let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize monitor_name^".h\"\n" ) "" (get_settings_monitor helper) in
   let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"("^string_of_int monitor_period^");\n" ) "" (get_settings_monitor helper) in
-  let code = headers ^"#include \"RTEML_buffer.h\"
+  let code = headers ^"#include \"RTML_buffer.h\"
 
 int count_until_iterations;
 
 #ifdef __NUTTX__
-__EXPORT RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^" __attribute__((used));
+__EXPORT RTML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^" __attribute__((used));
 #else
-RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^" __attribute__((used));
+RTML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^" __attribute__((used));
 #endif
 "
 ^ functions ^
@@ -799,11 +799,11 @@ in
 let code = "#ifndef _"^String.uppercase cluster_name^"_H_
 #define _"^String.uppercase cluster_name^"_H_
 
-#include \"RTEML_buffer.h\"
+#include \"RTML_buffer.h\"
 
 extern void __start_periodic_monitors();
 
-extern RTEML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
+extern RTML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buffer_"^ cluster_name ^";
 
 "^propositions^"
 

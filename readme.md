@@ -18,9 +18,9 @@ Synthesis for Z3 SMT solver is also supported as a manner to discard before exec
 
 ### Tarball binaries for Windows
 
-Let us begin by an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as basis the use case [one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`config`](/bin/config?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing [`rmtld3synthcpp.exe`](/bin/rmtld3synthcpp.exe?raw=true) in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
+Let us begin by an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as basis the use case [one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/bin/config?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing [`./rmtld3synth.exe -n usecaseone`](/bin/rmtld3synthcpp.exe?raw=true) in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
 
-Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. In this case, the `monitor_set1` folder containing the source files of the monitor of the use case one is created. Now, the monitor is ready to be compiled with gcc or other "compatible" c/c++ compiler and then deployed in the target system. At the present moment only C++ synthesis is supported but we want to include Ada in this bag.
+Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. In this case, the `monitor_set1` folder containing the source files of the monitor of the use case one is created. Now, the monitor is ready to be compiled with gcc or other "compatible" C/C++ compiler and then deployed in the target system. At the present moment only C++ synthesis is supported but we want to include Ada in this bag.
 
 ### Building with make
 
@@ -77,14 +77,12 @@ Imagine that we want to solve the formula `(LessThan (Constant 0) (Duration (Con
 
 #### Write formulas in RMTLD3
 
-The formulas `m_simple` and `m_morecomplex` follow the same syntax defined in the paper [[3]](http://link.springer.com/chapter/10.1007%2F978-3-319-23820-3_11).
-
 RMTLD3 is composed of atomic propositions and logic variables that can be syntactically connected using some temporal operators and the relation '<' for terms. The syntax of RMTLD3 terms `t` and formulas `f` is defined inductively as follows:
 ```
 t ::= (Constant `<constant>`) | (Variable `<lvariable>`) | (Plus t t) | (Times t t) | (Duration t formula)
 f ::= (Prop `<proposition>`) | (LessThan t t) | (Or f f) | (Not f) | (Until `<number>` f f)
 ```
-where `<constant>` is a real-number (interpreted as float/double), `<lvariable>` is a logic variable (identified by unique strings), `<proposition>` is a proposition (identified by unique strings), and `<number>` is a non-negative real-number (interpreted as float/double).
+where `<constant>` is a real-number (interpreted as float/double), `<lvariable>` is a logic variable (identified by unique strings), `<proposition>` is a proposition (identified by unique strings), and `<number>` is a non-negative real-number (interpreted as float/double). For more details you can read the syntax defined in the paper [[3]](http://link.springer.com/chapter/10.1007%2F978-3-319-23820-3_11).
 
 Let us interpret the sentence `"the duration of the task A with an arbitrary period greater than 10 and small than 20 is less than 5 units."`
 as a formula in RMTLD3. It can be described as
