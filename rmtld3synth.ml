@@ -1,4 +1,4 @@
-(*pp camlp4o C:\cygwin\home\anmap\.opam\system\lib\type_conv\pa_type_conv.cma C:\cygwin\home\anmap\.opam\system\lib\sexplib\pa_sexp_conv.cma *)
+(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query sexplib`/pa_sexp_conv.cma *)
 
 open Rmtld3synth_helper
 

@@ -12,6 +12,9 @@ authors: [
 depends: [
   "ocamlbuild" {build}
   "ocamlfind"  {build}
+  "batteries"
+  "sexplib"
+  "type_conv"
 ]
 
 build: [make]
