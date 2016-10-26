@@ -28,9 +28,13 @@ Note that the `rmtld3synth` can execute without any argument only guided by the 
 #### Compiling the rmtld3synth tool
 Use `make` to call the compilation process that will use the `OCamlMakefile` developed by Markus Mottl. More references about ocaml installation steps can be found [here](https://ocaml.org/docs/install.html). The compilation shall complete without warnings.
 
+Note that we recomend ocaml 4.01 including camlp4 4.01, type_conv 111.13.00, sexplib 111.13.00, and batteries.2.5.2. ´opam´ file is provided in the root directory for the automatic pre-configuration and preparation of the ocaml environment.
+
 #### Compiling the auxiliary library rtmlib
 This support library will be used by the synthesized monitors. For the case of the synthesis using Z3 this step can be skipped.
 Use `make` to perform the compilation of the library. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterwards(only for gcc 4.7.0 version).
+
+More details are available in the rtmlib repository.
 
 ### Documentation
 
