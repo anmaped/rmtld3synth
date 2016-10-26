@@ -12,7 +12,7 @@ Synthesis for Z3 SMT solver is also supported as a manner to discard before exec
 
 - Usage options:
   - [Tarball binaries for Windows](#tarball-binaries-for-windows)
-  - [Building with make](#building-with-make)
+  - [Building from Git](#building-with-make)
 - [Documentation](#documentation)
 - [License](#license)
 
@@ -22,12 +22,13 @@ Let us begin by an overview of a simple monitoring case generation by the `rmtld
 
 Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. In this case, the `monitor_set1` folder containing the source files of the monitor of the use case one is created. Now, the monitor is ready to be compiled with gcc or other "compatible" C/C++ compiler and then deployed in the target system. At the present moment only C++ synthesis is supported but we want to include Ada in the future.
 
-### Building with make
+### Building from Git
+[![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
 
 #### Compiling the rmtld3synth tool
 Use `make` to call the compilation process that will use the `OCamlMakefile` developed by Markus Mottl. More references about ocaml installation steps can be found [here](https://ocaml.org/docs/install.html). The compilation shall complete without warnings.
 
-### Compiling the auxiliary library rtmlib
+#### Compiling the auxiliary library rtmlib
 This support library will be used by the synthesized monitors. For the case of the synthesis using Z3 this step can be skipped.
 Use `make` to perform the compilation of the library. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterwards(only for gcc 4.7.0 version).
 
