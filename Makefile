@@ -4,6 +4,7 @@ SOURCES := \
   rmtld3synth_helper.ml \
   rmtld3synth_unittest.ml \
   rmtld3synth_smt.ml \
+  interface/mathkernel.ml \
   rmtld3synth.ml
 
 

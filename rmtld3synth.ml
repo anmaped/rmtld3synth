@@ -1,4 +1,4 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query sexplib`/pa_sexp_conv.cma *)
+(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` pa_sexp_conv.cma *)
 
 open Rmtld3synth_helper
 
@@ -363,23 +363,23 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
     (* Synthesize ocaml formula evaluation algorithm into c++ *)
     let stream = open_out (cluster_name^"/"^monitor_name^"_compute.h") in
     let code = "
-  #ifndef _"^ String.uppercase (monitor_name^"_compute") ^"_H_
-  #define _"^ String.uppercase (monitor_name^"_compute") ^"_H_
+  #ifndef _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
+  #define _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
 
   #include \"rmtld3.h\"
   
   auto _"^monitor_name^"_compute = "^compute (formula) helper^";
 
-  #endif //_"^ String.uppercase (monitor_name^"_compute") ^"_H_
+  #endif //_"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
     " in
     Printf.fprintf stream "%s\n" code;
     close_out stream;
 
 
-    let stream = open_out (cluster_name^"/"^String.capitalize monitor_name^".h") in
+    let stream = open_out (cluster_name^"/"^String.capitalize_ascii monitor_name^".h") in
     let code = "
-  #ifndef MONITOR_"^String.uppercase monitor_name^"_H
-  #define MONITOR_"^String.uppercase monitor_name^"_H
+  #ifndef MONITOR_"^String.uppercase_ascii monitor_name^"_H
+  #define MONITOR_"^String.uppercase_ascii monitor_name^"_H
 
   #include \"Rmtld3_reader.h\"
   #include \"RTML_monitor.h\"
@@ -387,7 +387,7 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
   #include \""^monitor_name^"_compute.h\"
   #include \""^ cluster_name ^".h\"
 
-  class "^String.capitalize monitor_name^" : public RTML_monitor {
+  class "^String.capitalize_ascii monitor_name^" : public RTML_monitor {
 
   private:
     RMTLD3_reader< "^ get_event_type(helper) ^" > trace = RMTLD3_reader< "^ get_event_type(helper) ^" >( __buffer_"^ cluster_name ^".getBuffer(), "^ string_of_float (calculate_t_upper_bound formula) ^" );
@@ -402,11 +402,11 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
     }
 
   public:
-    "^String.capitalize monitor_name^"(useconds_t p): RTML_monitor(p,SCHED_FIFO,50), env(std::make_pair (0, 0), &trace, __observation) {}
+    "^String.capitalize_ascii monitor_name^"(useconds_t p): RTML_monitor(p,SCHED_FIFO,50), env(std::make_pair (0, 0), &trace, __observation) {}
 
   };
 
-  #endif //MONITOR_"^String.uppercase monitor_name^"_H" in
+  #endif //MONITOR_"^String.uppercase_ascii monitor_name^"_H" in
     Printf.fprintf stream "%s\n" code;
     close_out stream;
 
@@ -768,8 +768,8 @@ let create_dir dir_name = try let state = Sys.is_directory dir_name in if state 
 
 (* this standalone cpp file instantiates the monitors that have been synthesized *)
   let stream = open_out (cluster_name^"/"^ cluster_name ^".cpp") in
-  let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize monitor_name^".h\"\n" ) "" (get_settings_monitor helper) in
-  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize monitor_name^" mon_"^monitor_name^"("^string_of_int monitor_period^");\n" ) "" (get_settings_monitor helper) in
+  let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize_ascii monitor_name^".h\"\n" ) "" (get_settings_monitor helper) in
+  let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize_ascii monitor_name^" mon_"^monitor_name^"("^string_of_int monitor_period^");\n" ) "" (get_settings_monitor helper) in
   let code = headers ^"#include \"RTML_buffer.h\"
 
 int count_until_iterations;
@@ -796,8 +796,8 @@ let propositions =
   let tbl = get_proposition_hashtbl helper in
   Hashtbl.fold (fun a_string b_int prop_list -> prop_list^ "#define P_"^a_string^" "^(string_of_int b_int)^"\n" ) tbl ""
 in
-let code = "#ifndef _"^String.uppercase cluster_name^"_H_
-#define _"^String.uppercase cluster_name^"_H_
+let code = "#ifndef _"^String.uppercase_ascii cluster_name^"_H_
+#define _"^String.uppercase_ascii cluster_name^"_H_
 
 #include \"RTML_buffer.h\"
 
@@ -807,7 +807,7 @@ extern RTML_buffer<"^ evt_subtype ^", "^string_of_int event_queue_size^"> __buff
 
 "^propositions^"
 
-#endif //_"^String.uppercase cluster_name^"_H_
+#endif //_"^String.uppercase_ascii cluster_name^"_H_
 "
 in
 Printf.fprintf stream "%s\n" code;

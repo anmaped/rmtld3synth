@@ -1,18 +1,17 @@
 opam-version: "1.2"
-maintainer:   "thomas@gazagnaire.org"
-homepage:     "https://github.com/ocaml/ocaml-ci-scripts"
-bug-reports:  "https://github.com/ocaml/ocaml-ci-scripts/issues"
-dev-repo:     "https://github.com/ocaml/ocaml-ci-scripts.git"
+maintainer:   "apedro.1@gmail.com"
+homepage:     "https://github.com/anmaped/rmtld3synth"
+bug-reports:  "https://github.com/anmaped/rmtld3synth/issues"
+dev-repo:     "https://github.com/anmaped/rmtld3synth.git"
 authors: [
-  "Thomas Gazagnaire"
-  "Richard Mortier"
-  "David Sheets"
+  "André Pedro"
 ]
 
 depends: [
   "ocamlbuild" {build}
   "ocamlfind"  {build}
   "batteries"
+  "pa_sexp_conv"
   "sexplib"
   "type_conv"
 ]
