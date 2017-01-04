@@ -18,13 +18,19 @@ type formula = Rmtld3.formula with sexp
 exception Settings_Not_Found of string;;
 
 (* reformulate this rmtld3synth state *)
-type helper = string * string * int ref * ( global_int list * global_string list * monitor list ) * ((int ref * (string, int) t) list)
+type helper = string ref * string ref * int ref * ( global_int list * global_string list * monitor list ) * ((int ref * (string, int) t) list)
 
 let get_event_fulltype (t1,t2,_,_,_) = 
-  t1 ^ "< " ^ t2 ^" >"
+  !t1 ^ "< " ^ !t2 ^" >"
 
 let get_event_type (t1,t2,_,_,_) =
-  t2
+  !t2
+
+let set_event_type type_event (t1,_,_,_,_) =
+  t1 := type_event
+
+let set_event_subtype sub_type_event (_,t2,_,_,_) =
+  t2 := sub_type_event
 
 let get_proposition_hashtbl (_,_,_,_,list) =
   let _, tbl = List.hd list in

@@ -10,6 +10,7 @@
 
 (maximum_inter_arrival_time 1)
 (maximum_period 2000000)
+(event_type Event)
 (event_subtype int)
 (cluster_name monitor_set1)
 

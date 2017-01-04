@@ -43,35 +43,50 @@ let rec lex inp =
              ((Char.escaped c)^toktl)::lex rest;;
 
 
-lex (String.explode "2*((var_1 + x') + 11)");;
-lex (String.explode "if (*p1-- == *p2++) then f() else g()");;
+(* Tests for lexer.
+	lex (String.explode "2*((var_1 + x') + 11)");;
+	lex (String.explode "if (*p1-- == *p2++) then f() else g()");;
+*)
 
+(* Parse a Mathematica FullForm term into the intermediate tree. *)
 
-(* Parse a Mathematica FullForm term into extended rmtld3 term. *)
-
-type m_tm = Int of int
-          | Var of string
-          | Plus of m_tm list
-          | Times of m_tm list
-          | Power of m_tm * int
-          | Rational of int * int
-          | Sin of m_tm
-          | Cos of m_tm
-          | Sinh of m_tm
-          | Cosh of m_tm
-          | Abs of m_tm
-          | Log of m_tm
-          | Tan of m_tm
-          | Sqrt of m_tm
-          | CubeRoot of m_tm
-          | ArcTan of m_tm
-          | ArcSin of m_tm
-          | ArcCos of m_tm
-          | Exp of m_tm
-          | UnaryMinus of m_tm
-          | Function of m_tm list
-          | Slot of int
-          | List of m_tm list with sexp;;
+type m_tm =
+	  Int of int
+    | Var of string
+    | Plus of m_tm list
+    | Times of m_tm list
+    | Power of m_tm * int
+    | Rational of int * int
+    | Sin of m_tm
+    | Cos of m_tm
+    | Sinh of m_tm
+    | Cosh of m_tm
+    | Abs of m_tm
+    | Log of m_tm
+    | Tan of m_tm
+    | Sqrt of m_tm
+    | CubeRoot of m_tm
+    | ArcTan of m_tm
+    | ArcSin of m_tm
+    | ArcCos of m_tm
+    | Exp of m_tm
+    | UnaryMinus of m_tm
+    | Function of m_tm list
+    | Slot of int
+    | List of m_tm list
+    (* boolean terms *)
+    | BooleanConvert of m_tm * string
+    | And of m_tm list
+    | Or of m_tm list
+    | Not of m_tm
+    (* quantifiers *)
+    | Exists of string * m_tm
+    (* less term *)
+    | Less of m_tm list
+    | Equal of m_tm list
+    (* Simplify *)
+    | Simplify of m_tm
+    with sexp;;
 
 
 type m_fm = Tm of m_tm | True | False | Aborted with sexp;;
@@ -102,6 +117,23 @@ and parse_m_tm' l =
 
     | "Times" :: r 		-> let (tm_lst, s) = parse_m_tm_lst r in
                            (Times tm_lst, s)
+
+
+    | "Equal" :: r      -> let (tm_lst, s) = parse_m_tm_lst r in
+    					   (Equal tm_lst, s)
+
+    | "And"   :: r      -> let (tm_lst, s) = parse_m_tm_lst r in
+    					   (And tm_lst, s)
+
+    | "Or"    :: r      -> let (tm_lst, s) = parse_m_tm_lst r in
+    					   (Or tm_lst, s)
+
+    | "Not"   :: r      -> let (tm_lst, s) = parse_m_tm_lst r in
+    					   (Not (hd tm_lst), s)
+
+    | "Less"  :: r      -> let (tm_lst, s) = parse_m_tm_lst r in
+    					   (Less tm_lst, s)
+
 
     | "Function" :: r 	-> let (tm_lst, s) = parse_m_tm_lst r in
                            (Function tm_lst, s)
@@ -202,14 +234,37 @@ let rec m_tm_to_str t =
     | ArcSin x -> "ArcSin[" ^ m_tm_to_str x ^ "]"
     | ArcCos x -> "ArcCos[" ^ m_tm_to_str x ^ "]"
     | Exp x -> "Exp[" ^ m_tm_to_str x ^ "]"
+    (*
+    	Boolean terms
+	*)
+    | BooleanConvert(x, typ) -> "BooleanConvert[" ^ m_tm_to_str x ^ ", " ^ typ ^ "]"
+    | And [x; y] -> "And[" ^ m_tm_to_str x ^ "," ^ m_tm_to_str y ^ "]"
+    | Or [x; y] -> "Or["^ m_tm_to_str x ^ "," ^ m_tm_to_str y ^ "]"
+    | Not x -> "Not[" ^ m_tm_to_str x ^ "]"
+    (* qunatifiers *)
+    | Exists(v,fm) -> "Exists[" ^ v ^ "," ^ m_tm_to_str fm ^ "]"
+    (*
+    	Less term
+    *)
+    | Less [x; y] -> "Less[" ^ m_tm_to_str x ^ "," ^ m_tm_to_str y ^ "]"
+    (* Simplify *)
+    | Simplify x -> "Simplify[" ^ m_tm_to_str x ^ "]"
     (* | RootIntervals x => "RootIntervals[{" ^ m_tm_to_str x ^ "}]" *)
     | _ -> raise (Failure "cannot convert Mathematica tm to string")
 
 (* change it for MACOS *)
 let mk_proc = ref (Unix.open_process "math -noprompt");;
+
 let mk_writeln s =
      output_string (snd (!mk_proc)) (s ^ "\n");
      BatIO.flush (snd (!mk_proc));;
+
+let mk_readln () =
+	let r = String.create 250 in
+	let n = input (fst !mk_proc) r 0 250 in
+	String.sub r 0 n
+
+    
 
 (* A simple handshaking function.  This should be run immediately
    after opening up an MK process.  It just does a simple check to
@@ -222,6 +277,9 @@ let mk_handshake () =
     ((* print ("\n" ^ (mk_opt_str (!mk_active_options)) ^ "\n"); *)
      mk_writeln ("InitTime = TimeUsed[]");
 
+     let x = mk_readln () in
+	 Printf.printf "%s\n" x;
+
      (* mk_writeln ("FullForm[1+1]");
       block_until_read "FullForm= 2\n\nIn[4]:= " *)
 
@@ -232,6 +290,9 @@ let mk_handshake () =
 
      (*** Setup our custom Mathematica REPL so we can use line-based I/O ***)
      mk_writeln ("While[True, NV = Input[\"In>\\n\"]; Print[NV]; If[NV == Quit, Quit[]]]");
+
+     let x = mk_readln () in
+	Printf.printf "%s\n" x;
 
  );;
 
@@ -253,22 +314,23 @@ let mk_close ignore_outcome =
 let minisleep (sec: float) =
     ignore (Unix.select [] [] [] sec);;
 
+
+let mathkernel_cad formula =
 (* Open a Mathematica MathKernel process. *)
 (*let channel_from_mathematica, channel_to_mathematica = Unix.open_process "math -noprompt";;*)
 (*minisleep 10.;;*)
-mk_handshake ();;
+mk_handshake ();
 
 (*let answer_from_mathematica = BatIO.nread (fst !mk_proc) 6 ;;
 Printf.printf "%s\n" answer_from_mathematica;;*)
 
-let r = String.create 250 in
-let n = input (fst !mk_proc) r 0 250 in
-    Printf.printf "%s\n" (String.sub r 0 n) ;
+let x = mk_readln () in
+Printf.printf "%s\n" x;
 
 (*let x = try Char.escaped (BatIO.read (fst !mk_proc)) with BatIO.No_more_input -> "End of string";;*)
 
-mk_writeln "Quit";;
-mk_close ();;
+mk_writeln "Quit";
+mk_close ();
 (*BatInnerIO.output channel_to_mathematica ("ss" ^ "\n");;
 (*Printf.fprintf channel_to_mathematica "Tell me if this is equal ...\n";;*)*)
 
@@ -277,15 +339,100 @@ mk_close ();;
 (*let mk_proc = ref (NONE : ((TextIO.instream, TextIO.outstream) Unix.proc * TextIO.instream * TextIO.outstream) option)*)
 
 
+(* Test code for parsing.
+
+	let x = m_fm_of_str "Plus[Times[Rational[-1, 2], Power[b, 3], c], 
+	 Times[Rational[1, 2], Power[a, 3], Power[c, 2]], 
+	 Times[Rational[3, 2], a, b, Power[c, 2]], 
+	 Times[Rational[1, 2], Power[c, 3]]]" in
+
+	Printf.printf "%s" (Sexp.to_string (sexp_of_m_fm x));;
+*)
+
+open Rmtld3
+
+(*let equality var1 var2() =
+	And([Less([Var(var1); Var(var2)]); Less([Var(var2); Var(var1)])])*)
+
+let rec rmtld_tm_to_m rmtld_term =
+	match rmtld_term with
+    | Constant value      -> Int(int_of_float value)
+    | Variable id         -> Var(id)
+    (*| Duration (trm,sf)   -> rmtld_fm_to_m sf (* todo: replace here! *)*)
+    | FPlus (eta1,eta2)   -> Plus([rmtld_tm_to_m eta1; rmtld_tm_to_m eta2])
+    | FTimes (eta1,eta2)  -> Times([rmtld_tm_to_m eta1; rmtld_tm_to_m eta2])
+    | x -> raise (Failure ("bad expression: " ^ (string_of_rmtld_tm x)))
+
+and rmtld_fm_to_m rmtld_formula =
+	match rmtld_formula with
+    | Prop p                 -> Var("prop"^p) (* TODO: control var replacement *)
+    | Not sf                 -> Not(rmtld_fm_to_m sf)
+    | Or (sf1, sf2)          -> Or([rmtld_fm_to_m sf1; rmtld_fm_to_m sf2])
+    (*| Until (pval, sf1, sf2) -> Less([Var(some_var); Int(1)]) (*rmtld_fm_to_m sf1*) (* todo: replace until operator with some_var = 1 *)*)
+    | Exists (var,sf)        -> Exists(var, rmtld_fm_to_m sf)
+    | LessThan (tr1,tr2)     -> Less([rmtld_tm_to_m tr1; rmtld_tm_to_m tr2])
+    | x -> raise (Failure ("bad expression: " ^ (string_of_rmtld_fm x)))
 
 
-let x = m_fm_of_str "Plus[Times[Rational[-1, 2], Power[b, 3], c], 
- Times[Rational[1, 2], Power[a, 3], Power[c, 2]], 
- Times[Rational[3, 2], a, b, Power[c, 2]], 
- Times[Rational[1, 2], Power[c, 3]]]";;
+let rec m_tm_to_rmtld m_tm =
+	match m_tm with
+	| Equal [x; y] -> Not(Or(LessThan(m_tm_to_rmtld_tm y, m_tm_to_rmtld_tm x), LessThan(m_tm_to_rmtld_tm x, m_tm_to_rmtld_tm y)))
+	| Var x -> (*if var starts with prop then is a proposition *) Prop(x)
+	
+	| And [x; y] -> Not(Or(Not(m_tm_to_rmtld x), Not(m_tm_to_rmtld y)))
+	| Or [x; y] -> Or(m_tm_to_rmtld x, m_tm_to_rmtld y)
+	| Not x -> Not(m_tm_to_rmtld x)
+	| Less [x; y] -> LessThan(m_tm_to_rmtld_tm x, m_tm_to_rmtld_tm y)
 
-let y = sexp_of_m_fm x;;
+	(* TODO THIS ONLY ALLOWS ARITY 2 *)
+	
+	| x -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_tm x))))
 
-let st = Sexp.to_string y;;
+and m_tm_to_rmtld_tm m_tm =
+	match m_tm with
+	| Var x -> Variable(x)
+	| Int x -> Constant(float_of_int x)
+	| x -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_tm x))))
 
-Printf.printf "%s" st;;
+
+let m_fm_to_rmtld m_formula = 
+	match m_formula with
+	| Tm(x) -> m_tm_to_rmtld x
+	| x -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_fm x))))
+
+let m_fm_convert mode m_formula =
+	(* convert the rmtld formula into the intermediate parse tree for mathematica *)
+
+	print_endline ("m_fm_convert "^mode);
+
+	let mt_formula_string = "OutputForm @ FullForm[" ^ m_tm_to_str (BooleanConvert(m_formula, mode)) ^ "]" in
+
+	mk_writeln mt_formula_string;
+
+	let answer = mk_readln () in
+	Printf.printf "BCONV: %s\n" answer;
+
+	(m_fm_of_str answer)
+
+let m_fm_cnf m_formula = m_fm_convert "CNF" m_formula
+
+let m_fm_dnf m_formula = m_fm_convert "DNF" m_formula
+
+let m_fm_simplify m_formula =
+	print_endline "m_fm_simplify";
+
+	let mt_formula_string = "OutputForm @ FullForm[" ^ m_tm_to_str (Simplify(m_formula)) ^ "]" in
+
+	mk_writeln mt_formula_string;
+
+	let answer = mk_readln () in
+	Printf.printf "SIMP: %s\n" answer;
+
+	(m_fm_of_str answer)
+
+
+let close_process_mathematica () =
+	mk_writeln "Quit";
+	mk_close ();
+
+	

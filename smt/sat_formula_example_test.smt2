@@ -115,7 +115,7 @@
 )
 	
 (assert (= (computeUless!1 10 0) TVTRUE) )
-(assert (= (tvlessthan (computeduration 9 0) 2) TVTRUE) )
+(assert (= (tvlessthan 10 (computeduration 9 0)) TVTRUE) )
 
 
 (check-sat-using smt)

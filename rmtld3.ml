@@ -240,115 +240,49 @@ let rec print_trace trace =
         Printf.printf "(%s,(%f,%f)), " x y z ;
         print_trace (tl trace)
 
-(* Print formulas and terms for latex *)
-let rec print_latex_term term =
+(* convert rmtld formulas to latex language *)
+let rec slatex_of_rmtld_tm term =
    match term with
-   | Constant value      -> Printf.fprintf stdout "%f " value
-
-   | Variable id         -> Printf.fprintf stdout "%s " id
-
-   | Duration (trm,sf)   -> Printf.fprintf stdout "\\int^{" ;
-                            print_latex_term trm ;
-                            Printf.printf "} \\left(" ;
-                            print_latex_formula sf ;
-                            Printf.printf "\\right) "
-
-   | FPlus (eta1,eta2)   -> Printf.fprintf stdout "\\left( ";
-                            print_latex_term eta1 ;
-                            Printf.fprintf stdout " + " ;
-                            print_latex_term eta2 ;
-                            Printf.fprintf stdout "\\right)"
-
-   | FTimes (eta1,eta2)  -> Printf.fprintf stdout "\\left( ";
-                            print_latex_term eta1 ;
-                            Printf.fprintf stdout " * " ;
-                            print_latex_term eta2 ;
-                            Printf.fprintf stdout "\\right)"
+   | Constant value      -> (string_of_float value) ^ " "
+   | Variable id         -> id ^ " "
+   | Duration (trm,sf)   -> "\\int^{" ^ (slatex_of_rmtld_tm trm) ^ "} \\left(" ^ (slatex_of_rmtld_fm sf) ^ "\\right) "
+   | FPlus (eta1,eta2)   -> "\\left( " ^ (slatex_of_rmtld_tm eta1) ^ " + " ^ (slatex_of_rmtld_tm eta2) ^ "\\right)"
+   | FTimes (eta1,eta2)  -> "\\left( " ^ (slatex_of_rmtld_tm eta1) ^ " * " ^ (slatex_of_rmtld_tm eta2) ^ "\\right)"
                             
-and print_latex_formula formula =
+and slatex_of_rmtld_fm formula =
    match formula with
-   | Prop p          -> Printf.fprintf stdout "%s " p
+   | Prop p                 -> p ^ " "
+   | Not sf                 -> "\\neg \\left(" ^ (slatex_of_rmtld_fm sf) ^ "\\right) "
+   | Or (sf1, sf2)          -> "\\left(" ^ (slatex_of_rmtld_fm sf1) ^ "\\lor " ^ (slatex_of_rmtld_fm sf2) ^ "\\right)"
+   | Until (pval, sf1, sf2) -> "\\left(" ^ slatex_of_rmtld_fm sf1 ^ "\\ U_{" ^ (string_of_float pval) ^ "} \\ " ^ (slatex_of_rmtld_fm sf2) ^ "\\right)"
+   | Exists (var,sf)        -> "\\exists " ^ var ^ " \\ \\left(" ^ (slatex_of_rmtld_fm sf) ^ "\\right)"
+   | LessThan (tr1,tr2)     -> "\\left(" ^ (slatex_of_rmtld_tm tr1) ^ "< " ^ (slatex_of_rmtld_tm tr2) ^ "\\right)"
 
-   | Not sf                 -> Printf.printf "\\neg \\left(" ;
-                               print_latex_formula sf ; 
-                               Printf.printf "\\right) "
+(* Print formulas and terms for latex *)
+let print_latex_formula f = print_endline (slatex_of_rmtld_fm f)
 
-   | Or (sf1, sf2)          -> Printf.printf "\\left(" ;
-                               print_latex_formula sf1 ;
-                               Printf.printf "\\lor " ;
-                               print_latex_formula sf2 ;
-                               Printf.printf "\\right)"
 
-   | Until (pval, sf1, sf2) -> Printf.printf "\\left(" ;
-                               print_latex_formula sf1 ;
-                               Printf.fprintf stdout "\\ U_{%f} \\ " pval ;
-                               print_latex_formula sf2 ;
-                               Printf.printf "\\right)"
-
-   | Exists (var,sf)        -> Printf.fprintf stdout "\\exists %s \\ \\left(" var ;
-                               print_latex_formula sf ;
-                               Printf.printf "\\right)"
-
-   | LessThan (tr1,tr2)     -> Printf.printf "\\left(" ;
-                               print_latex_term tr1 ;
-                               Printf.printf "< " ;
-                               print_latex_term tr2 ;
-                               Printf.printf "\\right)"
+(* convert rmtld formulas to plain text *)
+let rec string_of_rmtld_tm rmtld_tm = 
+  match rmtld_tm with
+  | Constant value      -> (string_of_float value) ^ " "
+  | Variable id         -> id ^ " "
+  | Duration (trm,sf)   -> "int[" ^ (string_of_rmtld_tm trm) ^ "] (" ^ (string_of_rmtld_fm sf) ^ ") "
+  | FPlus (eta1,eta2)   -> "( " ^ (string_of_rmtld_tm eta1) ^ " + " ^ (string_of_rmtld_tm eta2) ^ ")"
+  | FTimes (eta1,eta2)  -> "( " ^ (string_of_rmtld_tm eta1) ^ " * " ^ (string_of_rmtld_tm eta2) ^ ")"
+   
+and string_of_rmtld_fm rmtld_fm =
+  match rmtld_fm with
+  | Prop p                 -> p
+  | Not sf                 -> "~(" ^ (string_of_rmtld_fm sf) ^ ") "
+  | Or (sf1, sf2)          -> "(" ^ (string_of_rmtld_fm sf1) ^ " or " ^ (string_of_rmtld_fm sf2) ^ ")"
+  | Until (pval, sf1, sf2) -> "(" ^ (string_of_rmtld_fm sf1) ^ " U_" ^ (string_of_float pval) ^ " " ^ (string_of_rmtld_fm sf2) ^ ")"
+  | Exists (var,sf)        -> "exists " ^ var ^ " (" ^ (string_of_rmtld_fm sf) ^ ")"
+  | LessThan (tr1,tr2)     -> "(" ^ (string_of_rmtld_tm tr1) ^ " < " ^ (string_of_rmtld_tm tr2) ^ ")"
 
 (* print formulas and terms in plaintext *)
-let rec print_plaintext_term term =
-   match term with
-   | Constant value      -> Printf.fprintf stdout "%f " value
+let print_plaintext_formula f = print_endline (string_of_rmtld_fm f)
 
-   | Variable id         -> Printf.fprintf stdout "%s " id
-
-   | Duration (trm,sf)   -> Printf.fprintf stdout "int[" ;
-                            print_plaintext_term trm ;
-                            Printf.printf "] (" ;
-                            print_plaintext_formula sf ;
-                            Printf.printf ") "
-
-   | FPlus (eta1,eta2)   -> Printf.fprintf stdout "( ";
-                            print_plaintext_term eta1 ;
-                            Printf.fprintf stdout " + " ;
-                            print_plaintext_term eta2 ;
-                            Printf.fprintf stdout ")"
-
-   | FTimes (eta1,eta2)  -> Printf.fprintf stdout "( ";
-                            print_plaintext_term eta1 ;
-                            Printf.fprintf stdout " * " ;
-                            print_plaintext_term eta2 ;
-                            Printf.fprintf stdout ")"
-                            
-and print_plaintext_formula formula =
-   match formula with
-   | Prop p          -> Printf.fprintf stdout "%s " p
-
-   | Not sf                 -> Printf.printf "~(" ;
-                               print_plaintext_formula sf ; 
-                               Printf.printf ") "
-
-   | Or (sf1, sf2)          -> Printf.printf "(" ;
-                               print_plaintext_formula sf1 ;
-                               Printf.printf " or " ;
-                               print_plaintext_formula sf2 ;
-                               Printf.printf ")"
-
-   | Until (pval, sf1, sf2) -> Printf.printf "(" ;
-                               print_plaintext_formula sf1 ;
-                               Printf.fprintf stdout " U_%f " pval ;
-                               print_plaintext_formula sf2 ;
-                               Printf.printf ")"
-
-   | Exists (var,sf)        -> Printf.fprintf stdout "exists %s (" var ;
-                               print_plaintext_formula sf ;
-                               Printf.printf ")"
-
-   | LessThan (tr1,tr2)     -> Printf.printf "(" ;
-                               print_plaintext_term tr1 ;
-                               Printf.printf " < " ;
-                               print_plaintext_term tr2 ;
-                               Printf.printf ")"
 
 (* Convert a trace into an observation set *)
 let observation duration (trace_backward,trace_forward) p t =

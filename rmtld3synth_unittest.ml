@@ -2,6 +2,7 @@
 open Rmtld3
 
 open Rmtld3synth_helper
+open Rmtld3synth_smt
 
 open Sexplib
 open Sexplib.Conv
@@ -147,11 +148,26 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
         
 		if t_value = expected_value then
 		begin
+			let id = (string_of_int (get_counter_test_cases helper)) in
 	  		Printf.printf "[PASSED]%s \n" (b3_to_string t_value);
+
+
+	  		(* to generate C++ unit tests *)
 	  		rmtld3_unit_test_case_generation trace formula t_value computef helper filename cluster_name n;
 	  		Printf.printf "count_until: %i, stack_deep:%i count_full:%d\n" !count (calculate_heap_cost formula) (calculate_cycle_cost formula trace) ;
-	  		Printf.printf "__unit_test_%s_c%s_%d(): TIME_MES: %d:%d\n" cluster_name (string_of_int (get_counter_test_cases helper)) n (int_of_float (delta_t*.1000000000.)) (List.length trace);
+	  		Printf.printf "__unit_test_%s_c%s_%d(): TIME_MES: %d:%d\n" cluster_name id n (int_of_float (delta_t*.1000000000.)) (List.length trace);
 	  		call_list := !call_list^"__unit_test_"^cluster_name^"_c"^string_of_int (get_counter_test_cases helper)^"_"^string_of_int n^"();";
+
+
+    		(* generate smt benchmark tests *)
+    		(* create directory *)
+
+    		let oc = open_out_gen [Open_creat; Open_text; Open_append] 0o640 ("smt/"^cluster_name^"/"^id^".smt2") in
+    		(*let smtlibv2 = Sexp.to_string (sexp_of_formula formula) in*)
+    		let smtlibv2 = rmtld3synthsmt formula in
+    		output_string oc smtlibv2;
+    		close_out oc;
+
 	  	end
 	  	else raise (TEST_FAIL (b3_to_string t_value)); in
 
@@ -177,7 +193,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 	pass_test True "true " test1_trace ( mtrue ) ;
 	pass_test True "false" test1_trace ( Not(mfalse) ) ;
 	pass_test True "A    " test1_trace ( Prop("A") ) ;
-	pass_test True "~C   " test1_trace ( Not(Prop("C")) ) ;
+	pass_test True "~C   " test1_trace ( Not(Prop("C")) ) ; (* TODO: set propositions; they depend of the input formula of the configuration file *)
 
 	(* duration tests set *)
 	pass_test True "int 5 A < 3.0(0)1  " test1_trace
