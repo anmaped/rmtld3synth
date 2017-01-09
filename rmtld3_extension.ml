@@ -6,12 +6,20 @@ open Rmtld3
 type tm_var = Var of var_id
 
 (*
-	definition of the RMTLD in DNF form
+	definition of the RMTLD in DNF
 *)
 type tm = Var of var_id | C of value | Dur of tm * fm_disj | Plus of tm * tm | Times of tm * tm
-and atoms = Prop of prop | Less of tm * tm | Equal of tm_var * tm | ULess of fm_disj * fm_disj | E of fm_disj 
+and atoms = Prop of prop | Less of tm * tm | Equal of tm_var * tm | ULess of time * fm_disj * fm_disj | E of var_id * fm_disj 
 and fm_conj = And of fm_conj * atoms | Not of atoms
 and fm_disj = Or of fm_conj * fm_disj | Conj of fm_conj
+
+(*
+	intermediate representation for simplifying RMTLD formula in DNF; Ex_tm and Ex_fm constructors
+*)
+type tm_ex = Var of var_id | C of value | Dur of tm_ex * fm_disj_ex | Plus of tm_ex * tm_ex | Times of tm_ex * tm_ex | Ex_tm of var_id
+and atoms_ex = Prop of prop | Less of tm_ex * tm_ex | Equal of tm_var * tm_ex | ULess of fm_disj_ex * fm_disj_ex | E of fm_disj_ex | Ex_fm of prop
+and fm_conj_ex = And of fm_conj_ex * atoms_ex | Not of atoms_ex
+and fm_disj_ex = Or of fm_conj_ex * fm_disj_ex | Conj of fm_conj_ex
 
 (*
 	rigid formula
@@ -41,14 +49,26 @@ and fm_disj_notless = Or of fm_conj_notless * fm_disj_notless | Conj of fm_conj_
 
 
 (*
-	conversion steps
+	map functions
 *)
 
+(* From Rmtld3.formula to fm_disj *)
+let formula_to_fm_disj (fm: formula) : fm_disj =
+	Conj(Not(Prop("a")))  (* URGENT TO TO THAT *)
+
+
 (* From fm_disj to fm_disj_less *)
+let fm_disj_to_fm_disj_less fm =
+	fm
 
 
 (* From fm_disj to fm_disj_notless *)
-let fm_disj_to_fm_disj_notless fm = 
-	fm
+let fm_disj_to_fm_disj_notless (fm: fm_disj) : fm_disj_notless  = 
+	match fm with
+	_ -> Conj(Not(Prop("a"))) 
 
+
+(* From fm_disj to fm_disj_ex *)
+let fm_disj_to_fm_disj_ex (fm: fm_disj) =
+	fm
 
