@@ -1,0 +1,41 @@
+
+(gen_tests true)
+(gen_concurrency_tests false)
+(gen_unit_tests true)
+
+
+(gen_paper_results false)
+(buffer_size 100)
+
+
+(maximum_inter_arrival_time 1)
+(maximum_period 2000000)
+(event_type Event)
+(event_subtype int)
+(cluster_name monitor_set1)
+
+
+(m_usecase1 1000000 (Or
+  (Not
+    (Or
+      (Not
+        (Not
+          (Or (LessThan (Duration (Constant 1000000) (Prop N)) (Constant 0))
+            (LessThan (Constant 0) (Duration (Constant 1000000) (Prop N))))))
+      (Not
+        (Not
+          (Or
+            (Not
+              (Or
+                (LessThan (Constant 0)
+                  (Duration (Constant 1000000) (Prop B)))
+                (Not
+                  (Or
+                    (LessThan (Constant 0)
+                      (Duration (Constant 1000000) (Prop B)))
+                    (LessThan (Constant 1000000)
+                      (Duration (Constant 0) (Prop B)))))))
+            (Not
+              (LessThan (Duration (Constant 1000000) (Prop C))
+                (Constant 5000000))))))))
+  (Or (Prop A) (Not (Or (Prop NOSYMBOL) (Not (Prop NOSYMBOL)))))))
