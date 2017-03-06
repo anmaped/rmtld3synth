@@ -37,6 +37,7 @@ ocamlfind ocamlc -o ci-opam -package unix -linkpkg yorick.cmo ci_opam.ml
 git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
 cd pa_sexp_conv
 opam pin add pa_sexp_conv . -n
+opam install oasis
 opam install pa_sexp_conv
 # UNTIL HERE !
 
