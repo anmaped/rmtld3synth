@@ -1,4 +1,4 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` pa_sexp_conv.cma *)
+(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
 
 (* Interface between rmtld3tool and Mathematica's MathKernel *)
 (* Lexer was adapted from Pierre Weis, projet Cristal, INRIA Rocquencourt *)

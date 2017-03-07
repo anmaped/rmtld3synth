@@ -372,18 +372,6 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 	(* use cases generation test -- TO CHANGE TO CONFIG FILE *)
 
 
-	let m_duration_less cons1 formula cons2 = LessThan(Duration(cons1, formula), cons2) in
-	let m_duration_less2 cons2 cons1 formula = LessThan(cons2, Duration(cons1, formula)) in
-	let m_duration_notequal cons1 formula cons2 = Or((m_duration_less cons1 formula cons2), (m_duration_less2 cons2 cons1 formula)) in
-	let m_duration_equal cons1 formula cons2 = Not(m_duration_notequal cons1 formula cons2) in
-	let m_duration_lessorequal cons1 formula cons2 = Or(m_duration_less cons1 formula cons2, m_duration_equal cons1 formula cons2) in
-
-	
-	let m_duration_notequal2 cons2 cons1 formula = Or((m_duration_less2 cons2 cons1 formula), (m_duration_less2 cons1 cons2 formula)) in
-	let m_duration_equal2 cons2 cons1 formula = Not(m_duration_notequal2 cons2 cons1 formula) in
-	let m_duration_lessorequal2 cons2 cons1 formula = Or(m_duration_less2 cons2 cons1 formula, m_duration_equal2 cons2 cons1 formula) in
-	
-
 	let m_or_fold list_formulas = List.fold_left (fun a b -> Or(b,a)) mfalse list_formulas in
 
 	let pi_1 = 1000000. in
@@ -401,9 +389,9 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 			Prop("A");
 		]) in
 
-	let oc = open_out "formula_out" in
+	(*let oc = open_out "formula_out" in
 	Sexp.output_hum_indent 2 oc (sexp_of_formula usecase1_formula);
-	close_out oc;
+	close_out oc;*)
 
 	let trc = [("B",(0.,1.)); ("A",(1.,2.)); ("A",(2.,3.)); ("A",(3.,4.));
 			("A",(4.,5.)); ("A",(5.,6.)); ("B",(6.,9.)); ("A",(9.,20.));] in

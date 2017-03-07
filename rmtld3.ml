@@ -1,4 +1,4 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` pa_sexp_conv.cma *)
+(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
 
 (* RESTRICTED METRIC TEMPORAL LOGIC WITH DURATIONS EVALUATION MODULE
  *
@@ -541,6 +541,17 @@ let mand phi1 phi2 = Not (Or (Not phi1, Not phi2))
 let mimplies phi1 phi2 = Or (Not (phi1), phi2)
 let meventually t phi = Until (t, mtrue, phi)
 let malways t phi = Not (meventually t (Not phi))
+
+(* shorthand for simple duration inequalities *)
+let m_duration_less cons1 formula cons2 = LessThan(Duration(cons1, formula), cons2)
+let m_duration_less2 cons2 cons1 formula = LessThan(cons2, Duration(cons1, formula))
+let m_duration_notequal cons1 formula cons2 = Or((m_duration_less cons1 formula cons2), (m_duration_less2 cons2 cons1 formula))
+let m_duration_equal cons1 formula cons2 = Not(m_duration_notequal cons1 formula cons2)
+let m_duration_lessorequal cons1 formula cons2 = Or(m_duration_less cons1 formula cons2, m_duration_equal cons1 formula cons2)
+
+let m_duration_notequal2 cons2 cons1 formula = Or((m_duration_less2 cons2 cons1 formula), (m_duration_less2 cons1 cons2 formula))
+let m_duration_equal2 cons2 cons1 formula = Not(m_duration_notequal2 cons2 cons1 formula)
+let m_duration_lessorequal2 cons2 cons1 formula = Or(m_duration_less2 cons2 cons1 formula, m_duration_equal2 cons2 cons1 formula)
 
 
 let _ () =
