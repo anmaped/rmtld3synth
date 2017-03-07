@@ -36,8 +36,10 @@ Next, install the packages typing
 opam install ocamlbuild ocamlfind batteries pa_sexp_conv sexplib type_conv
 ```
 If pa_sexp_conv does not found a valid version we need to compile it manually.
-Get version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `/pa_sexp_conv`. Use opam to install the compiled version and install them.
+Get version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Use opam to install the compiled version and install them.
 ```
+opam install oasis
+
 git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
 cd pa_sexp_conv
 opam pin add pa_sexp_conv . -n
