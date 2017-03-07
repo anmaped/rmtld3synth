@@ -2,21 +2,22 @@
 rmtld3synth toolchain: Synthesis from a fragment of MTL with durations
 ===========================================
 
-RMTLD3 synthesis toolchain allows us to automatically generate monitors based on the formal specification language RMTLD3. RMTLD3 is a three-valued restricted metric temporal logic with durations that is able to reason about explicit time and temporal order.
+RMTLD3 synthesis toolchain allows us to automatically generate monitors and STMLibv2 specifications based on the formal language RMTLD3. RMTLD3 is a three-valued restricted metric temporal logic with durations that is able to reason about explicit time and temporal order of durations.
 
 Polynomial inequalities are supported by this formalism as well as the common operators of temporal logics. Existential quantification over formulas is also supported by the cylindrical algebraic decomposition (CAD) abstraction of such formulas into several conditions without these quantifiers.
 
-Synthesis for Z3 SMT solver is also supported as a manner to discard before execution several constraints involving duration and temporal order of propositions. Schedulability analysis of hard real-time systems can be done by specifying the complete problem in RMTLD3. First using rmtld3synth and then using Z3 to solve it. The ideia is to know if there exists a trace for what the RMTLD3 problem is satisfiable, otherwise if the SMT gives unsat it means that is impossible to schedule such system, which enforces the refinement by drawing a counter-example.
+Synthesis for Z3 SMT solver is another feature. It can be used to discard before execution several constraints involving duration and temporal order of propositions.
+For instance, schedulability analysis of hard real-time systems can be done by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMTLibv2 and then using Z3 to solve it. The ideia is to know if there exists a trace for what the RMTLD3 problem is satisfiable, otherwise if the SMT gives unsat it means that is impossible to schedule such system, which enforces the refinement by drawing a counter-example.
 
 # Contents
 
 - Usage options:
   - [Tarball binaries for Windows](#tarball-binaries-for-windows)
-  - [Building from Git](#building-with-make)
+  - [Building from Git](#building-from-git)
 - [Documentation](#documentation)
 - [License](#license)
 
-### Tarball binaries for Windows
+### Tarball binaries version 0.2-alpha for Windows
 
 Let us begin by an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as basis the use case [one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing [`./rmtld3synth.exe -n usecaseone`](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true) in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
 
@@ -25,18 +26,67 @@ Note that the `rmtld3synth` can execute without any argument only guided by the 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
 
-#### Compiling the rmtld3synth tool
-Use `make` to call the compilation process that will use the `OCamlMakefile` developed by Markus Mottl. More references about ocaml installation steps can be found [here](https://ocaml.org/docs/install.html). The compilation shall complete without warnings.
+#### To compile rmtld3synth for Linux and Mac OS using Opam and Ocaml 4.03
+Just use the following commands. The dependencies will be installed automatically.
+```
+git clone https://github.com/anmaped/rmtld3synth.git rmtld3synth
+cd rmtld3synth/
+git submodule update --init --recursive
+opam pin add rmtld3synth . -n
+opam install rmtld3synth
+```
 
-Note that we recomend ocaml 4.01 including camlp4 4.01, type_conv 111.13.00, sexplib 111.13.00, and batteries.2.5.2. ´opam´ file is provided in the root directory for the automatic pre-configuration and preparation of the ocaml environment.
+#### To compile windows version using ocaml 4.03
+```
+opam switch 4.03
+eval `opam config env`
+export PATH=/flexdll-bin-0.35:$PATH
+```
+Use this [link](http://alain.frisch.fr/flexdll/flexdll-bin-0.35.zip) to download the new flexdll.
+Decompress the archive in the root directory with folder name `flexdll-bin-0.35`.
+Next, install the packages typing
+```
+opam install ocamlbuild ocamlfind batteries pa_sexp_conv sexplib type_conv
+```
+If pa_sexp_conv does not found a valid version we need to compile it manually.
+Get version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Use opam to install the compiled version and install them.
+```
+opam install oasis
 
-#### Compiling the auxiliary library rtmlib
-This support library will be used by the synthesized monitors. For the case of the synthesis using Z3 this step can be skipped.
+git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
+cd pa_sexp_conv
+opam pin add pa_sexp_conv . -n
+opam install pa_sexp_conv
+```
+
+Compile the rmtld3synth manually using the make command or pin the package and install them.
+
+
+#### To compile RTMLIB
+rtmlib is a support library for monitors synthesis. We can skip this step if we only need the synthesis of RMTLD3 in SMT-Libv2.
 Use `make` to perform the compilation of the library. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterwards(only for gcc 4.7.0 version).
 
-More details are available in the rtmlib repository.
+More details are available in the [rtmlib repository](https://github.com/anmaped/rtmlib/tree/ea11f011861e0a27253f531df043ca8ef41944e3).
 
 ### Documentation
+
+
+#### Overview of the command line arguments of the rmtld3synth
+
+The available options at the present time are as follows:
+
+Arg                   | Description
+----------------------|-----------------------------------------------------
+--formula             | Formula in RMTLD to be synthesized
+--simplify            | Simplify quantified RMTLD formulas using CAD
+ --configuration-file | File containing synthesis settings
+--smt-lib-v2          | Enables Satisfability problem encoding in SMT-LIBv2
+--smt-out             | Set the output file for SMT problem formulation
+--verbose             | Enables verbose mode
+--help                | Display this list of options
+
+
+Imagine that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth -sat <this-formula>` to generate the Z3 input files that will be stored in the sub-folder `smt`. Directly feed the Z3 to get a result since we do not have implemented yet a direct call from our tool.
 
 #### Overview of the configuration file
 
@@ -67,18 +117,7 @@ See [the overall parameters](rmtld3_parameters.md) for more details.
 
 `cluster_name` identifies the set of monitors. It acts as a label for grouping monitor specifications.
 
-#### Overview of the command line arguments of the rmtld3synth
 
-The available options at the present time are as follows:
-
-Arg | Description
-------|------
--f | Formula(s) to be synthesized
--n | File containing synthesis settings
--sat | Formula for satisfiability check
--v | Enables verbose mode
-
-Imagine that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth -sat <this-formula>` to generate the Z3 input files that will be stored in the sub-folder `smt`. Directly feed the Z3 to get a result since we do not have implemented yet a direct call from our tool.
 
 #### Write formulas in RMTLD3
 
