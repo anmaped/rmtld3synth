@@ -19,9 +19,17 @@ For instance, schedulability analysis of hard real-time systems can be done by s
 
 ### Tarball binaries version 0.2-alpha for Windows
 
-Let us begin by an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as basis the use case [one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing [`./rmtld3synth.exe -n usecaseone`](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true) in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
+New version [0.3-alpha](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
+Old version [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
 
-Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. In this case, the `monitor_set1` folder containing the source files of the monitor of the use case one is created. Now, the monitor is ready to be compiled with gcc or other "compatible" C/C++ compiler and then deployed in the target system. At the present moment only C++ synthesis is supported but we want to include Ada in the future.
+Let us begin by an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as basis the [use case one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing the following command in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
+```
+./rmtld3synth.exe -n usecaseone
+```
+
+After executing this step, the `monitor_set1` folder contains the generated source files of the monitor for the `usecaseone` file.
+Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. 
+We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. At the present moment only C++ synthesis is supported but we want to include Ada in the future.
 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
