@@ -20,7 +20,8 @@ type time   = float with sexp
 type value  = float with sexp
 
 type formula =
-          Prop of prop
+          True of unit
+        | Prop of prop
         | Not of formula
         | Or of formula * formula
         | Until of time * formula * formula
@@ -535,12 +536,23 @@ and compute_uless m gamma phi1 phi2 =
 
 
 (* RMTLD3 abreviations *)
-let mtrue = Or(Prop "NOSYMBOL", Not(Prop "NOSYMBOL"))
+let mtrue : formula = True() (*Or(Prop "NOSYMBOL", Not(Prop "NOSYMBOL"))*)
 let mfalse = Not(mtrue)
 let mand phi1 phi2 = Not (Or (Not phi1, Not phi2))
 let mimplies phi1 phi2 = Or (Not (phi1), phi2)
 let meventually t phi = Until (t, mtrue, phi)
 let malways t phi = Not (meventually t (Not phi))
+let forall var phi = Not(Exists(var, Not(phi)))
+
+let greater tm1 tm2 = LessThan(tm2, tm1)
+let not_equal tm1 tm2 = Or(LessThan(tm1, tm2), LessThan(tm2,tm1))
+let equal tm1 tm2 = Not(not_equal tm1 tm2)
+let less_or_equal tm1 tm2 = Or(LessThan(tm1, tm2), equal tm1 tm2)
+let greater_or_equal tm1 tm2 = Or(greater tm1 tm2, equal tm1 tm2)
+
+
+
+(* CONTINUE HERE !!! *)
 
 (* shorthand for simple duration inequalities *)
 let m_duration_less cons1 formula cons2 = LessThan(Duration(cons1, formula), cons2)

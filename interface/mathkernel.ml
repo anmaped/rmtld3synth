@@ -25,8 +25,7 @@ let space = matches " \t\n\r"
 and punctuation = matches "()[]{},"
 and symbolic = matches "~`!@#$%^&*-+=|\\:;<>.?/"
 and numeric = matches "0123456789"
-and alphanumeric = matches
-  "abcdefghijklmnopqrstuvwxyz_'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";;
+and alphanumeric = matches "abcdefghijklmnopqrstuvwxyz_'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";;
 
 let rec lexwhile prop inp =
   match inp with

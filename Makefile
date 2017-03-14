@@ -5,6 +5,7 @@ SOURCES := \
   rmtld3synth_smt.ml \
   rmtld3synth_unittest.ml \
   interface/mathkernel.ml \
+  interface/texeqparser.ml \
   rmtld3_extension.ml \
   rmtld3synth_simplify.ml \
   rmtld3synth.ml \
