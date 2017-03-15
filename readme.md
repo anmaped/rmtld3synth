@@ -57,7 +57,7 @@ Next, install the packages typing
 opam install ocamlbuild ocamlfind batteries pa_sexp_conv sexplib type_conv
 ```
 If pa_sexp_conv does not found a valid version we need to compile it manually.
-Get version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Use opam to install the compiled version and install them.
+Get version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Use opam to compile this version and install them.
 ```
 opam install oasis
 
@@ -67,12 +67,12 @@ opam pin add pa_sexp_conv . -n
 opam install pa_sexp_conv
 ```
 
-Compile the rmtld3synth manually using the make command or pin the package and install them.
+Compilation of the rmtld3synth may be done manually using the make command.
 
 
 #### To compile RTMLIB
 rtmlib is a support library for monitors synthesis. We can skip this step if we only need the synthesis of RMTLD3 in SMT-Libv2.
-Use `make` to perform the compilation of the library. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterwards(only for gcc 4.7.0 version).
+Use `make` to perform the compilation of the library. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterwards (only for gcc 4.7.0 version).
 
 More details are available in the [rtmlib repository](https://github.com/anmaped/rtmlib/tree/ea11f011861e0a27253f531df043ca8ef41944e3).
 
@@ -85,22 +85,23 @@ The available options at the present time are as follows:
 
 Arg                   | Description
 ----------------------|-----------------------------------------------------
---formula             | Formula in RMTLD to be synthesized
+--formula-sexp        | SExpression formula as synthesis' input
+--fomrula-latexeq     | Latex Eq formula as input model
 --simplify            | Simplify quantified RMTLD formulas using CAD
- --configuration-file | File containing synthesis settings
+--configuration-file  | File containing synthesis settings
 --smt-lib-v2          | Enables Satisfability problem encoding in SMT-LIBv2
 --smt-out             | Set the output file for SMT problem formulation
 --verbose             | Enables verbose mode
 --help                | Display this list of options
 
 
-Imagine that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth -sat <this-formula>` to generate the Z3 input files that will be stored in the sub-folder `smt`. Directly feed the Z3 to get a result since we do not have implemented yet a direct call from our tool.
+Imagine that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --smt-lib-v2 --formula-sexp <this-formula> --smt-out <output-file-name>` to generate the Z3 input files. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool for Z3 is not yet implemented.
 
 #### Overview of the configuration file
 
 Settings for RMTLD3 synthesis tool are defined using the syntax `(<setting_id> <bool_type | integer_type | string_type>)`, where '|' indicates the different types of arguments such as Boolean, integer or string, and `setting_id` the setting identifier of the type string.
 
-See [the overall parameters](rmtld3_parameters.md) for more details.
+See [the overall parameters](doc/configparameters.md) for more details.
 
 ~~~~~~~~~~~~~~~~~~~~~{.lisp}
 (gen_tests true)

@@ -310,12 +310,14 @@ and calculate_t_upper_bound_term term =
 let verbose = ref false
 let config_mon_filename = ref ""
 let rmtld_formula = ref ""
+let rmtld_formula_ltxeq = ref ""
 let smtlibv2_formula = ref false
 let simplify_formula = ref false
 let smt_out_dir = ref ""
 
 let set_config_file file = config_mon_filename := file
 let set_formulas f = rmtld_formula := f
+let set_formulas_ltxeq f = rmtld_formula_ltxeq := f
 let set_smt_formula f = smtlibv2_formula := true
 let set_simplify_formula f = simplify_formula := true
 let set_smt_out_dir f = smt_out_dir := f
@@ -885,7 +887,8 @@ let _ =
 
   let speclist = [
     (* Encoding RMTLD in SMT-LIBv2 *)
-    ("--formula", Arg.String (set_formulas), "Formula in RMTLD to be synthesized");
+    ("--formula-sexp", Arg.String (set_formulas), "SExpression formula as synthesis' input");
+    ("--formula-latexeq", Arg.String (set_formulas_ltxeq), "Latex Eq formula as input model");
     ("--simplify", Arg.Unit (set_simplify_formula), "Simplify quantified RMTLD formulas using CAD");
     ("--smt-lib-v2", Arg.Unit (set_smt_formula), "Enables Satisfability problem encoding in SMT-LIBv2");
     ("--smt-out", Arg.String (set_smt_out_dir), "Set the output file for SMT problem formulation");
@@ -903,7 +906,14 @@ let _ =
   (* for sat case *)
   if !smtlibv2_formula <> false then
     begin
-      sat_gen (formula_of_sexp (Sexp.of_string !rmtld_formula));
+      (* rmtld_formula is undefined ? try rmtld_formula_ltxeq *)
+      if !rmtld_formula_ltxeq = "" then
+        sat_gen (formula_of_sexp (Sexp.of_string !rmtld_formula))
+      else
+        begin
+          print_endline "Latex Eq parsing enabled.";
+          Texeqparser.texeqparser !rmtld_formula_ltxeq;
+        end
     end
 
   else if !config_mon_filename <> "" then
