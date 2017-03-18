@@ -41,6 +41,8 @@ type op = Leq of unit | Geq of unit | Eq of unit | Less of unit | Greater of uni
 type intermediate_ltx_pm =
       PEmpty of unit
     | POp of op * intermediate_ltx_pm
+    | PList of intermediate_ltx_pm list
+    | Pvar of string
 and intermediate_ltx_tm = 
 	  TTimes of intermediate_ltx_tm list
 	| TPlus of intermediate_ltx_tm list
@@ -48,7 +50,8 @@ and intermediate_ltx_tm =
 	| TFrac of intermediate_ltx_tm * intermediate_ltx_tm
 	| TInt of intermediate_ltx_tm * intermediate_ltx_tm
 	| TVal of int
-	| TVar of string
+	| TVar of string * intermediate_ltx_pm
+    | TFun of string * intermediate_ltx_pm * intermediate_ltx_tm list
 	| TEmpty of unit
 and intermediate_ltx_fm =
 	  FIneq of  (intermediate_ltx_fm * op) list
@@ -69,7 +72,9 @@ let rec parse_latexeq_pm (l: string list) (feed: intermediate_ltx_pm) : intermed
     | "<"  :: r   -> let pm,rlst = parse_latexeq_pm r (PEmpty()) in (POp(Less(), pm),rlst)
     | "leq" :: r  -> let pm,rlst = parse_latexeq_pm r (PEmpty()) in (POp(Leq(), pm),rlst)
     | "="  :: r   -> let pm,rlst = parse_latexeq_pm r (PEmpty()) in (POp(Eq(), pm),rlst)
-    | x :: r      -> parse_latexeq_pm r feed (* get back here... *)
+    | x :: r      -> match feed with
+                       PList(a) -> parse_latexeq_pm r (PList(a@[Pvar(x)])) (* get back here... *)
+                     | _ -> parse_latexeq_pm r (PList([feed; Pvar(x)]))
     | _ -> raise (Failure ("bad expression parse_latexeq_pm"))
 
 let rec parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm) : intermediate_ltx_tm * string list =
@@ -100,16 +105,21 @@ let rec parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm) : interme
     | x :: r               -> try let i = int_of_string x in  (* check feed; something has been removed!!! *)
     						  (*parse_latexeq_tm' r (TVal(i))*)
                                 match feed with
-                                      TVar(a) -> parse_latexeq_tm' r (TVar(a^"_"^(string_of_int i)))
+                                      TVar(a,pm) -> parse_latexeq_tm' r (TVar(a^"_"^(string_of_int i), pm))
                                     | TEmpty() -> parse_latexeq_tm' r (TVal(i))
                                     | _ -> raise (Failure ("bad term var: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_tm feed))))
 
     						  with | Failure int_of_string ->
                                 if List.for_all alphanumeric (String.explode x) then
                                     match feed with
-                                      TVar(a) -> raise (Failure ("bad term var: two consecutive vars :"^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_tm (TVar(x))))))
+                                      TVar(a,pm)      -> raise (Failure ("bad term var: two consecutive vars :"^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_tm (TVar(x,PEmpty()))))))
                                     (*| TVal(a) -> parse_latexeq_tm' r (TVar((string_of_int a)^x)) *)
-                                    | TEmpty() -> parse_latexeq_tm' r (TVar(x))
+                                    | TEmpty()     -> (* check if it is a function *)
+                                      if r <> [] && (List.hd r) = "_" && (List.hd (List.tl r)) = "{" then
+                                        let pm,rlst = parse_latexeq_pm r (PEmpty()) in
+                                        if rlst <> [] && (List.hd rlst) = "(" then parse_latexeq_tm' rlst (TFun(x,pm,[])) else raise (Failure ("bad term function: ill-formed"))
+                                      else parse_latexeq_tm' r (TVar(x,PEmpty()))
+                                    | TFun(nm,pm,lst)  -> parse_latexeq_tm' r (TFun(nm,pm,lst@[TVar(x,PEmpty())]))  (* lack of parameterized variable *)
                                     | _ -> raise (Failure ("bad term var: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_tm feed))))
                                 else
                                     raise (Failure ("bad expression: " ^ x))
@@ -235,7 +245,10 @@ let rec lifting_ltx' l feed : intermediate_ltx_fm * string list =
 
 let lifting_ltx l feed : intermediate_ltx_fm = let x,y = lifting_ltx' l feed in if y = [] then x else raise (Failure ("bad expression; check parenthesis"))
 
-
+(*
+    Translation to RMTLD3
+*)
+let rmtld3_fm_of_intermediate_ltx_fm () = ()
 
 (* parsing latex sample
 (\int^{\pi_1} \psi_1=0\land 0\leq \int^{\pi_2} \psi_2<\theta )&\lor \ \ %\\
@@ -269,6 +282,8 @@ let texeqparser str =
         print_endline ("Latexeq input: "^str^"\n");
         print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (lifting_ltx (lex (String.explode str)) emptystr)));
 
+        (* lets convert the intermediate representation into rmtld3 expressions *)
+        rmtld3_fm_of_intermediate_ltx_fm ();
 
         if texeq_unit_tests_enabled then
         begin

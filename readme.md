@@ -85,17 +85,25 @@ The available options at the present time are as follows:
 
 Arg                   | Description
 ----------------------|-----------------------------------------------------
---formula-sexp        | SExpression formula as synthesis' input
---fomrula-latexeq     | Latex Eq formula as input model
---simplify            | Simplify quantified RMTLD formulas using CAD
---configuration-file  | File containing synthesis settings
---smt-lib-v2          | Enables Satisfability problem encoding in SMT-LIBv2
---smt-out             | Set the output file for SMT problem formulation
---verbose             | Enables verbose mode
---help                | Display this list of options
+ Flags:|
+  --simplify        |Simplify quantified RMTLD formulas using CAD
+  --smt-lib-v2      |Enables Satisfability problem encoding in SMT-LIBv2 language
+ Input:|
+  --input-sexp      |Inputs sexp expression (RMTLD3 formula)
+  --input-latexeq   |Inputs latex equation expressions (RMTLD3 formula)
+  --input-rmdsl     |Inputs rmdsl expressions for schedulability analysis
+  --config-file     |File containing synthesis settings
+ Output:|
+  --out-smt-file    |Set the output filename and directory for SMTLIBv2 file
+  --out-mon-folder  |Set the output folder for monitor synthesis
+ Options:|
+  --verbose         |Enables verbose mode
+  --version         |Version and SW information
+  --help            |Display this list of options
 
 
-Imagine that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --smt-lib-v2 --formula-sexp <this-formula> --smt-out <output-file-name>` to generate the Z3 input files. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool for Z3 is not yet implemented.
+
+Imagine that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --smt-lib-v2 --input-sexp <this-formula> --out-smt-file <output-file-name>` to generate the Z3 input files. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool to Z3 is not yet implemented.
 
 #### Overview of the configuration file
 

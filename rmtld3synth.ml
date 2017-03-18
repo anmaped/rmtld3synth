@@ -311,16 +311,20 @@ let verbose = ref false
 let config_mon_filename = ref ""
 let rmtld_formula = ref ""
 let rmtld_formula_ltxeq = ref ""
+let expression_rmdsl = ref ""
 let smtlibv2_formula = ref false
 let simplify_formula = ref false
 let smt_out_dir = ref ""
+let version_on = ref false
 
 let set_config_file file = config_mon_filename := file
 let set_formulas f = rmtld_formula := f
 let set_formulas_ltxeq f = rmtld_formula_ltxeq := f
+let set_exp_rmdsl f = expression_rmdsl := f
 let set_smt_formula f = smtlibv2_formula := true
 let set_simplify_formula f = simplify_formula := true
 let set_smt_out_dir f = smt_out_dir := f
+let set_version f = version_on := true
 
 open Unix
 open Sexplib
@@ -883,23 +887,32 @@ begin
 end
 
 
+open Version
+
 let _ =
 
   let speclist = [
-    (* Encoding RMTLD in SMT-LIBv2 *)
-    ("--formula-sexp", Arg.String (set_formulas), "SExpression formula as synthesis' input");
-    ("--formula-latexeq", Arg.String (set_formulas_ltxeq), "Latex Eq formula as input model");
-    ("--simplify", Arg.Unit (set_simplify_formula), "Simplify quantified RMTLD formulas using CAD");
-    ("--smt-lib-v2", Arg.Unit (set_smt_formula), "Enables Satisfability problem encoding in SMT-LIBv2");
-    ("--smt-out", Arg.String (set_smt_out_dir), "Set the output file for SMT problem formulation");
-
-    (* this is used only for monitoring synthesis and for automatic generation of some SMT-LIBv2 bechmark problems *)
-    ("--configuration-file", Arg.String (set_config_file), "File containing synthesis settings");
+    (* action flags *)
+    ("--simplify", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD");
+    ("--smt-lib-v2", Arg.Unit (set_smt_formula), " Enables Satisfability problem encoding in SMT-LIBv2 language\n\n Input:");
     
-    ("--verbose", Arg.Set verbose, "Enables verbose mode");
+
+    (* input models *)
+    ("--input-sexp", Arg.String (set_formulas), " Inputs sexp expression (RMTLD3 formula)");
+    ("--input-latexeq", Arg.String (set_formulas_ltxeq), " Inputs latex equation expressions (RMTLD3 formula)");
+    ("--input-rmdsl", Arg.String (set_exp_rmdsl), " Inputs rmdsl expressions for schedulability analysis");
+    (* this is used only for monitoring synthesis and for automatic generation of some SMT-LIBv2 bechmark problems *)
+    ("--config-file", Arg.String (set_config_file), " File containing synthesis settings\n\n Output:");
+
+    (*output models *)
+    ("--out-smt-file", Arg.String (set_smt_out_dir), " Set the output filename and directory for SMTLIBv2 file");
+    ("--out-mon-folder", Arg.Unit(fun () -> ()), " Set the output folder for monitor synthesis\n\n Options:");
+    
+    ("--verbose", Arg.Set verbose, " Enables verbose mode");
+    ("--version", Arg.Unit (fun () -> print_endline ("Git version "^(Version.git)); exit 0), " Version and SW information\n");
   ]
-  in let usage_msg = "rmtld3synth [options]"
-  in Arg.parse speclist print_endline usage_msg;
+  in let usage_msg = "rmtld3synth flags [options] input [output]\n\n Flags: "
+  in Arg.parse (Arg.align speclist) print_endline usage_msg;
 
   
 
