@@ -315,7 +315,6 @@ let expression_rmdsl = ref ""
 let smtlibv2_formula = ref false
 let simplify_formula = ref false
 let smt_out_dir = ref ""
-let version_on = ref false
 
 let set_config_file file = config_mon_filename := file
 let set_formulas f = rmtld_formula := f
@@ -324,7 +323,6 @@ let set_exp_rmdsl f = expression_rmdsl := f
 let set_smt_formula f = smtlibv2_formula := true
 let set_simplify_formula f = simplify_formula := true
 let set_smt_out_dir f = smt_out_dir := f
-let set_version f = version_on := true
 
 open Unix
 open Sexplib
@@ -888,6 +886,7 @@ end
 
 
 open Version
+open Rmdslparser
 
 let _ =
 
@@ -920,13 +919,16 @@ let _ =
   if !smtlibv2_formula <> false then
     begin
       (* rmtld_formula is undefined ? try rmtld_formula_ltxeq *)
-      if !rmtld_formula_ltxeq = "" then
+      if !rmtld_formula <> "" then
         sat_gen (formula_of_sexp (Sexp.of_string !rmtld_formula))
-      else
+      else if !rmtld_formula_ltxeq <> "" then
         begin
           print_endline "Latex Eq parsing enabled.";
           Texeqparser.texeqparser !rmtld_formula_ltxeq;
         end
+      else
+          print_endline "Rmdsl parsing enabled.";
+          Rmdslparser.rmdslparser !expression_rmdsl
     end
 
   else if !config_mon_filename <> "" then

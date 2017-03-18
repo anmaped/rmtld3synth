@@ -1,37 +1,93 @@
+(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
+
 
 open List
 open Batteries
+
+open Sexplib
+open Sexplib.Conv
 
 open Texeqparser
 
 (* parser for rmdsl *)
 (* operators for tasks: \succ, \bowtie; and for RM: \parallel, \gg *)
 
+type parameter = PInt of int | PFreevar of string with sexp
+
 type rmdsl_tk =
-| Tsk of int * int
+  TkEmp of unit
+| Tsk of string * parameter list
 | Pri of rmdsl_tk * rmdsl_tk
 | Arb of rmdsl_tk * rmdsl_tk
-and rmdsl_rs =
+with sexp
+
+type rmdsl_rs =
   Emp of unit
-| Res of rmdsl_tk * int * int
+| Res of string * rmdsl_tk * parameter list
 | Par of rmdsl_rs * rmdsl_rs
 | Seq of rmdsl_rs * rmdsl_rs
+with sexp
 
 
 (* direct parsing *)
-let rec rmdsl_rs_parser l feed =
-	let rmdsl_rs_parser_vars l feed =
+let rmdsl_rs_parser_string l = (List.hd (List.tl l), List.tl (List.tl (List.tl l)) )
+
+let rec rmdsl_rs_parser_param l (feed: parameter list) : parameter list * tokens = match l with
+									  "{" :: r -> rmdsl_rs_parser_param r []
+									| "}" :: r -> (feed,r)
+									| "," :: r -> rmdsl_rs_parser_param r feed
+									| a :: r   -> rmdsl_rs_parser_param r (feed@[try PInt(int_of_string a) with _ -> if List.for_all alphanumeric (String.explode a) then PFreevar(a) else raise (Failure ("bad parameter int "^( Sexp.to_string_hum (sexp_of_tokens l))))]) (* convert string to int *)
+									| []       -> raise (Failure ("bad parameter"))
+
+let rec rmdsl_rs_parser_tk l (feed: rmdsl_tk) : rmdsl_tk * tokens =
 	match l with
-	  "parallel" :: r -> Par(feed, rmdsl_rs_parser r (Emp()))
-	| "gg" :: r       -> Seq(feed, rmdsl_rs_parser r (Emp()))
-	| _               -> raise (Failure ("bad expression rs var: "))
+	| "{" :: r -> rmdsl_rs_parser_tk r feed
+	| "}" :: r -> (feed,r)
+
+	| "\\\\" :: ("tk" :: r)     -> let name, rlst = rmdsl_rs_parser_string r in
+								   let param,rlst = rmdsl_rs_parser_param rlst []
+								   in rmdsl_rs_parser_tk rlst (Tsk(name,param))
+
+	| "\\\\" :: ("succ" :: r)   -> let tk,rlst = rmdsl_rs_parser_tk r (TkEmp()) in (Pri(feed, tk),rlst)
+
+	| "\\\\" :: ("bowtie" :: r) -> let tk,rlst = rmdsl_rs_parser_tk r (TkEmp()) in (Arb(feed, tk),rlst)
+
+	| _ -> raise (Failure ("bad expression rs tk: "^ ( Sexp.to_string_hum (sexp_of_tokens l))))
+
+let rec rmdsl_rs_parser (l: tokens) (feed: rmdsl_rs) : rmdsl_rs * tokens =
+	let rmdsl_rs_parser_vars l (feed: rmdsl_rs) : rmdsl_rs * tokens =
+	match l with
+	  "parallel" :: r -> let rs,rlst = rmdsl_rs_parser r (Emp()) in (Par(feed, rs), rlst)
+	| "gg" :: r       -> let rs,rlst = rmdsl_rs_parser r (Emp()) in (Seq(feed, rs), rlst)
+	| "rm" :: r       -> let name, rlst = rmdsl_rs_parser_string r in
+						 let exp_tk,rlst = rmdsl_rs_parser_tk rlst (TkEmp()) in
+						 let param,rlst = rmdsl_rs_parser_param rlst []
+						 in
+						 rmdsl_rs_parser rlst (Res(name, exp_tk, param))
+	
+	| _               -> raise (Failure ("bad expression rs var: "^ ( Sexp.to_string_hum (sexp_of_tokens l))))
 	in
 
 	match l with
-	| "\\" :: r -> rmdsl_rs_parser_vars r feed
-	| _         -> raise (Failure ("bad expression rs: "))
+	  []           -> (feed,[])
+	| "\\\\" :: r  -> rmdsl_rs_parser_vars r feed
+	| "(" :: r     -> rmdsl_rs_parser r (Emp()) (* feed is discarded *)
+	| ")" :: r     -> (feed,r)
+	| "{" :: r     -> rmdsl_rs_parser r (Emp())
+	| "}" :: r     -> (feed, r)
+
+	(* symbols to discard *)
+	| "\\\\\\\\" :: r -> rmdsl_rs_parser r feed
+	| "$" :: r     -> rmdsl_rs_parser r feed
+	| "." :: r     -> rmdsl_rs_parser r feed
+	| "&" :: r     -> rmdsl_rs_parser r feed
+
+	| _            -> raise (Failure ("bad expression rs: "^ ( Sexp.to_string_hum (sexp_of_tokens l))))
 
 
 
 let rmdslparser str =
-	rmdsl_rs_parser (Texeqparser.lex (String.explode str)) (Emp())
+	let rs,_ = rmdsl_rs_parser (Texeqparser.lex (String.explode str)) (Emp()) in
+	print_endline ("Rmdsl input: "^str^"\n");
+    print_endline (Sexp.to_string_hum (sexp_of_rmdsl_rs rs));
+	()
