@@ -103,7 +103,7 @@ Arg                   | Description
 
 
 
-Imagine that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --smt-lib-v2 --input-sexp <this-formula> --out-smt-file <output-file-name>` to generate the Z3 input files. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool to Z3 is not yet implemented.
+Consider that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --smt-lib-v2 --input-sexp <this-formula> --out-smt-file <output-file-name>` to generate the Z3 input files. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool to Z3 is not yet implemented.
 
 #### Overview of the configuration file
 

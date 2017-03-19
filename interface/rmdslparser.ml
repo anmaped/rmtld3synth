@@ -32,12 +32,30 @@ with sexp
 (* direct parsing *)
 let rmdsl_rs_parser_string l = (List.hd (List.tl l), List.tl (List.tl (List.tl l)) )
 
-let rec rmdsl_rs_parser_param l (feed: parameter list) : parameter list * tokens = match l with
-									  "{" :: r -> rmdsl_rs_parser_param r []
-									| "}" :: r -> (feed,r)
-									| "," :: r -> rmdsl_rs_parser_param r feed
-									| a :: r   -> rmdsl_rs_parser_param r (feed@[try PInt(int_of_string a) with _ -> if List.for_all alphanumeric (String.explode a) then PFreevar(a) else raise (Failure ("bad parameter int "^( Sexp.to_string_hum (sexp_of_tokens l))))]) (* convert string to int *)
-									| []       -> raise (Failure ("bad parameter"))
+let chk_alphanum a = List.for_all alphanumeric (String.explode a)
+
+let rec rmdsl_rs_parser_param l (feed: parameter list) : parameter list * tokens =
+	let rec pre_match pm =
+		match pm with
+		  [] -> ""
+		| PFreevar(a) :: r when r <> [] -> a^"."^pre_match r
+		| PFreevar(a) :: _ -> a
+		| PInt(a) :: r when r <> [] -> (string_of_int a)^"."^(pre_match r)
+		| PInt(a) :: _ -> string_of_int a
+	in 
+	match l with
+	  "{" :: r -> rmdsl_rs_parser_param r []
+	| "}" :: r -> (feed,r)
+	| "," :: r -> rmdsl_rs_parser_param r feed
+	| "\\\\" :: r -> rmdsl_rs_parser_param r feed
+	| a :: ("_" :: ("{" :: r)) when chk_alphanum a
+	           -> let pm,rlst = rmdsl_rs_parser_param ("{"::r) [] in rmdsl_rs_parser_param rlst (feed@[PFreevar(a^"_"^(pre_match pm))])
+	| a :: ("_" :: (b :: r))   when chk_alphanum a && chk_alphanum b
+	           -> rmdsl_rs_parser_param r (feed@[PFreevar(a^"_"^b)])
+	| a :: r when chk_alphanum a
+	           -> (try rmdsl_rs_parser_param r (feed@[PInt(int_of_string a)]) with _ -> rmdsl_rs_parser_param r (feed@[PFreevar(a)]))
+	| _        -> raise (Failure ("bad parameter :"^(Sexp.to_string_hum (sexp_of_tokens l))))
+
 
 let rec rmdsl_rs_parser_tk l (feed: rmdsl_tk) : rmdsl_tk * tokens =
 	match l with
