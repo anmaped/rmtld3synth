@@ -131,6 +131,9 @@ and parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm list) : interm
     ->  parse_latexeq_tm' r  (feed@[TVar(a^b, TEmpty() )]) (* feed is discarded *)
   | a :: r when chk_alphanum a -> parse_latexeq_tm' r (try [TVal(int_of_string a)] with | _ -> feed@[TVar(a,TEmpty())])
 
+  (* term skip keyword *)
+  | "---" :: r            ->  parse_latexeq_tm' r feed
+
   | _        -> raise (Failure ("bad term: "^(Sexp.to_string_hum (sexp_of_tokens l))))
 
 
@@ -143,38 +146,56 @@ let rec ineq_parse prefix feed op =
   match prefix with
     FIneq(a)          -> FIneq((feed, op)::a)
 
-  | Strr(a)           -> FIneq([(feed, op); ( FTerm(parse_latexeq_tm a [] )  , N())])   (* Strr(a)  *)
-  | Always (a,b)          -> FIneq([(feed, op); (Always(a,b),N())])
-  | Eventually (a,b)     -> FIneq([(feed, op); (Eventually(a,b),N())])
+  | Strr(a)           -> FIneq([(feed, op); ( FTerm(parse_latexeq_tm a [] )  , N())])   (* first was plain copy of Strr(a) *)
 
-  | Fland(a) -> Fland( (ineq_parse (List.hd a) feed op)::(List.tl a))
-  | Flor(a) -> Flor( (ineq_parse (List.hd a) feed op)::(List.tl a))
-  | FImplies(a,b) -> FImplies(ineq_parse a feed op, b)
-  | _ -> raise (Failure ("bad expression for ineq: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_fm prefix))))
+  | Always (a,b)      -> FIneq([(feed, op); (Always(a,b),N())]) (* plain copy of Always and Eventually *)
+  | Eventually (a,b)  -> FIneq([(feed, op); (Eventually(a,b),N())])
 
-let rec parse_latexeq_prop l =  FProp("x") (* todo *)
+  | Fland(a)          -> Fland( (ineq_parse (List.hd a) feed op)::(List.tl a))
+  | Flor(a)           -> Flor( (ineq_parse (List.hd a) feed op)::(List.tl a))
+  | FImplies(a,b)     -> FImplies(ineq_parse a feed op, b)
+  | _                 -> raise (Failure ("bad expression for ineq: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_fm prefix))))
+
+let rec parse_latexeq_prop l =
+  let rec join_inf l feed =
+    match l with
+    | "{" :: r -> join_inf l feed
+    | "}" :: r -> (feed,r)
+    | a :: r when chk_alphanum a -> join_inf l (feed^a)
+    | _ -> raise (Failure ("join_inf"))
+  in
+  match l with
+  | a :: ("_" :: ("{" :: r)) when chk_alphanum a
+       -> FProp(fst (join_inf ("{"::r) "") ) (* TODO continue here.... *)
+  | a :: ("_" :: (b :: r))   when chk_alphanum a && chk_alphanum b
+       -> FProp(a^"#"^b)
+  | a :: r when chk_alphanum a
+       ->  FProp(a)
+  | _  -> raise (Failure ("bad prop: "^(Sexp.to_string_hum (sexp_of_tokens l))))
 
 let emptystr = Strr([])
+let termlabel = Strr(["---"])
 let rec match_feed feed : string list = match feed with Strr(a) -> a | FIsol(x) -> ["("]@(match_feed x)@[")"]  | _ -> raise (Failure ("bad expression for feed: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_fm feed))))
 
 let rec parse_latex_eq' l feed : intermediate_ltx_fm * string list =
-  let to_prop a = match a with Strr(ls) -> parse_latexeq_prop ls  | _ -> a
+  let to_prop a = try match a with Strr(ls) -> parse_latexeq_prop ls  | _ -> a with |_ -> a (*try to convert to proposition *)
   in
   match l with
     []                   -> (feed,[])
   | "\\\\" :: r          -> begin
       match r with
-        "leq"  :: r        -> let prefix,rlst = parse_latex_eq' r emptystr in
+        "leq"  :: r        -> let prefix,rlst = parse_latex_eq' r termlabel in
         (ineq_parse prefix feed (Leq()),rlst)
-      | "geq"  :: r        -> let prefix,rlst = parse_latex_eq' r emptystr in
+      | "geq"  :: r        -> let prefix,rlst = parse_latex_eq' r termlabel in
         (ineq_parse prefix feed (Geq()),rlst)
 
       | "land" :: r        -> let prefix,rlst = parse_latex_eq' r emptystr in
         let itt =
+          let feed = to_prop feed in
           match prefix with
             Fland(a)         -> Fland(feed::a)
 
-          | Strr(a)          -> Fland([feed; Strr(a)])
+          | Strr(a)          -> Fland([feed; to_prop (Strr(a))])
           | FIneq(a)         -> Fland([feed; FIneq(a)])
           | Always (a,b)     -> Fland([feed; Always(a,b)])
           | Eventually (a,b) -> Fland([feed; Eventually(a,b)])
@@ -185,11 +206,12 @@ let rec parse_latex_eq' l feed : intermediate_ltx_fm * string list =
         (itt,rlst)
 
       | "lor"  :: r        -> let prefix,rlst = parse_latex_eq' r emptystr in
-        let itt = 
+        let itt =
+          let feed = to_prop feed in
           match prefix with
             Flor(a)          -> Flor(feed::a)
 
-          | Strr(a)          -> Flor([feed; Strr(a)])
+          | Strr(a)          -> Flor([feed; to_prop (Strr(a))])
           | Always (a,b)     -> Flor([feed; Always(a,b)])
           | Eventually (a,b) -> Flor([feed; Eventually(a,b)])
           | Fland(a)         -> Flor([feed; Fland(a)])
@@ -199,14 +221,14 @@ let rec parse_latex_eq' l feed : intermediate_ltx_fm * string list =
         in
         (itt,rlst)
 
-      | "rightarrow" :: r  -> let prefix,rlst = parse_latex_eq' r feed in
-        (FImplies(feed, prefix),rlst)
+      | "rightarrow" :: r  -> let prefix,rlst = parse_latex_eq' r emptystr in
+        (FImplies(to_prop feed, to_prop prefix),rlst)
 
       | "always" :: r      -> (* feed is discarded *)
         if (List.hd r) = "_" then 
           let pm, rlst = parse_latexeq_pm (List.tl r) (PEmpty())
           in let prefix,rlst = parse_latex_eq' rlst emptystr
-          in (Always(pm,prefix),rlst)
+          in (Always(pm, to_prop prefix),rlst)
         else raise (Failure ("malformed always"))
       | "eventually" :: r  -> (* feed is discarded *)
         if (List.hd r) = "_" then
@@ -243,9 +265,9 @@ let rec parse_latex_eq' l feed : intermediate_ltx_fm * string list =
 
   | ")" :: r             -> (feed,r)
 
-  | "<" :: r             -> let prefix,rlst = parse_latex_eq' r emptystr in (ineq_parse prefix feed (Less()),rlst)
-  | ">" :: r             -> let prefix,rlst = parse_latex_eq' r emptystr in (ineq_parse prefix feed (Greater()),rlst)
-  | "=" :: r             -> let prefix,rlst = parse_latex_eq' r emptystr in (ineq_parse prefix feed (Eq()),rlst)
+  | "<" :: r             -> let prefix,rlst = parse_latex_eq' r termlabel in (ineq_parse prefix feed (Less()),rlst)
+  | ">" :: r             -> let prefix,rlst = parse_latex_eq' r termlabel in (ineq_parse prefix feed (Greater()),rlst)
+  | "=" :: r             -> let prefix,rlst = parse_latex_eq' r termlabel in (ineq_parse prefix feed (Eq()),rlst)
 
 
   (* skip keywords *)
