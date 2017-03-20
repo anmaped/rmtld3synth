@@ -36,11 +36,13 @@ let rec lex inp =
              ((Char.escaped c)^toktl)::lex rest;;
 
 
+type tokens = string list with sexp
+
 (* intermediate representation *)
 type op = Leq of unit | Geq of unit | Eq of unit | Less of unit | Greater of unit | N of unit with sexp
 type intermediate_ltx_pm =
       PEmpty of unit
-    | POp of op * intermediate_ltx_pm
+    | POp of op * intermediate_ltx_tm list
     | PList of intermediate_ltx_pm list
     | Pvar of string
 and intermediate_ltx_tm = 
@@ -50,8 +52,8 @@ and intermediate_ltx_tm =
 	| TFrac of intermediate_ltx_tm * intermediate_ltx_tm
 	| TInt of intermediate_ltx_tm * intermediate_ltx_tm
 	| TVal of int
-	| TVar of string * intermediate_ltx_pm
-    | TFun of string * intermediate_ltx_pm * intermediate_ltx_tm list
+	| TVar of string * intermediate_ltx_tm
+    | TFun of string * intermediate_ltx_tm list * intermediate_ltx_tm list
 	| TEmpty of unit
 and intermediate_ltx_fm =
 	  FIneq of  (intermediate_ltx_fm * op) list
@@ -61,39 +63,54 @@ and intermediate_ltx_fm =
 	| Eventually of intermediate_ltx_pm * intermediate_ltx_fm
 	| FImplies of intermediate_ltx_fm * intermediate_ltx_fm
 	| FIsol of intermediate_ltx_fm
-	| FTerm of intermediate_ltx_tm
+	| FTerm of intermediate_ltx_tm list
 	| Strr of string list
+    | FProp of string
 with sexp
+
+let chk_alphanum a = List.for_all alphanumeric (String.explode a)
 
 let rec parse_latexeq_pm (l: string list) (feed: intermediate_ltx_pm) : intermediate_ltx_pm * string list =
     match l with
     | "{" :: r    -> parse_latexeq_pm r feed
     | "}" :: r    -> (feed,r)
-    | "<"  :: r   -> let pm,rlst = parse_latexeq_pm r (PEmpty()) in (POp(Less(), pm),rlst)
-    | "leq" :: r  -> let pm,rlst = parse_latexeq_pm r (PEmpty()) in (POp(Leq(), pm),rlst)
-    | "="  :: r   -> let pm,rlst = parse_latexeq_pm r (PEmpty()) in (POp(Eq(), pm),rlst)
-    | x :: r      -> match feed with
-                       PList(a) -> parse_latexeq_pm r (PList(a@[Pvar(x)])) (* get back here... *)
-                     | _ -> parse_latexeq_pm r (PList([feed; Pvar(x)]))
-    | _ -> raise (Failure ("bad expression parse_latexeq_pm"))
+    | "(" :: r    -> parse_latexeq_pm r feed
+    | ")" :: r    -> (feed,r)
+    | "<"  :: r   -> let pm,rlst = parse_latexeq_tm' r []
+                     in (POp(Less(), pm),rlst)
+    | "leq" :: r  -> let pm,rlst = parse_latexeq_tm' r []
+                     in (POp(Leq(), pm),rlst)
+    | "="  :: r   -> let pm,rlst = parse_latexeq_tm' r []
+                     in (POp(Eq(), pm),rlst)
+    (*| x :: r      -> (
+                       match feed with
+                         PList(a) -> parse_latexeq_pm r (PList(a@[Pvar(x)])) (* get back here... *)
+                       | PEmpty() -> parse_latexeq_pm r (PList([Pvar(x)]))
 
-let rec parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm) : intermediate_ltx_tm * string list =
+                     )*)
+    | _ -> raise (Failure ("bad expression pm: "^(Sexp.to_string_hum (sexp_of_tokens l))))
+
+and parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm list) : intermediate_ltx_tm list * string list =
     match l with
       [] 				   -> (feed,[])
-    | "\\" :: r            -> begin
+    | "\\\\" :: r            -> begin
     						  match r with 
-    						    "int" :: r         -> let pf,rlst = parse_latexeq_tm' r (TEmpty()) in
-    						    					  let pf2,rlst2 = parse_latexeq_tm' rlst (TEmpty()) in (TInt(pf,pf2), rlst2) 
+    						    "int" :: r         -> let pf,rlst = parse_latexeq_tm' r [] in
+    						    					  let pf2,rlst2 = parse_latexeq_tm' rlst []
+                                                      in ([TInt(List.hd pf,List.hd pf2)], rlst2) 
 
     						  | "times" :: r       -> parse_latexeq_tm' r feed
     						  | "frac"  :: r       -> let pf,rlst = parse_latexeq_tm' r feed in
-    						  						  let pf2,rlst2 = parse_latexeq_tm' rlst feed in parse_latexeq_tm' rlst2 (TFrac(pf,pf2))
+    						  						  let pf2,rlst2 = parse_latexeq_tm' rlst feed
+                                                      in parse_latexeq_tm' rlst2 ([TFrac(List.hd pf,List.hd pf2)])
 
-    						  | _ -> raise (Failure ("bad term:" ^ (String.concat " " r)))
+                              | a :: r when chk_alphanum a -> parse_latexeq_tm' (a::r) feed
+
+    						  | _ -> raise (Failure ("bad term var: " ^(Sexp.to_string_hum (sexp_of_tokens l))))
     						  end
 
-    | "+" :: r             -> let pf,rlst = parse_latexeq_tm' r (TEmpty()) in (TPlus([feed; pf]), rlst)
-    | "-" :: r             -> let pf,rlst = parse_latexeq_tm' r (TEmpty()) in (TMinus([feed; pf]), rlst)
+    | "+" :: r             -> let pf,rlst = parse_latexeq_tm' r [] in ([TPlus([List.hd feed; List.hd pf])], rlst)
+    | "-" :: r             -> let pf,rlst = parse_latexeq_tm' r [] in ([TMinus([List.hd feed; List.hd pf])], rlst)
 
     | "^" :: r             -> parse_latexeq_tm' r feed (* TODO *)
     | "_" :: r             -> parse_latexeq_tm' r feed (* TODO *)
@@ -102,38 +119,31 @@ let rec parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm) : interme
     | "(" :: r             -> let pf,rlst = parse_latexeq_tm' r feed in parse_latexeq_tm' rlst pf
     | ")" :: r             -> (feed, r)
 
-    | x :: r               -> try let i = int_of_string x in  (* check feed; something has been removed!!! *)
-    						  (*parse_latexeq_tm' r (TVal(i))*)
-                                match feed with
-                                      TVar(a,pm) -> parse_latexeq_tm' r (TVar(a^"_"^(string_of_int i), pm))
-                                    | TEmpty() -> parse_latexeq_tm' r (TVal(i))
-                                    | _ -> raise (Failure ("bad term var: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_tm feed))))
+    | a :: ("_" :: ("{" :: r)) when chk_alphanum a
+               -> let tm,rlst = parse_latexeq_tm' ("{"::r) []
+                  in
+                  if (List.hd rlst) = "(" then
+                    let pm2,rlst2 = parse_latexeq_tm' rlst [] in
+                    parse_latexeq_tm' rlst2 ([TFun(a, tm, pm2 )]) 
+                  else
+                    parse_latexeq_tm' rlst ([TVar(a, List.hd tm )]) (* feed is discarded *)
+    | a :: ("_" :: (b :: r))   when chk_alphanum a && chk_alphanum b
+               ->  parse_latexeq_tm' r  (feed@[TVar(a^b, TEmpty() )]) (* feed is discarded *)
+    | a :: r when chk_alphanum a -> parse_latexeq_tm' r (try [TVal(int_of_string a)] with | _ -> feed@[TVar(a,TEmpty())])
 
-    						  with | Failure int_of_string ->
-                                if List.for_all alphanumeric (String.explode x) then
-                                    match feed with
-                                      TVar(a,pm)      -> raise (Failure ("bad term var: two consecutive vars :"^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_tm (TVar(x,PEmpty()))))))
-                                    (*| TVal(a) -> parse_latexeq_tm' r (TVar((string_of_int a)^x)) *)
-                                    | TEmpty()     -> (* check if it is a function *)
-                                      if r <> [] && (List.hd r) = "_" && (List.hd (List.tl r)) = "{" then
-                                        let pm,rlst = parse_latexeq_pm r (PEmpty()) in
-                                        if rlst <> [] && (List.hd rlst) = "(" then parse_latexeq_tm' rlst (TFun(x,pm,[])) else raise (Failure ("bad term function: ill-formed"))
-                                      else parse_latexeq_tm' r (TVar(x,PEmpty()))
-                                    | TFun(nm,pm,lst)  -> parse_latexeq_tm' r (TFun(nm,pm,lst@[TVar(x,PEmpty())]))  (* lack of parameterized variable *)
-                                    | _ -> raise (Failure ("bad term var: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_tm feed))))
-                                else
-                                    raise (Failure ("bad expression: " ^ x))
+    | _        -> raise (Failure ("bad term: "^(Sexp.to_string_hum (sexp_of_tokens l))))
+
 
 let parse_latexeq_tm l feed = fst (parse_latexeq_tm' l feed)
 
 
 let rec ineq_parse prefix feed op =
-    let feed_prs feed = match feed with Strr(a) -> FTerm(parse_latexeq_tm a (TEmpty()) ) | _ -> feed in
+    let feed_prs feed = match feed with Strr(a) -> FTerm(parse_latexeq_tm a [] ) | _ -> feed in
     let feed = feed_prs feed in
 	match prefix with
 	  FIneq(a)          -> FIneq((feed, op)::a)
 
-	| Strr(a)           -> FIneq([(feed, op); ( FTerm(parse_latexeq_tm a (TEmpty()) )  , N())])   (* Strr(a)  *)
+	| Strr(a)           -> FIneq([(feed, op); ( FTerm(parse_latexeq_tm a [] )  , N())])   (* Strr(a)  *)
 	| Always (a,b)          -> FIneq([(feed, op); (Always(a,b),N())])
 	| Eventually (a,b)     -> FIneq([(feed, op); (Eventually(a,b),N())])
 
@@ -142,20 +152,24 @@ let rec ineq_parse prefix feed op =
 	| FImplies(a,b) -> FImplies(ineq_parse a feed op, b)
 	| _ -> raise (Failure ("bad expression for ineq: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_fm prefix))))
 
+let rec parse_latexeq_prop l =  FProp("x") (* todo *)
+
 let emptystr = Strr([])
 let rec match_feed feed : string list = match feed with Strr(a) -> a | FIsol(x) -> ["("]@(match_feed x)@[")"]  | _ -> raise (Failure ("bad expression for feed: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_fm feed))))
 
-let rec lifting_ltx' l feed : intermediate_ltx_fm * string list =
+let rec parse_latex_eq' l feed : intermediate_ltx_fm * string list =
+    let to_prop a = match a with Strr(ls) -> parse_latexeq_prop ls  | _ -> a
+    in
 	match l with
       [] 				   -> (feed,[])
     | "\\\\" :: r          -> begin
     						  match r with
-    						    "leq"  :: r        -> let prefix,rlst = lifting_ltx' r emptystr in
+    						    "leq"  :: r        -> let prefix,rlst = parse_latex_eq' r emptystr in
     						                          (ineq_parse prefix feed (Leq()),rlst)
-    						  | "geq"  :: r        -> let prefix,rlst = lifting_ltx' r emptystr in
+    						  | "geq"  :: r        -> let prefix,rlst = parse_latex_eq' r emptystr in
     						  						  (ineq_parse prefix feed (Geq()),rlst)
 
-    						  | "land" :: r        -> let prefix,rlst = lifting_ltx' r emptystr in
+    						  | "land" :: r        -> let prefix,rlst = parse_latex_eq' r emptystr in
     						    					  let itt =
     						    					  match prefix with
     						    					    Fland(a)         -> Fland(feed::a)
@@ -170,7 +184,7 @@ let rec lifting_ltx' l feed : intermediate_ltx_fm * string list =
     						    					  in
     						    					  (itt,rlst)
 
-    						  | "lor"  :: r        -> let prefix,rlst = lifting_ltx' r emptystr in
+    						  | "lor"  :: r        -> let prefix,rlst = parse_latex_eq' r emptystr in
     						    					  let itt = 
     						    					  match prefix with
     						    					    Flor(a)          -> Flor(feed::a)
@@ -185,35 +199,35 @@ let rec lifting_ltx' l feed : intermediate_ltx_fm * string list =
     						    					  in
     						    					  (itt,rlst)
 
-    						  | "rightarrow" :: r  -> let prefix,rlst = lifting_ltx' r feed in
+    						  | "rightarrow" :: r  -> let prefix,rlst = parse_latex_eq' r feed in
     						  						  (FImplies(feed, prefix),rlst)
 
     						  | "always" :: r      -> (* feed is discarded *)
                                                         if (List.hd r) = "_" then 
                                                             let pm, rlst = parse_latexeq_pm (List.tl r) (PEmpty())
-                                                            in let prefix,rlst = lifting_ltx' rlst emptystr
+                                                            in let prefix,rlst = parse_latex_eq' rlst emptystr
                                                             in (Always(pm,prefix),rlst)
                                                         else raise (Failure ("malformed always"))
     						  | "eventually" :: r  -> (* feed is discarded *)
                                                         if (List.hd r) = "_" then
                                                             let pm, rlst = parse_latexeq_pm (List.tl r) (PEmpty())
-                                                            in let prefix,rlst = lifting_ltx' rlst emptystr
-                                                            in (Eventually(pm,prefix),rlst)
+                                                            in let prefix,rlst = parse_latex_eq' rlst emptystr
+                                                            in (Eventually(pm, to_prop prefix),rlst)
                                                         else raise (Failure ("malformed eventually"))
 
-    						  | "int" :: r         -> lifting_ltx' r (Strr((match_feed feed)@["\\"; "int"]))
-    						  | "frac" :: r        -> lifting_ltx' r (Strr((match_feed feed)@["\\"; "frac"]))
-    						  | "times" :: r       -> lifting_ltx' r (Strr((match_feed feed)@["\\"; "times"]))
+    						  | "int" :: r         -> parse_latex_eq' r (Strr((match_feed feed)@["\\\\"; "int"]))
+    						  | "frac" :: r        -> parse_latex_eq' r (Strr((match_feed feed)@["\\\\"; "frac"]))
+    						  | "times" :: r       -> parse_latex_eq' r (Strr((match_feed feed)@["\\\\"; "times"]))
 
     						  (* skip keywords *)
-    						  | "scriptstyle" :: r -> lifting_ltx' r feed
-    						  | "left" :: r        -> lifting_ltx' r feed
-    						  | "right" :: r       -> lifting_ltx' r feed
+    						  | "scriptstyle" :: r -> parse_latex_eq' r feed
+    						  | "left" :: r        -> parse_latex_eq' r feed
+    						  | "right" :: r       -> parse_latex_eq' r feed
 
-    						  | _                  -> lifting_ltx' r feed
+    						  | _                  -> parse_latex_eq' r feed
     						  end
 
-    | "(" :: r             -> let prefix,rlst = lifting_ltx' r emptystr in
+    | "(" :: r             -> let prefix,rlst = parse_latex_eq' r emptystr in
                               (* decision to proceed based on feed and prefix variables *)
                               let par_fun prefix : bool * intermediate_ltx_fm = match prefix with Strr(a) -> (true,prefix) | _ -> (false,FIsol(prefix))
                               in
@@ -225,25 +239,25 @@ let rec lifting_ltx' l feed : intermediate_ltx_fm * string list =
                                                         else raise (Failure ("bad expression for parenthesis shape: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_fm feed))))
                               | emptystr -> (snd (par_fun prefix))
                               in
-                              lifting_ltx' rlst (vvv)
+                              parse_latex_eq' rlst (vvv)
 
     | ")" :: r             -> (feed,r)
 
-    | "<" :: r             -> let prefix,rlst = lifting_ltx' r emptystr in (ineq_parse prefix feed (Less()),rlst)
-    | ">" :: r             -> let prefix,rlst = lifting_ltx' r emptystr in (ineq_parse prefix feed (Greater()),rlst)
-    | "=" :: r             -> let prefix,rlst = lifting_ltx' r emptystr in (ineq_parse prefix feed (Eq()),rlst)
+    | "<" :: r             -> let prefix,rlst = parse_latex_eq' r emptystr in (ineq_parse prefix feed (Less()),rlst)
+    | ">" :: r             -> let prefix,rlst = parse_latex_eq' r emptystr in (ineq_parse prefix feed (Greater()),rlst)
+    | "=" :: r             -> let prefix,rlst = parse_latex_eq' r emptystr in (ineq_parse prefix feed (Eq()),rlst)
 
 
     (* skip keywords *)
-    | "\\\\\\\\" :: r      -> (* skip linebreaks *) lifting_ltx' r feed
-    | "&" :: r             -> lifting_ltx' r feed
-    | "%" :: r             -> lifting_ltx' r feed
-    | "$" :: r             -> lifting_ltx' r feed
-    | "," :: r             -> lifting_ltx' r feed
+    | "\\\\\\\\" :: r      -> (* skip linebreaks *) parse_latex_eq' r feed
+    | "&" :: r             -> parse_latex_eq' r feed
+    | "%" :: r             -> parse_latex_eq' r feed
+    | "$" :: r             -> parse_latex_eq' r feed
+    | "," :: r             -> parse_latex_eq' r feed
 
-    | a :: r               -> lifting_ltx' r (Strr((match_feed feed)@[a]))
+    | a :: r               -> parse_latex_eq' r (Strr((match_feed feed)@[a]))
 
-let lifting_ltx l feed : intermediate_ltx_fm = let x,y = lifting_ltx' l feed in if y = [] then x else raise (Failure ("bad expression; check parenthesis"))
+let parse_latex_eq l feed : intermediate_ltx_fm = let x,y = parse_latex_eq' l feed in if y = [] then x else raise (Failure ("bad expression; check parenthesis"))
 
 (*
     Translation to RMTLD3
@@ -273,14 +287,12 @@ let s2 = "a=\\int^{\\var} \\psi_1 \\land \\alwaysless \\left(
 let test2_input = lex (String.explode s1)
 let test3_input = lex (String.explode s2)
 
-type tokens = string list with sexp
-
 let texeq_unit_tests_enabled = false
 
 let texeqparser str =
     begin
         print_endline ("Latexeq input: "^str^"\n");
-        print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (lifting_ltx (lex (String.explode str)) emptystr)));
+        print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq (lex (String.explode str)) emptystr)));
 
         (* lets convert the intermediate representation into rmtld3 expressions *)
         rmtld3_fm_of_intermediate_ltx_fm ();
@@ -289,9 +301,9 @@ let texeqparser str =
         begin
             print_endline "\nlexer 1:\n"; print_endline (Sexp.to_string_hum ( sexp_of_tokens test2_input ));
 
-            print_endline "\ntest 1:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (lifting_ltx [ "G"; "\\\\"; "land"; "Y"; "\\\\"; "leq"; "X"; "\\\\"; "land"; "Z"; "\\\\"; "lor"; "H"; "\\\\"; "lor"; "HH"] emptystr)));
-            print_endline "\ntest 2:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (lifting_ltx test2_input emptystr)));
+            print_endline "\ntest 1:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq [ "G"; "\\\\"; "land"; "Y"; "\\\\"; "leq"; "X"; "\\\\"; "land"; "Z"; "\\\\"; "lor"; "H"; "\\\\"; "lor"; "HH"] emptystr)));
+            print_endline "\ntest 2:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq test2_input emptystr)));
 
-            print_endline "\ntest 3:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (lifting_ltx test3_input emptystr)));
+            print_endline "\ntest 3:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq test3_input emptystr)));
         end
     end

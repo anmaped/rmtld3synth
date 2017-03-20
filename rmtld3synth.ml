@@ -920,15 +920,19 @@ let _ =
     begin
       (* rmtld_formula is undefined ? try rmtld_formula_ltxeq *)
       if !rmtld_formula <> "" then
-        sat_gen (formula_of_sexp (Sexp.of_string !rmtld_formula))
+        begin
+          sat_gen (formula_of_sexp (Sexp.of_string !rmtld_formula))
+        end
       else if !rmtld_formula_ltxeq <> "" then
         begin
           print_endline "Latex Eq parsing enabled.";
           Texeqparser.texeqparser !rmtld_formula_ltxeq;
         end
       else
+        begin
           print_endline "Rmdsl parsing enabled.";
-          Rmdslparser.rmdslparser !expression_rmdsl
+          Rmdslparser.rmdslparser !expression_rmdsl;
+        end
     end
 
   else if !config_mon_filename <> "" then

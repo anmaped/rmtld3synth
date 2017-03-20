@@ -1,3 +1,3 @@
  $$
- &\rm{RCA}{ \tk{ts1}{10,8} \succ \tk{ts2}{5,20} \bowtie \tk{ts3}{7,27} }{p_{\a_1,1},b_1} \parallel \\ & \rm{RSC}{\tk{ts1}{4,33}}{p_2,b_2}.
+ &\rm{RCA}{ \tk{ts1}{10,8} \succ \tk{ts2}{5,20} \bowtie \tk{ts3}{7,27} }{\pi_1,\theta_1} \parallel \\ & \rm{RSC}{\tk{ts1}{4,33}}{\pi_2,\theta_2}.
  $$

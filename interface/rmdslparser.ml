@@ -32,8 +32,6 @@ with sexp
 (* direct parsing *)
 let rmdsl_rs_parser_string l = (List.hd (List.tl l), List.tl (List.tl (List.tl l)) )
 
-let chk_alphanum a = List.for_all alphanumeric (String.explode a)
-
 let rec rmdsl_rs_parser_param l (feed: parameter list) : parameter list * tokens =
 	let rec pre_match pm =
 		match pm with
@@ -49,7 +47,8 @@ let rec rmdsl_rs_parser_param l (feed: parameter list) : parameter list * tokens
 	| "," :: r -> rmdsl_rs_parser_param r feed
 	| "\\\\" :: r -> rmdsl_rs_parser_param r feed
 	| a :: ("_" :: ("{" :: r)) when chk_alphanum a
-	           -> let pm,rlst = rmdsl_rs_parser_param ("{"::r) [] in rmdsl_rs_parser_param rlst (feed@[PFreevar(a^"_"^(pre_match pm))])
+	           -> let pm,rlst = rmdsl_rs_parser_param ("{"::r) []
+	              in rmdsl_rs_parser_param rlst (feed@[PFreevar(a^"_"^(pre_match pm))])
 	| a :: ("_" :: (b :: r))   when chk_alphanum a && chk_alphanum b
 	           -> rmdsl_rs_parser_param r (feed@[PFreevar(a^"_"^b)])
 	| a :: r when chk_alphanum a
