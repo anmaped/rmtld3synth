@@ -34,6 +34,9 @@ and term =
         | FTimes of term * term
         | Duration of term * formula
 with sexp
+
+type rmtld3_fm = formula with sexp
+type rmtld3_tm = term with sexp
 (*type foobar = Foo of int | Bar with sexp*)
 
 

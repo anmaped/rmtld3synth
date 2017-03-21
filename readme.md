@@ -19,13 +19,14 @@ For instance, schedulability analysis of hard real-time systems can be done by s
 
 ### Tarball binaries version 0.2-alpha for Windows
 
-New version [0.3-alpha](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
+New version [0.3-alpha1](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
 Old version [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
 
 Let us begin by an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as basis the [use case one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing the following command in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
 ```
 ./rmtld3synth.exe -n usecaseone
 ```
+Note that `-n` is deprecated. For version 0.3-alpha1 use `--config-file` instead of `-n`.
 
 After executing this step, the `monitor_set1` folder contains the generated source files of the monitor for the `usecaseone` file.
 Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. 

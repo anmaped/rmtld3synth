@@ -8,6 +8,7 @@ open Sexplib
 open Sexplib.Conv
 
 open Texeqparser
+open Rmtld3
 
 (* parser for rmdsl *)
 (* operators for tasks: \succ, \bowtie; and for RM: \parallel, \gg *)
@@ -71,16 +72,16 @@ let rec rmdsl_rs_parser_tk l (feed: rmdsl_tk) : rmdsl_tk * tokens =
 
   | _ -> raise (Failure ("bad expression rs tk: "^ ( Sexp.to_string_hum (sexp_of_tokens l))))
 
-let rec rmdsl_rs_parser (l: tokens) (feed: rmdsl_rs) : rmdsl_rs * tokens =
+let rec rmdsl_rs_parser' (l: tokens) (feed: rmdsl_rs) : rmdsl_rs * tokens =
   let rmdsl_rs_parser_vars l (feed: rmdsl_rs) : rmdsl_rs * tokens =
     match l with
-      "parallel" :: r -> let rs,rlst = rmdsl_rs_parser r (Emp()) in (Par(feed, rs), rlst)
-    | "gg" :: r       -> let rs,rlst = rmdsl_rs_parser r (Emp()) in (Seq(feed, rs), rlst)
+      "parallel" :: r -> let rs,rlst = rmdsl_rs_parser' r (Emp()) in (Par(feed, rs), rlst)
+    | "gg" :: r       -> let rs,rlst = rmdsl_rs_parser' r (Emp()) in (Seq(feed, rs), rlst)
     | "rm" :: r       -> let name, rlst = rmdsl_rs_parser_string r in
       let exp_tk,rlst = rmdsl_rs_parser_tk rlst (TkEmp()) in
       let param,rlst = rmdsl_rs_parser_param rlst []
       in
-      rmdsl_rs_parser rlst (Res(name, exp_tk, param))
+      rmdsl_rs_parser' rlst (Res(name, exp_tk, param))
 
     | _               -> raise (Failure ("bad expression rs var: "^ ( Sexp.to_string_hum (sexp_of_tokens l))))
   in
@@ -88,23 +89,57 @@ let rec rmdsl_rs_parser (l: tokens) (feed: rmdsl_rs) : rmdsl_rs * tokens =
   match l with
     []           -> (feed,[])
   | "\\\\" :: r  -> rmdsl_rs_parser_vars r feed
-  | "(" :: r     -> rmdsl_rs_parser r (Emp()) (* feed is discarded *)
+  | "(" :: r     -> rmdsl_rs_parser' r (Emp()) (* feed is discarded *)
   | ")" :: r     -> (feed,r)
-  | "{" :: r     -> rmdsl_rs_parser r (Emp())
+  | "{" :: r     -> rmdsl_rs_parser' r (Emp())
   | "}" :: r     -> (feed, r)
 
   (* symbols to discard *)
-  | "\\\\\\\\" :: r -> rmdsl_rs_parser r feed
-  | "$" :: r     -> rmdsl_rs_parser r feed
-  | "." :: r     -> rmdsl_rs_parser r feed
-  | "&" :: r     -> rmdsl_rs_parser r feed
+  | "\\\\\\\\" :: r -> rmdsl_rs_parser' r feed
+  | "$" :: r     -> rmdsl_rs_parser' r feed
+  | "." :: r     -> rmdsl_rs_parser' r feed
+  | "&" :: r     -> rmdsl_rs_parser' r feed
 
   | _            -> raise (Failure ("bad expression rs: "^ ( Sexp.to_string_hum (sexp_of_tokens l))))
 
-
+let rmdsl_rs_parser lx = fst (rmdsl_rs_parser' lx (Emp()))
 
 let rmdslparser str =
-  let rs,_ = rmdsl_rs_parser (Texeqparser.lex (String.explode str)) (Emp()) in
+  let rs = rmdsl_rs_parser (Texeqparser.lex (String.explode str)) in
   print_endline ("Rmdsl input: "^str^"\n");
-  print_endline (Sexp.to_string_hum (sexp_of_rmdsl_rs rs));
-  ()
+  print_endline "--------------------------------------------------------------------------------\n";
+  print_endline ("rmdsl tree: ");
+  print_endline ((Sexp.to_string_hum (sexp_of_rmdsl_rs rs))^"\n");
+  rs
+
+
+(*
+  Type conversions:
+    - to rmtld3_fm
+*)
+
+let get_int el = match el with PInt(x) -> x | _ -> raise (Failure ("get_int conversion"))
+let get_float el = float_of_int (get_int el)
+
+
+let prop_list_of_fm fm = mtrue
+
+let rec rmtld3_fm_of_rmdsl_tm tm : (rmtld3_fm * rmtld3_fm) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm) =
+  let tsk_prop nm t (phi1, phi2) filter = (mand phi1 (Until (t, Or(Prop("B"^nm),Or(Prop("R"^nm),Or(Prop("S"^nm),filter))), Prop("E"^nm) )),  mtrue) in
+  match tm with
+  | Tsk(str,plst) when length plst = 2 -> tsk_prop str (get_float (hd plst))
+  | Pri(tk1,tk2)  -> let f1 = rmtld3_fm_of_rmdsl_tm tk1
+                     in let f2 = rmtld3_fm_of_rmdsl_tm tk2
+                     in let fm1 = f1 (mtrue,mtrue) (prop_list_of_fm mtrue)
+                     in (fun _ _ -> f2 fm1 (prop_list_of_fm fm1))
+
+  | Arb(tk1,tk2)  -> rmtld3_fm_of_rmdsl_tm tk1
+  | _             -> raise (Failure ("bad rmdsl expression tm"))
+
+let rmtld3_fm_of_rmdsl ex : rmtld3_fm =
+  match ex with
+    Emp ()           -> True()
+  | Res(str,tk,plst) -> let a,b = rmtld3_fm_of_rmdsl_tm tk (mtrue,mtrue) mtrue in mand a b
+  | Par(rs1,rs2)     -> True()
+  | Seq(rs1,rs2)     -> True()
+

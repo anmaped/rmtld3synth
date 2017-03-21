@@ -931,7 +931,13 @@ let _ =
       else
         begin
           print_endline "Rmdsl parsing enabled.";
-          Rmdslparser.rmdslparser !expression_rmdsl;
+          let ex = Rmdslparser.rmdslparser !expression_rmdsl in
+          let fm = Rmdslparser.rmtld3_fm_of_rmdsl ex in
+          print_endline "--------------------------------------------------------------------------------\n";
+          print_endline "rmtld3 formula: ";
+          print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm fm));
+          ()
+
         end
     end
 
