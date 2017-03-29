@@ -11,9 +11,9 @@ depends: [
   "ocamlbuild" {build}
   "ocamlfind"  {build}
   "batteries"
-  "pa_sexp_conv"
-  "sexplib"
-  "type_conv"
+  "pa_sexp_conv" {<= "113.00.02"}
+  "sexplib" {<= "113.33.00+4.03"}
+  "type_conv" {<= "113.00.02"}
 ]
 
 build: [make]

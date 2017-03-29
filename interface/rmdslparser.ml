@@ -174,7 +174,7 @@ let rec rmtld3_fm_of_rmdsl ex : ((rmtld3_fm * rmtld3_fm) -> rmtld3_fm -> (rmtld3
     Emp ()           -> []
   | Res(str,tk,plst) -> [fun (a,c) b -> rmtld3_fm_of_rmdsl_tm tk str (a,c) b ]
   | Par(rs1,rs2)     -> (rmtld3_fm_of_rmdsl rs1)@(rmtld3_fm_of_rmdsl rs2) (* unreal paralell (split case) *)
-  | Seq(rs1,rs2)     -> [fun (a,c) b -> (True(),True()) ]
+  | Seq(rs1,rs2)     -> [fun (a,c) b -> (True(),True()) ] (* TODO *)
   | Cmp(rs1,rs2)     -> [fun (a,c) filter ->
                           let f1 = List.hd (rmtld3_fm_of_rmdsl rs1) in (* skip other list elements; TODO raise something *)
                           let f2 = List.hd (rmtld3_fm_of_rmdsl rs2) in
