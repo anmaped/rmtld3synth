@@ -1,6 +1,9 @@
 
 open Rmtld3
 open Batteries
+open Sexplib
+open Sexplib.Conv
+
 
 open Rmtld3synth_helper
 
@@ -130,34 +133,35 @@ let rmtld3synthsmt formula =
 
 
 (* unfold formula *)
-let rec compute_term t term helper =
+let rec synth_smtlib_tm t term helper =
   match term with
     | Constant value       -> (string_of_int(int_of_float value), "")
-    | Duration (di,phi)    -> let tr_out1, tr_out2 = compute_term t di helper in
-    						  let sf_out1, sf_out2 = compute t phi helper in
+    | Duration (di,phi)    -> let tr_out1, tr_out2 = synth_smtlib_tm t di helper in
+    						  let sf_out1, sf_out2 = synth_smtlib_fm t phi helper in
     						  let dur_out1, dur_out2 = duration t tr_out1 sf_out1 in
     						  (dur_out1, tr_out2^sf_out2^dur_out2)
     | FPlus (tr1,tr2)      -> ("", "")
     | FTimes (tr1,tr2)     -> ("", "")
-    | _ -> raise (Failure "compute_terms: missing term")
-and compute t formula helper =
+    | _                    -> raise (Failure ("synth_smtlib_tm: bad term "^( Sexp.to_string_hum (sexp_of_rmtld3_tm term))))
+and synth_smtlib_fm t formula helper =
   match formula with
+    | True()                  -> ("TVTRUE","")
     | Prop p                  -> let tbl = get_proposition_hashtbl helper in
                                  let counter = get_proposition_counter helper in 
                                  let val1,val2 = try (Hashtbl.find tbl p,"") with Not_found -> Hashtbl.add tbl p counter; (counter, compute_proposition (string_of_int counter)) in
                                  ("(computeprop"^ (string_of_int val1) ^" mk mt "^ (string_of_int val1) ^")", val2)
 
-    | Not sf                  -> let sf_out1, sf_out2 = compute t sf helper in
+    | Not sf                  -> let sf_out1, sf_out2 = synth_smtlib_fm t sf helper in
     							 ("(tvnot "^ sf_out1 ^" )", sf_out2)
 
-    | Or (sf1, sf2)           -> let sf1_out1, sf1_out2 = compute t sf1 helper in
-    							 let sf2_out1, sf2_out2 = compute t sf2 helper in
+    | Or (sf1, sf2)           -> let sf1_out1, sf1_out2 = synth_smtlib_fm t sf1 helper in
+    							 let sf2_out1, sf2_out2 = synth_smtlib_fm t sf2 helper in
     							 ("(tvor "^ sf1_out1 ^" "^ sf2_out1 ^")", sf1_out2^sf2_out2)
 
     | Until (gamma, sf1, sf2) -> (*let range = (List.range itv_low `To itv_upp )  in*)
     							 let idx = get_until_counter helper in
-    							 let sf1_out1, sf1_out2 = (compute (t + (int_of_float gamma)) sf1 helper) in
-    							 let sf2_out1, sf2_out2 = (compute (t + (int_of_float gamma)) sf2 helper) in
+    							 let sf1_out1, sf1_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf1 helper) in
+    							 let sf2_out1, sf2_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf2 helper) in
     	 					     (
     								"(computeUless!" ^ (string_of_int idx) ^" "^ (string_of_int (int_of_float gamma)) ^" "^ (string_of_int t) ^")"
     							  ,
@@ -170,10 +174,10 @@ and compute t formula helper =
 							    	)
 								 )
 
-    | LessThan (tr1,tr2)      -> let tr1_out1, tr1_out2 = (compute_term t tr1 helper) in
-    							 let tr2_out1, tr2_out2 = (compute_term t tr2 helper) in
+    | LessThan (tr1,tr2)      -> let tr1_out1, tr1_out2 = (synth_smtlib_tm t tr1 helper) in
+    							 let tr2_out1, tr2_out2 = (synth_smtlib_tm t tr2 helper) in
     							 ("(tvlessthan "^ tr1_out1 ^" "^ tr2_out1 ^")", tr1_out2^tr2_out2)
-    | _ -> raise (Failure "compute: missing formula") in
+    | _ -> raise (Failure ("synth_smtlib_fm: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula)))) in
 
 
 (* call the unfold function *)
@@ -181,11 +185,13 @@ and compute t formula helper =
 let formula = Until(10., Until(10., Prop("A"), Prop("B")), Prop("B")) in*)
 
 let helper = ("", "", ref 0, ([],[],[]), [(ref 0, Hashtbl.create 10); (ref 0, Hashtbl.create 10)]) in
-let toassert,x = compute 0 formula helper in
+let toassert,x = synth_smtlib_fm 0 formula helper in
 
 common_types ^ map_macros ^ evali ^ new_trace ^ x ^ "
 (assert (= "^ toassert ^" TVTRUE) )
 " ^"
 (check-sat)
 (get-model)
+
+(get-info :all-statistics)
 "

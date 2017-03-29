@@ -444,13 +444,14 @@ and compute_term_duration (k,u) dt formula =
 
 and compute (env, lg_env, t) formula =
         match formula with
-        | Prop p           -> env.evaluate env.trace p t
+        | True()                  -> True
+        | Prop p                  -> env.evaluate env.trace p t
         | Not sf                  -> b3_not (compute (env, lg_env, t) sf)
         | Or (sf1, sf2)           -> b3_or (compute (env, lg_env, t) sf1) (compute (env, lg_env, t) sf2)
         | Until (gamma, sf1, sf2) -> compute_uless (env, lg_env, t) gamma sf1 sf2
         | LessThan (tr1,tr2)      -> b3_lessthan (compute_term (env, lg_env) t tr1)
                                        (compute_term (env, lg_env) t tr2)
-        | _ -> raise (Failure "compute: missing formula")
+        | _                       -> raise (Failure ("compute: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
 
 and compute_uless m gamma phi1 phi2 =
 

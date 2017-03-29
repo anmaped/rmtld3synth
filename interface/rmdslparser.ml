@@ -9,6 +9,7 @@ open Sexplib.Conv
 
 open Texeqparser
 open Rmtld3
+open Rmtld3synth_helper
 
 (* parser for rmdsl *)
 (* operators for tasks: \succ, \bowtie; and for RM: \parallel, \gg *)
@@ -27,6 +28,7 @@ type rmdsl_rs =
   | Res of string * rmdsl_tk * parameter list
   | Par of rmdsl_rs * rmdsl_rs
   | Seq of rmdsl_rs * rmdsl_rs
+  | Cmp of rmdsl_rs * rmdsl_rs
 with sexp
 
 
@@ -62,6 +64,9 @@ let rec rmdsl_rs_parser_tk l (feed: rmdsl_tk) : rmdsl_tk * tokens =
   | "{" :: r -> rmdsl_rs_parser_tk r feed
   | "}" :: r -> (feed,r)
 
+  | "(" :: r -> let tk,rlst = rmdsl_rs_parser_tk r (TkEmp()) in rmdsl_rs_parser_tk rlst tk (* feed is discarded *)
+  | ")" :: r -> (feed,r)
+
   | "\\\\" :: ("tk" :: r)     -> let name, rlst = rmdsl_rs_parser_string r in
     let param,rlst = rmdsl_rs_parser_param rlst []
     in rmdsl_rs_parser_tk rlst (Tsk(name,param))
@@ -76,6 +81,7 @@ let rec rmdsl_rs_parser' (l: tokens) (feed: rmdsl_rs) : rmdsl_rs * tokens =
   let rmdsl_rs_parser_vars l (feed: rmdsl_rs) : rmdsl_rs * tokens =
     match l with
       "parallel" :: r -> let rs,rlst = rmdsl_rs_parser' r (Emp()) in (Par(feed, rs), rlst)
+    | "mid" :: r      -> let rs,rlst = rmdsl_rs_parser' r (Emp()) in (Cmp(feed, rs), rlst)
     | "gg" :: r       -> let rs,rlst = rmdsl_rs_parser' r (Emp()) in (Seq(feed, rs), rlst)
     | "rm" :: r       -> let name, rlst = rmdsl_rs_parser_string r in
       let exp_tk,rlst = rmdsl_rs_parser_tk rlst (TkEmp()) in
@@ -106,10 +112,12 @@ let rmdsl_rs_parser lx = fst (rmdsl_rs_parser' lx (Emp()))
 
 let rmdslparser str =
   let rs = rmdsl_rs_parser (Texeqparser.lex (String.explode str)) in
-  print_endline ("Rmdsl input: "^str^"\n");
-  print_endline "--------------------------------------------------------------------------------\n";
-  print_endline ("rmdsl tree: ");
-  print_endline ((Sexp.to_string_hum (sexp_of_rmdsl_rs rs))^"\n");
+  verb (fun _ ->
+    print_endline ("Rmdsl input: "^str^"\n");
+    print_endline "--------------------------------------------------------------------------------\n";
+    print_endline ("rmdsl tree: ");
+    print_endline ((Sexp.to_string_hum (sexp_of_rmdsl_rs rs))^"\n");
+  );
   rs
 
 
@@ -122,24 +130,58 @@ let get_int el = match el with PInt(x) -> x | _ -> raise (Failure ("get_int conv
 let get_float el = float_of_int (get_int el)
 
 
-let prop_list_of_fm fm = mtrue
+let rec prop_list_of_fm' (fm: rmtld3_fm) : rmtld3_fm list = 
+  match fm with
+  | True()                  -> []
+  | Prop p                  -> [Prop(p)]
+  | Not sf                  -> prop_list_of_fm' sf
+  | Or (sf1, sf2)           -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
+  | Until (gamma, sf1, sf2) -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
+  | LessThan (tr1,tr2)      -> []
+  | _ -> raise (Failure "error: prop_list_of_fm'")
 
-let rec rmtld3_fm_of_rmdsl_tm tm : (rmtld3_fm * rmtld3_fm) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm) =
-  let tsk_prop nm t (phi1, phi2) filter = (mand phi1 (Until (t, Or(Prop("B"^nm),Or(Prop("R"^nm),Or(Prop("S"^nm),filter))), Prop("E"^nm) )),  mtrue) in
+let rec remove_dups lst =
+  match lst with
+  | []   -> []
+  | h::t -> h::(remove_dups (List.filter (fun x -> x<>h) t))
+
+let prop_list_of_fm fm : rmtld3_fm = fold_left (fun a b -> Or(a,b)) (Not(mtrue)) (remove_dups (prop_list_of_fm' fm)) (* it removes duplications *)
+
+let rec rmtld3_fm_of_rmdsl_tm tm st : (rmtld3_fm * rmtld3_fm) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm) =
+  let tsk_prop nm t (phi1, phi2) filter = (mand phi1 (Until (t, Or(Prop("B#"^nm),Or(Prop("R#"^nm),Or(Prop("S#"^nm),filter))), Prop("E#"^nm) )),  mtrue) in
   match tm with
-  | Tsk(str,plst) when length plst = 2 -> tsk_prop str (get_float (hd plst))
-  | Pri(tk1,tk2)  -> let f1 = rmtld3_fm_of_rmdsl_tm tk1
-                     in let f2 = rmtld3_fm_of_rmdsl_tm tk2
-                     in let fm1 = f1 (mtrue,mtrue) (prop_list_of_fm mtrue)
-                     in (fun _ _ -> f2 fm1 (prop_list_of_fm fm1))
+  | Tsk(str,plst) when length plst = 2 -> tsk_prop (st^str) (get_float (hd plst))
+  | Pri(tk1,tk2)  -> let f1 = rmtld3_fm_of_rmdsl_tm tk1 st
+                     in let f2 = rmtld3_fm_of_rmdsl_tm tk2 st
+                     in (fun (phi1,phi2) filter -> let fm1 = f1 (phi1,phi2) (prop_list_of_fm filter)
+                        in let fm2 = f2 fm1 (prop_list_of_fm (fst fm1) )
+                        in fm2)
 
-  | Arb(tk1,tk2)  -> rmtld3_fm_of_rmdsl_tm tk1
+  | Arb(tk1,tk2)  -> let f1 = rmtld3_fm_of_rmdsl_tm tk1 st
+                     in let f2 = rmtld3_fm_of_rmdsl_tm tk2 st
+                     in let fm1 = f1 (mtrue,mtrue) (prop_list_of_fm mtrue)
+                     in let fm2 = f2 (mtrue,mtrue) (prop_list_of_fm mtrue)
+
+                     in (fun (phi1,phi2) filter -> let fm11 = f1 (phi1,phi2) (prop_list_of_fm (Or((fst fm2), filter)))
+                       in let fm22 = f2 fm11 (prop_list_of_fm (Or((fst fm1),filter)))
+                       in fm22 )
+
+
   | _             -> raise (Failure ("bad rmdsl expression tm"))
 
-let rmtld3_fm_of_rmdsl ex : rmtld3_fm =
+let rec rmtld3_fm_of_rmdsl ex : ((rmtld3_fm * rmtld3_fm) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm)) list =
   match ex with
-    Emp ()           -> True()
-  | Res(str,tk,plst) -> let a,b = rmtld3_fm_of_rmdsl_tm tk (mtrue,mtrue) mtrue in mand a b
-  | Par(rs1,rs2)     -> True()
-  | Seq(rs1,rs2)     -> True()
+    Emp ()           -> []
+  | Res(str,tk,plst) -> [fun (a,c) b -> rmtld3_fm_of_rmdsl_tm tk str (a,c) b ]
+  | Par(rs1,rs2)     -> (rmtld3_fm_of_rmdsl rs1)@(rmtld3_fm_of_rmdsl rs2) (* unreal paralell (split case) *)
+  | Seq(rs1,rs2)     -> [fun (a,c) b -> (True(),True()) ]
+  | Cmp(rs1,rs2)     -> [fun (a,c) filter ->
+                          let f1 = List.hd (rmtld3_fm_of_rmdsl rs1) in (* skip other list elements; TODO raise something *)
+                          let f2 = List.hd (rmtld3_fm_of_rmdsl rs2) in
+                          let out1 = f1 (mtrue,mtrue) (prop_list_of_fm mtrue) in
+                          let out2 = f2 (mtrue,mtrue) (prop_list_of_fm mtrue) in
+                          let out11 = f1 (a,c) (prop_list_of_fm (Or((fst out2), filter))) in
+                          let out22 = f2 out11 (prop_list_of_fm (Or((fst out1), filter))) in
+                          out22
+                        ]
 

@@ -1,5 +1,8 @@
 (*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
 
+open Sexplib
+open Sexplib.Conv
+
 open Rmtld3synth_helper
 
 (* function that pretty prints 'observation' function as a lambda functions in c++ *)
@@ -77,7 +80,7 @@ and compute formula helper =
     | Or (sf1, sf2)           -> compute_function_head_mutable^" { auto sf1 = "^ compute sf1 helper ^"(env,t); auto sf2 = "^ compute sf2 helper ^"(env,t); return b3_or (sf1, sf2); }"
     | Until (gamma, sf1, sf2) -> if gamma > 0. then compute_uless gamma (compute sf1 helper) (compute sf2 helper) helper else raise  (Failure "Gamma of U operator is a non-negative value") 
     | LessThan (tr1,tr2)      -> compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ compute_term tr1 helper ^"; auto tr2 = "^ compute_term tr2 helper ^"; return b3_lessthan (tr1, tr2); }(env,t); }"
-    | _ -> raise (Failure "compute: missing formula")
+    | _ -> raise (Failure ("synth_mon: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
 and compute_uless gamma sf1 sf2 helper =
   compute_function_head ^"
   {
@@ -307,7 +310,6 @@ and calculate_t_upper_bound_term term =
 
 (* rmtld3 synthesis interface *)
 
-let verbose = ref false
 let config_mon_filename = ref ""
 let rmtld_formula = ref ""
 let rmtld_formula_ltxeq = ref ""
@@ -324,9 +326,11 @@ let set_smt_formula f = smtlibv2_formula := true
 let set_simplify_formula f = simplify_formula := true
 let set_smt_out_dir f = smt_out_dir := f
 
+open Batteries
 open Unix
 open Sexplib
 open Sexplib.Conv
+
 
 open Rmtld3synth_simplify
 open Rmtld3synth_unittest
@@ -879,9 +883,16 @@ end
 
 let sat_gen formula =
 begin
-  let stream = open_out ("smt/smtlibv2_formula_example.smt2") in
-  Printf.fprintf stream "%s\n" (rmtld3synthsmt formula);
-  close_out stream;
+  if String.exists (!smt_out_dir) ".smt2" then
+    let stream = open_out (!smt_out_dir) in
+    Printf.fprintf stream "%s\n" (rmtld3synthsmt formula);
+    close_out stream;
+    verb (fun _ -> print_endline ("SMTLIBv2 file "^(!smt_out_dir)^" saved."));
+  else
+  begin
+    verb (fun _ -> print_endline "SMTLIBv2 file: \n");
+    print_endline (rmtld3synthsmt formula);
+  end
 end
 
 
@@ -907,7 +918,7 @@ let _ =
     ("--out-smt-file", Arg.String (set_smt_out_dir), " Set the output filename and directory for SMTLIBv2 file");
     ("--out-mon-folder", Arg.Unit(fun () -> ()), " Set the output folder for monitor synthesis\n\n Options:");
     
-    ("--verbose", Arg.Set verbose, " Enables verbose mode");
+    ("--verbose", Arg.Set_int verb_mode, " Enables verbose mode");
     ("--version", Arg.Unit (fun () -> print_endline ("Git version "^(Version.git)); exit 0), " Version and SW information\n");
   ]
   in let usage_msg = "rmtld3synth flags [options] input [output]\n\n Flags: "
@@ -925,17 +936,29 @@ let _ =
         end
       else if !rmtld_formula_ltxeq <> "" then
         begin
-          print_endline "Latex Eq parsing enabled.";
-          Texeqparser.texeqparser !rmtld_formula_ltxeq;
+          verb (fun _ -> print_endline "Latex Eq parsing enabled.";
+            Texeqparser.texeqparser !rmtld_formula_ltxeq;
+          );
         end
       else
         begin
-          print_endline "Rmdsl parsing enabled.";
+          verb (fun _ -> print_endline "Rmdsl parsing enabled.");
           let ex = Rmdslparser.rmdslparser !expression_rmdsl in
-          let fm = Rmdslparser.rmtld3_fm_of_rmdsl ex in
-          print_endline "--------------------------------------------------------------------------------\n";
-          print_endline "rmtld3 formula: ";
-          print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm fm));
+          let fm_lst = Rmdslparser.rmtld3_fm_of_rmdsl ex in
+          verb (fun _ ->
+            print_endline "--------------------------------------------------------------------------------\n";
+            print_endline "rmtld3 formula(s): ";
+            print_endline ("Available goals: "^(string_of_int (List.length fm_lst)));
+          );
+
+          List.fold_left (fun a b ->
+            let ex,ex2 = b (mtrue,mtrue) mtrue in (* TODO skip ex2 *)
+            print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex));
+            print_endline "--------------------------------------------------------------------------------\n";
+            sat_gen ex;
+            a + 1
+          ) 1 fm_lst;
+          
           ()
 
         end

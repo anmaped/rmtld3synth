@@ -20,6 +20,10 @@ exception Settings_Not_Found of string;;
 (* reformulate this rmtld3synth state *)
 type helper = string ref * string ref * int ref * ( global_int list * global_string list * monitor list ) * ((int ref * (string, int) t) list)
 
+let verb_mode = ref 0
+
+let verb f = if !verb_mode = 2 then f () else () 
+
 let get_event_fulltype (t1,t2,_,_,_) = 
   !t1 ^ "< " ^ !t2 ^" >"
 
