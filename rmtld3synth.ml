@@ -899,6 +899,9 @@ end
 open Version
 open Rmdslparser
 
+(*
+   Command Line Interface
+ *)
 let _ =
 
   let speclist = [
@@ -924,7 +927,17 @@ let _ =
   in let usage_msg = "rmtld3synth flags [options] input [output]\n\n Flags: "
   in Arg.parse (Arg.align speclist) print_endline usage_msg;
 
-  
+  let to_simplify fm : rmtld3_fm =
+    if !simplify_formula then
+      let smp = simplify fm in
+      verb (fun _ ->
+        print_endline "Output formula from the simplification process:\n";
+        print_endline (Sexp.to_string_hum (sexp_of_rmtld3_fm smp));
+        print_endline "--------------------------------------------------------------------------------\n";
+      );
+      smp
+    else fm
+    in
 
   (* for sat case *)
   if !smtlibv2_formula <> false then
@@ -932,12 +945,14 @@ let _ =
       (* rmtld_formula is undefined ? try rmtld_formula_ltxeq *)
       if !rmtld_formula <> "" then
         begin
-          sat_gen (formula_of_sexp (Sexp.of_string !rmtld_formula))
+          (* get satisfability of a plain formula *)
+          sat_gen (to_simplify (formula_of_sexp (Sexp.of_string !rmtld_formula)))
         end
       else if !rmtld_formula_ltxeq <> "" then
         begin
           verb (fun _ -> print_endline "Latex Eq parsing enabled.";
             Texeqparser.texeqparser !rmtld_formula_ltxeq;
+            (* type convert to rmtld3_fm USE: sat_gen (to_simplify X) *)
           );
         end
       else
@@ -951,13 +966,15 @@ let _ =
             print_endline ("Available goals: "^(string_of_int (List.length fm_lst)));
           );
 
-          List.fold_left (fun a b ->
+          let _ = List.fold_left (fun a b ->
             let ex,ex2 = b (mtrue,mtrue) mtrue in (* TODO skip ex2 *)
-            print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex));
-            print_endline "--------------------------------------------------------------------------------\n";
-            sat_gen ex;
+            verb (fun _ ->
+              print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex));
+              print_endline "--------------------------------------------------------------------------------\n";
+            );
+            sat_gen (to_simplify ex);
             a + 1
-          ) 1 fm_lst;
+          ) 1 fm_lst in
           
           ()
 
@@ -975,10 +992,11 @@ let _ =
       if !rmtld_formula <> "" then
       begin
         print_endline ("Processing formula: "^(!rmtld_formula));
-        Rmtld3synth_simplify.simplify (formula_of_sexp (Sexp.of_string !rmtld_formula));
+        let fm = simplify (formula_of_sexp (Sexp.of_string !rmtld_formula)) in
+        print_endline (Sexp.to_string_hum (sexp_of_rmtld3_fm fm));
       end
       else
-        print_endline "No formula specified."
+        print_endline "No formula specified. Use --input-sexp"
     end
 
   else

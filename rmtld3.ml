@@ -277,6 +277,7 @@ let rec string_of_rmtld_tm rmtld_tm =
    
 and string_of_rmtld_fm rmtld_fm =
   match rmtld_fm with
+  | True()                 -> "true"
   | Prop p                 -> p
   | Not sf                 -> "~(" ^ (string_of_rmtld_fm sf) ^ ") "
   | Or (sf1, sf2)          -> "(" ^ (string_of_rmtld_fm sf1) ^ " or " ^ (string_of_rmtld_fm sf2) ^ ")"

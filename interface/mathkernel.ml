@@ -348,6 +348,7 @@ let mathkernel_cad formula =
   *)
 
 open Rmtld3
+open Rmtld3_extension
 
 (*let equality var1 var2() =
   	And([Less([Var(var1); Var(var2)]); Less([Var(var2); Var(var1)])])*)
@@ -361,7 +362,7 @@ let rec rmtld_tm_to_m rmtld_term =
   | FTimes (eta1,eta2)  -> Times([rmtld_tm_to_m eta1; rmtld_tm_to_m eta2])
   | x                   -> raise (Failure ("bad expression: " ^ (string_of_rmtld_tm x)))
 
-and rmtld_fm_to_m rmtld_formula =
+and rmtld_fm_to_m (rmtld_formula: rmtld3_fm) : m_tm =
   match rmtld_formula with
   | Prop p                 -> Var("prop"^p) (* TODO: control var replacement *)
   | Not sf                 -> Not(rmtld_fm_to_m sf)
@@ -372,7 +373,7 @@ and rmtld_fm_to_m rmtld_formula =
   | x                      -> raise (Failure ("bad expression: " ^ (string_of_rmtld_fm x)))
 
 
-let rec m_tm_to_rmtld m_tm =
+let rec m_tm_to_rmtld (m_tm: m_tm) : rmtld3_fm =
   match m_tm with
   | Equal [x; y] -> Not(Or(LessThan(m_tm_to_rmtld_tm y, m_tm_to_rmtld_tm x), LessThan(m_tm_to_rmtld_tm x, m_tm_to_rmtld_tm y)))
   | Var x -> (*if var starts with prop then is a proposition *) Prop(x)
@@ -398,6 +399,44 @@ let m_fm_to_rmtld m_formula =
   | Tm(x) -> m_tm_to_rmtld x
   | x     -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_fm x))))
 
+
+let rec rmtld3_tm_disj_of_m_tm (tm: m_tm) : tm_disj =
+  (* type conversion from mathematica term into tm_disj *)
+  match tm with
+  | Var x -> Var(x)
+  | Int x -> C(float_of_int x)
+  | _     -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
+
+and rmtld3_fm_atoms_of_m_tm (tm: m_tm) : atoms =
+  match tm with
+  | Var x -> (*if var starts with prop then is a proposition *) Prop(x)
+  | Equal [x; y] -> (* we need to test if x is a var and y is a duration *) Equal(rmtld3_tm_disj_of_m_tm x, rmtld3_tm_disj_of_m_tm y)
+  | Less [x; y]  -> Less(rmtld3_tm_disj_of_m_tm x, rmtld3_tm_disj_of_m_tm y)
+  | _            -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
+
+and rmtld3_fm_conj_of_m_tm (tm: m_tm) : fm_conj =
+  (* type conversion from mathematica term into rmtld3_fm_disj *)
+  match tm with
+
+  | And lst   -> let fld (a: fm_conj) (b: m_tm) : fm_conj = if a = (Atom(True)) then rmtld3_fm_conj_of_m_tm b else And(a, rmtld3_fm_atoms_of_m_tm b)
+                 in fold_left fld (Atom(True)) lst
+  | Not x     -> Not(rmtld3_fm_atoms_of_m_tm x)
+  | _         -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
+
+and rmtld3_fm_disj_of_m_tm (tm: m_tm) : fm_disj =
+  match tm with
+  | Or(x::lst) -> let fld (a: fm_disj) (b: m_tm) : fm_disj = Or(a, rmtld3_fm_conj_of_m_tm b)
+              in fold_left fld (Conj(rmtld3_fm_conj_of_m_tm x)) lst
+  | _      -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
+
+and rmtld3_fm_disj_of_m_fm (fm: m_fm) : fm_disj =
+  (* type conversion from mathematica formula into rmtld3_fm_disj *)
+  match fm with
+  | Tm(x) -> rmtld3_fm_disj_of_m_tm x
+  | _     -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_fm fm))))
+
+
+
 let m_fm_convert mode m_formula =
   (* convert the rmtld formula into the intermediate parse tree for mathematica *)
 
@@ -415,6 +454,18 @@ let m_fm_convert mode m_formula =
 let m_fm_cnf m_formula = m_fm_convert "CNF" m_formula
 
 let m_fm_dnf m_formula = m_fm_convert "DNF" m_formula
+
+
+(* From Rmtld3.formula to fm_disj *)
+let formula_to_fm_disj (fm: rmtld3_fm) : fm_disj =
+  let dnf_fm_disj fm = rmtld3_fm_disj_of_m_fm (m_fm_dnf (rmtld_fm_to_m fm))
+  in
+  dnf_fm_disj fm
+
+  (* Conj(Not(Prop("bb"))) *)  (* URGENT TO TO THAT *)
+  (* CONTINUE HERE !!! HOME *)
+
+
 
 let m_fm_simplify m_formula =
   print_endline "m_fm_simplify";
