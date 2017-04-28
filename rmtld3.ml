@@ -37,6 +37,8 @@ with sexp
 
 type rmtld3_fm = formula with sexp
 type rmtld3_tm = term with sexp
+type tm = rmtld3_tm with sexp
+type fm = rmtld3_fm with sexp
 (*type foobar = Foo of int | Bar with sexp*)
 
 

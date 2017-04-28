@@ -2,13 +2,13 @@ RESULT := rmtld3synth
 SOURCES := \
   version.ml \
   rmtld3.ml \
+  rmtld3_extension.ml \
   rmtld3synth_helper.ml \
   rmtld3synth_smt.ml \
   rmtld3synth_unittest.ml \
   interface/mathkernel.ml \
   interface/texeqparser.ml \
   interface/rmdslparser.ml \
-  rmtld3_extension.ml \
   rmtld3synth_simplify.ml \
   rmtld3synth.ml
 
