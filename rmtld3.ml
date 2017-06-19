@@ -8,6 +8,7 @@
  *
  * *)
 
+open Batteries
 open List
 
 open Sexplib
@@ -173,28 +174,10 @@ and gen_formula size p =
    else
      Prop("E")
 
-(* generate an until formula *)
-let rec gen_until_formula rl size p =
-  if size > 0 then
-    Until((p), gen_until_formula true (size-1) p, gen_until_formula false (size-1) p)
-  else
-    if rl then
-      Until((p), Prop("A"), Prop("B"))
-    else
-      Until((p), Prop("A"), Prop("*"))
 
-
-(* create an uniform trace of the type
- * (p1, (i1, i1')), ... ,(pn, (in, in')) list 
- *)
-let rec generate_uniform_traces value samples lst =
-   if (List.length lst) > samples then lst else
-   let timestamp = (Random.float 0.01) +. value in
-   match Random.int 2 with
-   | 0 -> generate_uniform_traces timestamp samples (("A",(value,timestamp))::lst)
-   | 1 -> generate_uniform_traces timestamp samples (("B",(value,timestamp))::lst)
-   | _ -> generate_uniform_traces timestamp samples (("C",(value,timestamp))::lst)
-
+(*
+   Functions for getting results about the search space
+*)
 
 (* measuring formulas (n durations, n temporal operators) *)
 let rec measure_term term =
@@ -229,6 +212,72 @@ and measure_formula formula =
    | LessThan (tr1,tr2)     -> let x1,y1 = measure_term tr1 in
                                let x2,y2 = measure_term tr2 in
                                (x1+x2, y1+y2)
+
+(* create an uniform trace of the type
+ * (p1, (i1, i1')), ... ,(pn, (in, in')) list 
+ *)
+let rec generate_uniform_traces value samples lst =
+   if (List.length lst) > samples then lst else
+   let timestamp = (Random.float 0.01) +. value in
+   match Random.int 2 with
+   | 0 -> generate_uniform_traces timestamp samples (("A",(value,timestamp))::lst)
+   | 1 -> generate_uniform_traces timestamp samples (("B",(value,timestamp))::lst)
+   | _ -> generate_uniform_traces timestamp samples (("C",(value,timestamp))::lst)
+
+(* asymptotic function for complexity *)
+let rec asym_comp (a,b,c) fm =
+  match fm with
+  | Until(vl, fm1, fm2) when a <> []-> fst (fold_left (fun (cts,lst) el -> (cts + (asym_comp (lst,b,c) fm1) + (asym_comp (lst,b,c) fm2), List.tl lst ) ) (0,a) a)
+  | Prop(str) -> 1
+  | _ -> raise (Failure ("Not supported formula."))
+
+(* generate an until formula using triangle pattern *)
+let rec gen_u_formula_with_triangle_pattern rl size p =
+  if size > 0 then
+    Until((p), gen_u_formula_with_triangle_pattern true (size-1) p, gen_u_formula_with_triangle_pattern false (size-1) p)
+  else
+    if rl then
+      Until((p), Prop("A"), Prop("B"))
+    else
+      Until((p), Prop("A"), Prop("*"))
+
+(* generate an until formula with maximum likelihood *)
+let gen_u_formula_with_maximum_prop_evaluation size pval samples =
+  let trc = generate_uniform_traces 0.2 samples []
+  in
+  let rec gen_u_formula_with_maximum_prop_evaluation' size_op pval trc =
+    (*print_endline ("D.. "^(string_of_int size_op));*)
+      
+    if not (size_op > 0) then
+      Prop("A")
+    else
+      (* test if until of trees is better than the line of trees *)
+      let fm1 = gen_u_formula_with_maximum_prop_evaluation' (size_op - 1) pval trc
+      in
+      let fm2 = gen_u_formula_with_maximum_prop_evaluation' (size_op-2) pval trc
+      in
+      let n_du1, n_to1 = measure_formula fm1
+      in
+      let n_du2, n_to2 = measure_formula fm2
+      in
+      let fm3 = gen_u_formula_with_maximum_prop_evaluation' (size_op - n_to2 - 2) pval trc
+      in
+      let n_du2, n_to3 = measure_formula fm3
+      in
+      
+      let fm1_tree = Until(pval, fm1, gen_u_formula_with_maximum_prop_evaluation' (size_op - n_to1 - 1) pval trc)
+      in
+      let fm2_line = Until(pval, Until(pval, fm2, gen_u_formula_with_maximum_prop_evaluation' (size_op - n_to2 - 2) pval trc), gen_u_formula_with_maximum_prop_evaluation' (size_op - n_to2 - n_to3 - 2) pval trc)
+      in
+      if asym_comp (trc, 0., 0.) fm1_tree < asym_comp (trc, 0., 0.) fm2_line && (size_op - n_to2 - n_to3 - 2) >= 0 then
+        fm2_line
+      else fm1_tree
+
+  in
+  gen_u_formula_with_maximum_prop_evaluation' size pval trc
+
+
+
 
 
 (* 
@@ -448,7 +497,10 @@ and compute_term_duration (k,u) dt formula =
 and compute (env, lg_env, t) formula =
         match formula with
         | True()                  -> True
-        | Prop p                  -> env.evaluate env.trace p t
+        | Prop p                  ->
+          (* counting proposition evaluation instead of recursive calls *)
+          count := !count + 1 ;
+          env.evaluate env.trace p t
         | Not sf                  -> b3_not (compute (env, lg_env, t) sf)
         | Or (sf1, sf2)           -> b3_or (compute (env, lg_env, t) sf1) (compute (env, lg_env, t) sf2)
         | Until (gamma, sf1, sf2) -> compute_uless (env, lg_env, t) gamma sf1 sf2
@@ -494,9 +546,6 @@ and compute_uless m gamma phi1 phi2 =
             Printf.printf "\n" ;
           end;
           let s,_ = fold_left (fun (v,t') (prop,(ii1,ii2)) ->
-            
-            (* counting recursive calls *)
-            count := !count + 1 ;
 
             if activate_debug = ref true then
             begin
@@ -539,7 +588,26 @@ and compute_uless m gamma phi1 phi2 =
         end
         else
           (* failure: gamma is not a non-negative value *)
-          raise  (Failure "Gamma of U operator is a non-negative value") 
+          raise  (Failure "Gamma of U operator is a non-negative value")
+
+
+
+(* compute the temporal upper bound of a formula *)
+let rec calculate_t_upper_bound formula =
+  match formula with
+    | Prop p                  -> 0.
+    | Not sf                  -> calculate_t_upper_bound sf
+    | Or (sf1, sf2)           -> Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
+    | Until (gamma, sf1, sf2) -> gamma +. Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
+    | LessThan (tr1,tr2)      -> Pervasives.max (calculate_t_upper_bound_term tr1) (calculate_t_upper_bound_term tr2)
+    | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.") 
+and calculate_t_upper_bound_term term =
+  match term with
+    | Constant value       -> 0.
+    | Duration (di,phi)    -> 0.
+    | FPlus (tr1,tr2)      -> 0.
+    | FTimes (tr1,tr2)     -> 0.
+    | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
 
 
 (* RMTLD3 abreviations *)
@@ -573,12 +641,12 @@ let m_duration_equal2 cons2 cons1 formula = Not(m_duration_notequal2 cons2 cons1
 let m_duration_lessorequal2 cons2 cons1 formula = Or(m_duration_less2 cons2 cons1 formula, m_duration_equal2 cons2 cons1 formula)
 
 
-let _ () =
+let _ =
   Random.self_init ();
   Printf.printf "Random Seed Initialized !\n";
   
   (* debuging flag *)
-  activate_tests := false;
+  activate_tests := true;
   activate_debug := false;
   let activate_graph_generation = ref false in
 
@@ -662,24 +730,103 @@ let _ () =
 
     (* complexity *)
     (* (y-2)*(x*(2*x))+((y-3)*x)+x *)
+
     count := 0 ;
-    (* 2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x+x *)
-    pass_test "(A U_10 B) U_10 (A U_10 *)" (
+    (* 2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x + x *)
+    pass_test "A U_10 *" (
       compute (t_k3, t_u, 0.)
-      (Until(10.,Until(10.,Prop("A"),Prop("B")),Until(10.,Prop("A"),Prop("*"))))
+      (
+        Until(10.,
+          Prop("A"),
+          Prop("*")
+        )
+      )
     ) ;
     Printf.printf "count: %i\n" !count ;
 
     count := 0 ;
-    (* 5*(2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x)+4*x *)
-    pass_test "((A U_10 B) U_10 (A U_10 *) U_10 ((A U_10 B) U_10 A U_10 *)" (
+    (* 2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x + x *)
+    pass_test "(A U_10 B) U_10 (A U_10 *)" (
       compute (t_k3, t_u, 0.)
-      (Until(10.,Until(10.,Until(10.,Prop("A"),Prop("B")),
-      Until(10.,
-      Prop("A"),Prop("B"))),Until(10.,Until(10.,Prop("A"),Prop("B")),Until(10.,
-      Prop("A"),Prop("*")))))
+      (
+        Until(10.,
+          Until(10.,Prop("A"),Prop("B")),
+          Until(10.,Prop("A"),Prop("*"))
+        )
+      )
     ) ;
     Printf.printf "count: %i\n" !count ;
+
+    count := 0 ;
+    (* 5*(2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x) + 4*x *)
+    pass_test "((A U_10 B) U_10 (A U_10 *) U_10 ((A U_10 B) U_10 A U_10 *)" (
+      compute (t_k3, t_u, 0.)
+      (
+        Until(10.,
+          Until(10.,
+            Until(10.,Prop("A"),Prop("B")),
+            Until(10.,Prop("A"),Prop("B"))
+          ),
+          Until(10.,
+            Until(10.,Prop("A"),Prop("B")),
+            Until(10.,Prop("A"),Prop("*"))
+          )
+        )
+      )
+    ) ;
+    Printf.printf "count: %i\n" !count ;
+
+    count := 0 ;
+    (* number of temporal operators: 15 *)
+    (* 13*(2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x) + 12*x *)
+    pass_test "(((A U_10 B) U_10 (A U_10 *)) U_10 ((A U_10 B) U_10 (A U_10 *)) U_10 (((A U_10 B) U_10 (A U_10 *)) U_10 ((A U_10 B) U_10 (A U_10 *)))"
+    (
+      compute (t_k3, t_u, 0.)
+      (
+        Until(10.,
+          Until(10.,
+            Until(10.,
+              Until(10.,Prop("A"),Prop("B")),
+              Until(10., Prop("A"),Prop("B"))
+            ),
+            Until(10.,
+              Until(10.,Prop("A"),Prop("B")),
+              Until(10., Prop("A"),Prop("B"))
+            )
+          ),
+          Until(10.,
+            Until(10.,
+              Until(10.,Prop("A"),Prop("B")),
+              Until(10., Prop("A"),Prop("B"))
+            ),
+            Until(10.,
+              Until(10.,Prop("A"),Prop("B")),
+              Until(10., Prop("A"),Prop("*"))
+            )
+          )
+        )
+      )
+    );
+    Printf.printf "count: %i\n" !count ;
+
+
+
+    (* binomial(n+(m-1), (m-1)) * 2^n *)
+    let g_val = [0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10] in
+    let g_val2 = map (fun a -> (Int.pow 2 a) -1) (tl g_val) in
+    let lst1 = [1; 2; 3; 4; 5; 6; 7; 8]
+    in
+    iter (fun a -> 
+      let fm = gen_u_formula_with_triangle_pattern true a 10.
+      in print_endline ("D"^(string_of_int a)^": " ^ (string_of_int (asym_comp (lst1, 0., 0.) fm))^" n: "^(string_of_int (snd (measure_formula fm))) );
+
+      (* print_endline (Sexp.to_string_hum (sexp_of_rmtld3_fm fm)); *)
+    ) g_val;
+
+    iter (fun a -> 
+      let fm = gen_u_formula_with_maximum_prop_evaluation a 10. (List.length lst1)
+      in print_endline ("N"^(string_of_int a)^": " ^ (string_of_int (asym_comp (lst1, 0., 0.) fm))^" n: "^(string_of_int (snd (measure_formula fm))) );
+    ) g_val2;
 
 (*
  * NEW test [TODO]
@@ -778,7 +925,7 @@ Metrics:
         (* factor * sizeof_trace * 2 = duration -> factor = duration / (sizeof_trace*2) *)
         let duration = 10. in
         let trace = rev (strategic_uniform_trace 0. sizeof_trace (duration /. ( (float_of_int sizeof_trace) /. 1.95)) []) in
-        let formula = gen_until_formula true (height-2) duration in
+        let formula = gen_u_formula_with_triangle_pattern true (height-2) duration in
         (*((2. ** (float_of_int (height)))/. (float_of_int sizeof_trace)) *)
         (*print_trace trace ;*)
         Printf.printf "\nFormula with height=%i and |trace|=%i: \n  " height sizeof_trace ;

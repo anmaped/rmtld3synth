@@ -230,8 +230,8 @@ let simplify (rmtld_formula: fm) : fm =
 
   let isol f lst = List.fold_left (fun (wineq,nineq) a -> if try f a; false with _ -> true then (a::wineq,nineq) else (wineq,a::nineq)) ([],[]) lst
   in
-  let isol_conj (fm: fm_conj_ex) : (fm_atom_ex list * fm_atom_ex list) = isol fm_atom_notless_of_fm_atom_ex (fm_atom_ex_lst_of_fm_conj_ex fm) in
-  let isol_disj (fm: fm_disj_ex) : (fm_conj_ex list * fm_conj_ex list) = isol fm_conj_notless_of_fm_conj_ex (fm_conj_ex_lst_of_fm_disj_ex fm) in
+  let isol_conj (fm: fm_conj_ex) : (fm_atom_ex list * fm_atom_ex list) = isol (fm_atom_notless_of_fm_atom % fm_atom_of_fm_atom_ex) (fm_atom_ex_lst_of_fm_conj_ex fm) in
+  let isol_disj (fm: fm_disj_ex) : (fm_conj_ex list * fm_conj_ex list) = isol (fm_conj_notless_of_fm_conj % fm_conj_of_fm_conj_ex) (fm_conj_ex_lst_of_fm_disj_ex fm) in
 
   
 

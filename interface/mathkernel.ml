@@ -419,7 +419,7 @@ let rec tm_disj_of_m_tm (tm: m_tm) : tm_disj =
   | Int x -> C(float_of_int x)
   | _     -> raise (Failure ("bad expression5: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
 
-and fm_atoms_of_m_tm (tm: m_tm) : atoms =
+and fm_atoms_of_m_tm (tm: m_tm) : fm_atom =
 (* TODO: CHANGE LESS ARITY !! *)
   match tm with
   | Less [x; y]  -> Less(tm_disj_of_m_tm x, tm_disj_of_m_tm y)
