@@ -307,6 +307,9 @@ let set_exp_rmdsl f = expression_rmdsl := f
 let set_smt_formula f = smtlibv2_formula := true
 let set_simplify_formula f = simplify_formula := true
 let set_smt_out_dir f = smt_out_dir := f
+let set_ocaml_language f = ()
+let set_cpp_language f = ()
+let set_spark14_anguage f = ()
 
 open Batteries
 open Unix
@@ -409,8 +412,12 @@ let _ =
 
   let speclist = [
     (* action flags *)
-    ("--simplify", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD");
-    ("--smt-lib-v2", Arg.Unit (set_smt_formula), " Enables Satisfability problem encoding in SMT-LIBv2 language\n\n Input:");
+    ("--synth-smtlibv2", Arg.Unit (set_smt_formula), " Enables synthesis for SMT-LIBv2 language");
+    ("--synth-ocaml", Arg.Unit (set_ocaml_language)," Enables synthesis for Ocaml language");
+    ("--synth-cpp11", Arg.Unit (set_cpp_language), " Enables synthesis for C++11 language");
+    ("--synth-spark2014", Arg.Unit (set_spark14_anguage), " Enables synthesis for Spark2014 language\n\n Input:");
+    ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD");
+
     
 
     (* input models *)
