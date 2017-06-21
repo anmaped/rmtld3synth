@@ -110,7 +110,6 @@ type logic_obs =
   }
 
 let activate_debug = ref false
-let activate_tests = ref false
 
 let count = ref 0
 let count_duration = ref 0

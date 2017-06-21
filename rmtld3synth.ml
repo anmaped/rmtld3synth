@@ -3,292 +3,48 @@
 open Sexplib
 open Sexplib.Conv
 
+open Rmtld3
 open Rmtld3synth_helper
 
-(* function that pretty prints 'observation' function as a lambda functions in c++ *)
-let synth_obs_function observation_funcname struct_name =
-  (* *)
-  let code = "
-  // obs lambda function
-  auto "^observation_funcname^" = []( struct "^struct_name^" &env, proposition p, timespan t) mutable -> three_valued_type
-  {
-    DEBUGV_RTEMLD3(\"  eval: %lu prop:%d\\n\", t, p);
-    return b3_or ( env.trace->searchOForward(env.state, p, t), env.trace->searchOBackward(env.state, p, t) );
-  };
-  " in
-  code
-
-  (* function that prety prints 'environment' function as a lambda function in c++ *)
-let synth_environment helper =
-  let struct_name = "Environment" in
-  let circular_buffer_vartype = "RMTLD3_reader< "^ get_event_type(helper) ^" >" in
-  let observation_funcname = "__observation" in
-  (* object to read traces containing current duration and element numbers (since is a circular buffer then size is constant)*)
-  let code_init = "
-  struct "^struct_name^" {
-    std::pair <size_t, timespanw> state;
-    "^circular_buffer_vartype^" * const trace;
-    three_valued_type (*const evaluate)(struct Environment &, proposition, timespan);
-
-    "^struct_name^"(
-      std::pair <size_t, timespanw> st,
-      "^circular_buffer_vartype^" * const t,
-      three_valued_type (*const ev)(struct Environment &, proposition, timespan)
-    ) :
-      state(st),
-      trace(t),
-      evaluate(ev) {};
-  };
-  " in
-
-  (* observation function where duration_varname is the name of the current duration variable *)
-  let code_obs = synth_obs_function observation_funcname (struct_name) in
-  let code_end = "
-  " in
-  (code_init^code_obs^code_end)
-
-
-
-open Rmtld3
-
-let compute_function_head = "[](struct Environment env, timespan t) -> three_valued_type";;
-
-let compute_function_head_mutable = "[](struct Environment &env, timespan t) mutable -> three_valued_type";;
-
-let compute_term_function_head = "[](struct Environment env, timespan t) -> duration";;
-
-let trace_iterator helper = "TraceIterator< "^ get_event_type(helper) ^" >";;
-
-(* Synthesis of the compute function  *)
-let rec compute_term term helper =
-  match term with
-    | Constant value       -> "make_duration("^string_of_float value^",false)"
-    | Duration (di,phi)    -> compute_term_duration (compute_term di helper) (compute phi helper) helper
-    | FPlus (tr1,tr2)      -> "make_duration("^compute_term tr1 helper ^" + "^ compute_term tr2 helper^",false)"
-    | FTimes (tr1,tr2)     -> "make_duration("^compute_term tr1 helper ^" * "^ compute_term tr2 helper^",false)"
-    | _ -> raise (Failure "compute_terms: missing term")
-and compute formula helper =
-  match formula with
-    | Prop p                  -> let tbl = get_proposition_hashtbl helper in
-                                 let counter = get_proposition_counter helper in 
-                                 compute_function_head_mutable^" { return env.evaluate(env, "^
-                                  string_of_int (
-                                    try Hashtbl.find tbl p with Not_found -> Hashtbl.add tbl p counter; counter 
-                                                )^
-                                 ", t); }"
-    | Not sf                  -> compute_function_head_mutable^" { auto sf = "^ compute sf helper ^"(env,t); return b3_not (sf); }"
-    | Or (sf1, sf2)           -> compute_function_head_mutable^" { auto sf1 = "^ compute sf1 helper ^"(env,t); auto sf2 = "^ compute sf2 helper ^"(env,t); return b3_or (sf1, sf2); }"
-    | Until (gamma, sf1, sf2) -> if gamma > 0. then compute_uless gamma (compute sf1 helper) (compute sf2 helper) helper else raise  (Failure "Gamma of U operator is a non-negative value") 
-    | LessThan (tr1,tr2)      -> compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ compute_term tr1 helper ^"; auto tr2 = "^ compute_term tr2 helper ^"; return b3_lessthan (tr1, tr2); }(env,t); }"
-    | _ -> raise (Failure ("synth_mon: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
-and compute_uless gamma sf1 sf2 helper =
-  compute_function_head ^"
-  {
-    auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator helper^" iter) -> four_valued_type
-    {
-
-      // eval_b lambda function
-      auto eval_b = []( struct Environment env, timespan t, four_valued_type v ) -> four_valued_type
-      {
-        // eval_i lambda function
-        auto eval_i = [](three_valued_type b1, three_valued_type b2) -> four_valued_type
-        {
-          return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE && b2 == T_FALSE) ? b3_to_b4(b1) : FV_SYMBOL );
-        };
-
-        // change this (trying to get the maximum complexity)
-        //if ( v == FV_SYMBOL )
-        //{
-          DEBUGV_RTEMLD3(\"  compute phi1\\n\");
-          // compute phi1
-          three_valued_type cmpphi1 = "^sf1^"(env, t);
-
-          DEBUGV_RTEMLD3(\"  compute phi2\\n\");
-          // compute phi2
-          three_valued_type cmpphi2 = "^sf2^"(env, t);
-
-          four_valued_type rs = eval_i(cmpphi1, cmpphi2);
-
-          DEBUGV_RTEMLD3(\" phi1=%s UNTIL phi2=%s\\n\", out_p(cmpphi1), out_p(cmpphi2) );
-
-        if ( v == FV_SYMBOL )
-        {
-          return rs;
-        }
-        else
-        {
-          return v;
-        }
-      };
-
-      DEBUGV_RTEMLD3(\"BEGIN until_op.\\n\\n \");
-      iter.debug();
-
-      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
-
-      auto cos = iter.getBegin();
-
-      four_valued_type s = std::accumulate(
-        iter.begin(),
-        iter.end(),
-        std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
-          [&env, &cos, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype(helper) ^" e ) {
-            
-            DEBUGV_RTEMLD3(\"  until++ (%s)\\n\", out_fv(a.first));
-
-            count_until_iterations += 1;
-
-            /* update the new state based on the sub_k calculate iterator.
-             * optimization step: update current index to avoid re-read/evaluate events several times
-             */
-            env.state = std::make_pair ( cos,  a.second);
-            cos++;
-
-            return std::make_pair( eval_b( env, a.second, a.first ), a.second + e.getTime() );
-          }
-      ).first;
-
-      return s;
-    };
-
-
-    // sub_k function defines a sub-trace
-    auto sub_k = []( struct Environment env, timespan t) -> "^trace_iterator helper^"
-    {
-
-      // use env.state to speedup the calculation of the new bounds
-      "^trace_iterator helper^" iter = "^trace_iterator helper^" (env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
-
-      // to use the iterator for both searches we use one reference
-      "^trace_iterator helper^" &it = iter;
-
-      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
-
-      auto lower = env.trace->searchIndexForwardUntil( it, t);
-      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") - 1 );
-
-      // set TraceIterator for interval [t, t+"^string_of_float (gamma)^"[
-      it.setBound(lower, upper);
-
-      // return iterator ... interval length may be zero
-      return it;
-    };
-
-    "^trace_iterator helper^" subk = sub_k(env, t);
-
-    four_valued_type eval_c = eval_fold(env, t, subk );
-
-    DEBUGV_RTEMLD3(\"END until_op (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
-    
-    return ( eval_c == FV_SYMBOL ) ?
-      ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
-    :
-      b4_to_b3(eval_c);
-  }
-
-  "
-  and compute_term_duration di tf helper =
-    compute_term_function_head^" {
-    
-    auto eval_eta =  [](struct Environment env, timespan t, timespan t_upper, "^trace_iterator helper^" iter) -> duration
-    {
-      auto indicator_function = [](struct Environment env, timespan t) -> duration {
-        auto formula = "^tf^"(env, t);
-
-        return (formula == T_TRUE)? std::make_pair (1,false) : ( (formula == T_FALSE)? std::make_pair (0,false) : std::make_pair (0,true)) ;
-
-      };
-
-
-      // compare if t is equal to the lower bound
-      auto lower = iter.getLowerAbsoluteTime();
-      // compare if t is equal to the upper bound
-      auto upper = iter.getUpperAbsoluteTime();
-
-      timespan val1 = ( t == lower )? 0 : t - lower;
-      timespan val2 = ( t_upper == upper )? 0 : t_upper - upper;
-
-      DEBUGV_RTEMLD3(\"dur lower(%ld) upper(%ld)\\n\", val1, val2);
-
-      auto cum = lower;
-
-      // lets do the fold over the trace
-      return std::accumulate(
-        iter.begin(),
-        iter.end(),
-        std::make_pair (make_duration (0, false), (timespan)lower), // initial fold data (duration starts at 0)
-        [&env, val1, val2, &cum, t, t_upper, indicator_function]( const std::pair<duration,timespan> p, "^ get_event_fulltype(helper) ^" e )
-        {
-          auto d = p.first;
-
-          auto t_begin = cum;
-          auto t_end = t_begin + e.getTime();
-          cum = t_end;
-
-          auto cond1 = t_begin <= t && t < t_end;
-          auto cond2 = t_begin <= t_upper && t_upper < t_end;
-
-          auto valx = ((cond1)? val1 : 0 ) + ((cond2)? val2 : 0);
-
-          auto x = indicator_function(env, p.second);
-
-          DEBUGV_RTEMLD3(\"dur=%f bottom=%d\\n\", d.first + (x.first * ( e.getTime() - valx )), d.second || x.second);
-
-          return std::make_pair (make_duration (d.first + (x.first * ( e.getTime() - valx )), d.second || x.second), p.second + e.getTime());
-        }
-      ).first;
-      
-    };
-
-    // sub_k function defines a sub-trace
-    auto sub_k = []( struct Environment env, timespan t, timespan t_upper) -> "^trace_iterator helper^"
-    {
-
-      // use env.state to speedup the calculation of the new bounds
-      "^trace_iterator helper^" iter = "^trace_iterator helper^" ( env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
-
-      // to use the iterator for both searches we use one reference
-      "^trace_iterator helper^" &it = iter;
-
-      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
-
-      auto lower = env.trace->searchIndexForwardUntil( it, t);
-      auto upper = env.trace->searchIndexForwardUntil( it, t_upper - 1 );
-
-      // set TraceIterator for interval [t, t + di[
-      it.setBound(lower, upper);
-
-      // return iterator ... interval length may be zero
-      return it;
-    };
-
-    auto t_upper = t + "^di^".first;
-
-    return eval_eta(env, t, t_upper, sub_k(env, t, t_upper));
-
-    /*let indicator_function (k,u) t phi = if compute (k,u,t) phi = True then 1. else 0. in
-        let riemann_sum m dt (i,i') phi =
-          (* dt=(t,t') and t in ]i,i'] or t' in ]i,i'] *)
-          count_duration := !count_duration + 1 ;
-          let t,t' = dt in
-          if i <= t && t < i' then
-            (* lower bound *)
-            (i'-.t) *. (indicator_function m i' phi)
-          else (
-            if i <= t' && t' < i' then
-              (* upper bound *)
-              (t'-.i) *. (indicator_function m t' phi)
-            else
-              (i'-.i) *. (indicator_function m i' phi)
-          ) in
-        let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
-        m dt (i,t') phi) +. s) 0. x in
-        let t,t' = dt in
-        eval_eta (k,u) dt formula (sub_k (k,u,t) t')*/
-
-
-    }(env,t)"
-
+(*open Rmtld3synth_cpp11*) (* module for cpp11 synthesis *)
+open Rmtld3synth_ocaml
+
+(*let module M = (val m : Rmtld3synth_ocaml)*)
+module type Conversion =
+sig
+  val compute_tm_constant : value -> helper -> string
+  val compute_tm_duration : string -> string -> helper -> string
+  val compute_tm_plus : string -> string -> helper -> string
+  val compute_tm_times : string -> string -> helper -> string
+  val compute_fm_p : prop -> helper -> string
+  val compute_fm_not : string -> helper -> string
+  val compute_fm_or : string -> string -> helper -> string
+  val compute_fm_less : string -> string -> helper -> string
+  val compute_fm_uless : value -> string -> string -> helper -> string
+end;;
+
+module Conversion_cpp (Conv : Conversion) = struct
+  (* Synthesis of the rmtld3 term *)
+  let rec compute_term term helper =
+    match term with
+      | Constant value       -> Conv.compute_tm_constant value helper
+      | Duration (di,phi)    -> Conv.compute_tm_duration (compute_term di helper) (compute phi helper) helper
+      | FPlus (tr1,tr2)      -> Conv.compute_tm_plus (compute_term tr1 helper) (compute_term tr2 helper) helper
+      | FTimes (tr1,tr2)     -> Conv.compute_tm_times (compute_term tr1 helper) (compute_term tr2 helper) helper
+      | _                    -> raise (Failure "compute_terms: missing term")
+
+  (* Synthesis of the rmtld3 formula *)
+  and compute formula helper =
+    match formula with
+      | Prop p                  -> Conv.compute_fm_p p helper
+      | Not sf                  -> Conv.compute_fm_not (compute sf helper) helper
+      | Or (sf1, sf2)           -> Conv.compute_fm_or (compute sf1 helper) (compute sf2 helper) helper
+      | Until (gamma, sf1, sf2) -> if gamma > 0. then Conv.compute_fm_uless gamma (compute sf1 helper) (compute sf2 helper) helper
+                                   else raise  (Failure "Gamma of U operator is a non-negative value") 
+      | LessThan (tr1,tr2)      -> Conv.compute_fm_less (compute_term tr1 helper) (compute_term tr2 helper) helper
+      | _                       -> raise (Failure ("synth_mon: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
+
+end;;
 
 (* rmtld3 synthesis interface *)
 
@@ -361,6 +117,9 @@ let mon_gen () =
   create_dir ("smt/"^cluster_name);
 
 
+  (* for cpp11 *)
+  let module Conv_cpp11 = Conversion_cpp(Rmtld3synth_cpp11) in
+  let module Conv_ocaml = Conversion_cpp(Rmtld3synth_ocaml) in
 
   (* generate monitors *)
   List.fold_left (fun _ (monitor_name,monitor_period,formula) ->
@@ -368,11 +127,11 @@ let mon_gen () =
     (*create_dir (cluster_name^"/"^monitor_name);*)
 
     (* monitor synthesis to cpp11 *)
-    synth_cpp11_compute cluster_name monitor_name monitor_period formula compute helper;
+    synth_cpp11_compute cluster_name monitor_name monitor_period formula (Conv_cpp11.compute) helper;
 
   ) () (get_settings_monitor helper);
 
-  synth_cpp1_external_dep cluster_name synth_environment helper;
+  synth_cpp1_external_dep cluster_name helper;
 
   synth_cpp11_env cluster_name evt_subtype event_queue_size helper;
 
@@ -383,7 +142,7 @@ let mon_gen () =
     create_dir (cluster_name^"/tests");
     Rmtld3synth_unittest.test () cluster_name helper;
 
-    Rmtld3synth_unittest.rmtld3_unit_test_generation () compute helper cluster_name helper;
+    Rmtld3synth_unittest.rmtld3_unit_test_generation () (Conv_cpp11.compute) helper cluster_name helper;
   end
 
 
@@ -415,15 +174,15 @@ let _ =
     ("--synth-smtlibv2", Arg.Unit (set_smt_formula), " Enables synthesis for SMT-LIBv2 language");
     ("--synth-ocaml", Arg.Unit (set_ocaml_language)," Enables synthesis for Ocaml language");
     ("--synth-cpp11", Arg.Unit (set_cpp_language), " Enables synthesis for C++11 language");
-    ("--synth-spark2014", Arg.Unit (set_spark14_anguage), " Enables synthesis for Spark2014 language\n\n Input:");
-    ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD");
+    ("--synth-spark2014", Arg.Unit (set_spark14_anguage), " Enables synthesis for Spark2014 language (Experimental)");
+    ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD (Experimental)\n\n Input:");
 
     
 
     (* input models *)
     ("--input-sexp", Arg.String (set_formulas), " Inputs sexp expression (RMTLD3 formula)");
-    ("--input-latexeq", Arg.String (set_formulas_ltxeq), " Inputs latex equation expressions (RMTLD3 formula)");
-    ("--input-rmdsl", Arg.String (set_exp_rmdsl), " Inputs rmdsl expressions for schedulability analysis");
+    ("--input-latexeq", Arg.String (set_formulas_ltxeq), " Inputs latex equation expressions (RMTLD3 formula) (Experimental)");
+    ("--input-rmdsl", Arg.String (set_exp_rmdsl), " Inputs rmdsl expressions for schedulability analysis (Experimental)");
     (* this is used only for monitoring synthesis and for automatic generation of some SMT-LIBv2 bechmark problems *)
     ("--config-file", Arg.String (set_config_file), " File containing synthesis settings\n\n Output:");
 

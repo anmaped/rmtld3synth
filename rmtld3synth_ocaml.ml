@@ -2,8 +2,26 @@
    Synthesis from RMTLD3 to Ocaml
 *)
 
+open Batteries
+open List
+
+open Rmtld3
+
+
+(* ocaml module api *)
+let compute_tm_constant value helper = ""
+let compute_tm_duration di tf helper = ""
+let compute_tm_plus cmptr1 cmptr2 helper = ""
+let compute_tm_times cmptr1 cmptr2 helper = ""
+let compute_fm_p p helper = ""
+let compute_fm_not cmpfm helper = ""
+let compute_fm_or cmpfm1 cmpfm2 helper = ""
+let compute_fm_less cmptr1 cmptr2 helper = ""
+let compute_fm_uless gamma sf1 sf2 helper = ""
+
 let synth_ocaml_unittests () =
   (* debuging flag *)
+  let activate_tests = ref false in
   activate_tests := true;
 
   if activate_tests = ref true then

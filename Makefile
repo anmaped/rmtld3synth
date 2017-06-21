@@ -11,6 +11,7 @@ SOURCES := \
   interface/rmdslparser.ml \
   rmtld3synth_simplify.ml \
   rmtld3synth_cpp11.ml \
+  rmtld3synth_ocaml.ml \
   rmtld3synth.ml
 
 

@@ -10,6 +10,295 @@ open Sexplib.Conv
 open Rmtld3
 open Rmtld3synth_helper
 
+(* function that pretty prints 'observation' function as a lambda functions in c++ *)
+let synth_obs_function observation_funcname struct_name =
+  (* *)
+  let code = "
+  // obs lambda function
+  auto "^observation_funcname^" = []( struct "^struct_name^" &env, proposition p, timespan t) mutable -> three_valued_type
+  {
+    DEBUGV_RTEMLD3(\"  eval: %lu prop:%d\\n\", t, p);
+    return b3_or ( env.trace->searchOForward(env.state, p, t), env.trace->searchOBackward(env.state, p, t) );
+  };
+  " in
+  code
+
+ (* function that prety prints 'environment' function as a lambda function in c++ *)
+let synth_environment helper =
+  let struct_name = "Environment" in
+  let circular_buffer_vartype = "RMTLD3_reader< "^ get_event_type(helper) ^" >" in
+  let observation_funcname = "__observation" in
+  (* object to read traces containing current duration and element numbers (since is a circular buffer then size is constant)*)
+  let code_init = "
+  struct "^struct_name^" {
+    std::pair <size_t, timespanw> state;
+    "^circular_buffer_vartype^" * const trace;
+    three_valued_type (*const evaluate)(struct Environment &, proposition, timespan);
+
+    "^struct_name^"(
+      std::pair <size_t, timespanw> st,
+      "^circular_buffer_vartype^" * const t,
+      three_valued_type (*const ev)(struct Environment &, proposition, timespan)
+    ) :
+      state(st),
+      trace(t),
+      evaluate(ev) {};
+  };
+  " in
+
+  (* observation function where duration_varname is the name of the current duration variable *)
+  let code_obs = synth_obs_function observation_funcname (struct_name) in
+  let code_end = "
+  " in
+  (code_init^code_obs^code_end)
+
+
+(*
+ * some macros for cpp11
+ *)
+let trace_iterator helper = "TraceIterator< "^ get_event_type(helper) ^" >";;
+let compute_term_function_head = "[](struct Environment env, timespan t) -> duration";;
+let compute_function_head = "[](struct Environment env, timespan t) -> three_valued_type";;
+let compute_function_head_mutable = "[](struct Environment &env, timespan t) mutable -> three_valued_type";;
+
+(*
+ * Compute terms
+ *)
+let compute_tm_constant value helper = "make_duration("^string_of_float value^",false)"
+
+let compute_tm_duration di tf helper =
+    compute_term_function_head^" {
+    
+    auto eval_eta =  [](struct Environment env, timespan t, timespan t_upper, "^trace_iterator helper^" iter) -> duration
+    {
+      auto indicator_function = [](struct Environment env, timespan t) -> duration {
+        auto formula = "^tf^"(env, t);
+
+        return (formula == T_TRUE)? std::make_pair (1,false) : ( (formula == T_FALSE)? std::make_pair (0,false) : std::make_pair (0,true)) ;
+
+      };
+
+
+      // compare if t is equal to the lower bound
+      auto lower = iter.getLowerAbsoluteTime();
+      // compare if t is equal to the upper bound
+      auto upper = iter.getUpperAbsoluteTime();
+
+      timespan val1 = ( t == lower )? 0 : t - lower;
+      timespan val2 = ( t_upper == upper )? 0 : t_upper - upper;
+
+      DEBUGV_RTEMLD3(\"dur lower(%ld) upper(%ld)\\n\", val1, val2);
+
+      auto cum = lower;
+
+      // lets do the fold over the trace
+      return std::accumulate(
+        iter.begin(),
+        iter.end(),
+        std::make_pair (make_duration (0, false), (timespan)lower), // initial fold data (duration starts at 0)
+        [&env, val1, val2, &cum, t, t_upper, indicator_function]( const std::pair<duration,timespan> p, "^ get_event_fulltype(helper) ^" e )
+        {
+          auto d = p.first;
+
+          auto t_begin = cum;
+          auto t_end = t_begin + e.getTime();
+          cum = t_end;
+
+          auto cond1 = t_begin <= t && t < t_end;
+          auto cond2 = t_begin <= t_upper && t_upper < t_end;
+
+          auto valx = ((cond1)? val1 : 0 ) + ((cond2)? val2 : 0);
+
+          auto x = indicator_function(env, p.second);
+
+          DEBUGV_RTEMLD3(\"dur=%f bottom=%d\\n\", d.first + (x.first * ( e.getTime() - valx )), d.second || x.second);
+
+          return std::make_pair (make_duration (d.first + (x.first * ( e.getTime() - valx )), d.second || x.second), p.second + e.getTime());
+        }
+      ).first;
+      
+    };
+
+    // sub_k function defines a sub-trace
+    auto sub_k = []( struct Environment env, timespan t, timespan t_upper) -> "^trace_iterator helper^"
+    {
+
+      // use env.state to speedup the calculation of the new bounds
+      "^trace_iterator helper^" iter = "^trace_iterator helper^" ( env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
+
+      // to use the iterator for both searches we use one reference
+      "^trace_iterator helper^" &it = iter;
+
+      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
+
+      auto lower = env.trace->searchIndexForwardUntil( it, t);
+      auto upper = env.trace->searchIndexForwardUntil( it, t_upper - 1 );
+
+      // set TraceIterator for interval [t, t + di[
+      it.setBound(lower, upper);
+
+      // return iterator ... interval length may be zero
+      return it;
+    };
+
+    auto t_upper = t + "^di^".first;
+
+    return eval_eta(env, t, t_upper, sub_k(env, t, t_upper));
+
+    /*let indicator_function (k,u) t phi = if compute (k,u,t) phi = True then 1. else 0. in
+        let riemann_sum m dt (i,i') phi =
+          (* dt=(t,t') and t in ]i,i'] or t' in ]i,i'] *)
+          count_duration := !count_duration + 1 ;
+          let t,t' = dt in
+          if i <= t && t < i' then
+            (* lower bound *)
+            (i'-.t) *. (indicator_function m i' phi)
+          else (
+            if i <= t' && t' < i' then
+              (* upper bound *)
+              (t'-.i) *. (indicator_function m t' phi)
+            else
+              (i'-.i) *. (indicator_function m i' phi)
+          ) in
+        let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
+        m dt (i,t') phi) +. s) 0. x in
+        let t,t' = dt in
+        eval_eta (k,u) dt formula (sub_k (k,u,t) t')*/
+
+
+    }(env,t)"
+
+let compute_tm_plus cmptr1 cmptr2 helper = "make_duration("^ cmptr1 ^" + "^cmptr2^",false)"
+
+let compute_tm_times cmptr1 cmptr2 helper = "make_duration("^ cmptr1 ^" * "^ cmptr2 ^",false)"
+
+
+(*
+ * compute formulas
+*)
+let compute_fm_p p helper =
+  let tbl = get_proposition_hashtbl helper in
+  let counter = get_proposition_counter helper in 
+  compute_function_head_mutable^" { return env.evaluate(env, "^
+    string_of_int (
+      try Hashtbl.find tbl p with Not_found -> Hashtbl.add tbl p counter; counter 
+    ) ^ ", t); }"
+
+let compute_fm_not cmpfm helper = compute_function_head_mutable^" { auto sf = "^ cmpfm ^"(env,t); return b3_not (sf); }"
+
+let compute_fm_or cmpfm1 cmpfm2 helper = compute_function_head_mutable^" { auto sf1 = "^ cmpfm1 ^"(env,t); auto sf2 = "^ cmpfm2 ^"(env,t); return b3_or (sf1, sf2); }"
+
+let compute_fm_less cmptr1 cmptr2 helper = compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ cmptr1 ^"; auto tr2 = "^ cmptr2 ^"; return b3_lessthan (tr1, tr2); }(env,t); }"
+
+let compute_fm_uless gamma sf1 sf2 helper =
+  compute_function_head ^"
+  {
+    auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator helper^" iter) -> four_valued_type
+    {
+
+      // eval_b lambda function
+      auto eval_b = []( struct Environment env, timespan t, four_valued_type v ) -> four_valued_type
+      {
+        // eval_i lambda function
+        auto eval_i = [](three_valued_type b1, three_valued_type b2) -> four_valued_type
+        {
+          return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE && b2 == T_FALSE) ? b3_to_b4(b1) : FV_SYMBOL );
+        };
+
+        // change this (trying to get the maximum complexity)
+        //if ( v == FV_SYMBOL )
+        //{
+          DEBUGV_RTEMLD3(\"  compute phi1\\n\");
+          // compute phi1
+          three_valued_type cmpphi1 = "^sf1^"(env, t);
+
+          DEBUGV_RTEMLD3(\"  compute phi2\\n\");
+          // compute phi2
+          three_valued_type cmpphi2 = "^sf2^"(env, t);
+
+          four_valued_type rs = eval_i(cmpphi1, cmpphi2);
+
+          DEBUGV_RTEMLD3(\" phi1=%s UNTIL phi2=%s\\n\", out_p(cmpphi1), out_p(cmpphi2) );
+
+        if ( v == FV_SYMBOL )
+        {
+          return rs;
+        }
+        else
+        {
+          return v;
+        }
+      };
+
+      DEBUGV_RTEMLD3(\"BEGIN until_op.\\n\\n \");
+      iter.debug();
+
+      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
+
+      auto cos = iter.getBegin();
+
+      four_valued_type s = std::accumulate(
+        iter.begin(),
+        iter.end(),
+        std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
+          [&env, &cos, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype(helper) ^" e ) {
+            
+            DEBUGV_RTEMLD3(\"  until++ (%s)\\n\", out_fv(a.first));
+
+            count_until_iterations += 1;
+
+            /* update the new state based on the sub_k calculate iterator.
+             * optimization step: update current index to avoid re-read/evaluate events several times
+             */
+            env.state = std::make_pair ( cos,  a.second);
+            cos++;
+
+            return std::make_pair( eval_b( env, a.second, a.first ), a.second + e.getTime() );
+          }
+      ).first;
+
+      return s;
+    };
+
+
+    // sub_k function defines a sub-trace
+    auto sub_k = []( struct Environment env, timespan t) -> "^trace_iterator helper^"
+    {
+
+      // use env.state to speedup the calculation of the new bounds
+      "^trace_iterator helper^" iter = "^trace_iterator helper^" (env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
+
+      // to use the iterator for both searches we use one reference
+      "^trace_iterator helper^" &it = iter;
+
+      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
+
+      auto lower = env.trace->searchIndexForwardUntil( it, t);
+      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") - 1 );
+
+      // set TraceIterator for interval [t, t+"^string_of_float (gamma)^"[
+      it.setBound(lower, upper);
+
+      // return iterator ... interval length may be zero
+      return it;
+    };
+
+    "^trace_iterator helper^" subk = sub_k(env, t);
+
+    four_valued_type eval_c = eval_fold(env, t, subk );
+
+    DEBUGV_RTEMLD3(\"END until_op (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
+    
+    return ( eval_c == FV_SYMBOL ) ?
+      ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
+    :
+      b4_to_b3(eval_c);
+  }
+
+  "
+
+
+
 
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11_compute cluster_name monitor_name monitor_period formula compute helper =
@@ -66,7 +355,7 @@ let synth_cpp11_compute cluster_name monitor_name monitor_period formula compute
   (* monitor dependent functions ends here *)
 ;;
 
-let synth_cpp1_external_dep cluster_name synth_environment helper =
+let synth_cpp1_external_dep cluster_name helper =
 
 (* the next functions will be used to manage the buffers assigned to each formula *)
 

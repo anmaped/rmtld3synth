@@ -90,12 +90,12 @@ Arg                   | Description
   --synth-smtlibv2    |Enables synthesis for SMT-LIBv2 language
   --synth-ocaml       |Enables synthesis for Ocaml language
   --synth-cpp11       |Enables synthesis for C++11 language
-  --synth-spark2014   |Enables synthesis for Spark2014 language
-  --simpl-cad         |Simplify quantified RMTLD formulas using CAD
+  --synth-spark2014   |Enables synthesis for Spark2014 language (Experimental)
+  --simpl-cad         |Simplify quantified RMTLD formulas using CAD (Experimental)
  Input:|
   --input-sexp        |Inputs sexp expression (RMTLD3 formula)
-  --input-latexeq     |Inputs latex equation expressions (RMTLD3 formula)
-  --input-rmdsl       |Inputs rmdsl expressions for schedulability analysis
+  --input-latexeq     |Inputs latex equation expressions (RMTLD3 formula) (Experimental)
+  --input-rmdsl       |Inputs rmdsl expressions for schedulability analysis (Experimental)
   --config-file       |File containing synthesis settings
  Output:|
   --out-smt-file      |Set the output filename and directory for SMTLIBv2 file
