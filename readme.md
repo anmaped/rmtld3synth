@@ -30,7 +30,7 @@ Note that `-n` is deprecated. For version 0.3-alpha1 use `--config-file` instead
 
 After executing this step, the `monitor_set1` folder contains the generated source files of the monitor for the `usecaseone` file.
 Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. 
-We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. At the present moment only C++ synthesis is supported but we want to include Ada in the future.
+We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. At the version 0.3-alpha1 only C++ and Ocaml synthesis is fully supported but we include Spark2014 as experimental.
 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
@@ -86,28 +86,28 @@ The available options at the present time are as follows:
 
 Arg                   | Description
 ----------------------|-----------------------------------------------------
- Flags:|
+ Flags:               |
   --synth-smtlibv2    |Enables synthesis for SMT-LIBv2 language
   --synth-ocaml       |Enables synthesis for Ocaml language
   --synth-cpp11       |Enables synthesis for C++11 language
   --synth-spark2014   |Enables synthesis for Spark2014 language (Experimental)
   --simpl-cad         |Simplify quantified RMTLD formulas using CAD (Experimental)
- Input:|
+ Input:               |
   --input-sexp        |Inputs sexp expression (RMTLD3 formula)
   --input-latexeq     |Inputs latex equation expressions (RMTLD3 formula) (Experimental)
   --input-rmdsl       |Inputs rmdsl expressions for schedulability analysis (Experimental)
   --config-file       |File containing synthesis settings
- Output:|
-  --out-smt-file      |Set the output filename and directory for SMTLIBv2 file
-  --out-mon-folder    |Set the output folder for monitor synthesis
- Options:|
+ Output:              |
+  --out-file          |Set the output file for synthesis
+  --out-src           |Set the output directory for synthesis
+ Options:             |
   --verbose           |Enables verbose mode
   --version           |Version and SW information
   --help              |Display this list of options
 
 
 
-Consider that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --synth-smtlibv2 --input-sexp <this-formula> --out-smt-file <output-file-name>` to generate the Z3 input files. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool to Z3 is not yet implemented.
+Consider that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --synth-smtlibv2 --input-sexp <this-formula> --out-file <output-file-name>` to generate the Z3 input files. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool to Z3 is not yet implemented.
 
 #### Overview of the configuration file
 

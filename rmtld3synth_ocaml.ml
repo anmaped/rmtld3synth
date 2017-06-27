@@ -4,20 +4,70 @@
 
 open Batteries
 open List
+open Str
 
 open Rmtld3
 
 
 (* ocaml module api *)
-let compute_tm_constant value helper = ""
-let compute_tm_duration di tf helper = ""
-let compute_tm_plus cmptr1 cmptr2 helper = ""
-let compute_tm_times cmptr1 cmptr2 helper = ""
-let compute_fm_p p helper = ""
-let compute_fm_not cmpfm helper = ""
-let compute_fm_or cmpfm1 cmpfm2 helper = ""
-let compute_fm_less cmptr1 cmptr2 helper = ""
-let compute_fm_uless gamma sf1 sf2 helper = ""
+let compute_tm_constant value helper = ("("^ (string_of_float value) ^")","")
+let compute_tm_duration (tm_call,tm_body) (fm_call,fm_body) helper =
+  let id = "xx" (* [TODO: put id dynamic based on helper ] *)
+  in ("compute_term_duration"^ id ^" "^ fm_call ^" m (t, "^ tm_call ^") ", tm_body^fm_body^("
+compute_term_duration"^ id ^" (k,u) dt formula =
+        let indicator_function (k,u) t phi = if compute (k,u,t) phi = True then 1. else 0. in
+        let riemann_sum m dt (i,i') phi =
+          (* dt=(t,t') and t in ]i,i'] or t' in ]i,i'] *)
+          count_duration := !count_duration + 1 ;
+          let t,t' = dt in
+          if i <= t && t < i' then
+            (* lower bound *)
+            (i'-.t) *. (indicator_function m t phi)
+          else (
+            if i <= t' && t' < i' then
+              (* upper bound *)
+              (t'-.i) *. (indicator_function m t' phi)
+            else
+              (i'-.i) *. (indicator_function m i phi)
+          ) in
+        let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
+        m dt (i,t') phi) +. s) 0. x in
+        let t,t' = dt in
+        eval_eta (k,u) dt formula (sub_k (k,u,t) t')
+"
+))
+let compute_tm_plus cmptr1 cmptr2 helper = ("","")
+let compute_tm_times cmptr1 cmptr2 helper = ("","")
+let compute_fm_p p helper = ("(fun k s t -> env.evaluate env.trace \""^ p ^"\" t)","")
+let compute_fm_not cmpfm helper = ("b3_not ("^ fst cmpfm ^" env lg_env t)", snd cmpfm)
+let compute_fm_or cmpfm1 cmpfm2 helper = ("b3_or ("^ fst cmpfm1 ^" env lg_env t) ("^ fst cmpfm2 ^" env lg_env t)", (snd cmpfm1)^(snd cmpfm2))
+let compute_fm_less cmptr1 cmptr2 helper = ("","")
+let compute_fm_uless gamma sf1 sf2 helper = ("","")
+
+
+
+let synth_ocaml_compute (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
+  let mon_call,mon_body = compute formula helper
+  in let mon = "
+open Rmtld3
+module type Trace = sig val trc : trace end
+(* one trace :: module OneTrace : Trace = struct let trc = [(\"a\",(1.,2.))] end *)
+
+module "^ (String.capitalize_ascii monitor_name) ^"  ( T : Trace  ) = struct \n"^ mon_body ^"
+  let env = environment T.trc
+  let lg_env = logical_environment
+  let t = 0.
+  let mon = "^ mon_call ^"
+end
+  " in
+
+  if out_file <> "" then
+    (* ... *)
+    ()
+  else
+    (* print to console *)
+    print_endline mon
+
 
 let synth_ocaml_unittests () =
   (* debuging flag *)

@@ -64,10 +64,10 @@ let compute_function_head_mutable = "[](struct Environment &env, timespan t) mut
 (*
  * Compute terms
  *)
-let compute_tm_constant value helper = "make_duration("^string_of_float value^",false)"
+let compute_tm_constant value helper = ("make_duration("^string_of_float value^",false)","")
 
-let compute_tm_duration di tf helper =
-    compute_term_function_head^" {
+let compute_tm_duration (di,_) (tf,_) helper =
+    (compute_term_function_head^" {
     
     auto eval_eta =  [](struct Environment env, timespan t, timespan t_upper, "^trace_iterator helper^" iter) -> duration
     {
@@ -166,11 +166,11 @@ let compute_tm_duration di tf helper =
         eval_eta (k,u) dt formula (sub_k (k,u,t) t')*/
 
 
-    }(env,t)"
+    }(env,t)","")
 
-let compute_tm_plus cmptr1 cmptr2 helper = "make_duration("^ cmptr1 ^" + "^cmptr2^",false)"
+let compute_tm_plus (cmptr1,_) (cmptr2,_) helper = ("make_duration("^ cmptr1 ^" + "^cmptr2^",false)","")
 
-let compute_tm_times cmptr1 cmptr2 helper = "make_duration("^ cmptr1 ^" * "^ cmptr2 ^",false)"
+let compute_tm_times (cmptr1,_) (cmptr2,_) helper = ("make_duration("^ cmptr1 ^" * "^ cmptr2 ^",false)","")
 
 
 (*
@@ -179,19 +179,19 @@ let compute_tm_times cmptr1 cmptr2 helper = "make_duration("^ cmptr1 ^" * "^ cmp
 let compute_fm_p p helper =
   let tbl = get_proposition_hashtbl helper in
   let counter = get_proposition_counter helper in 
-  compute_function_head_mutable^" { return env.evaluate(env, "^
+  (compute_function_head_mutable^" { return env.evaluate(env, "^
     string_of_int (
       try Hashtbl.find tbl p with Not_found -> Hashtbl.add tbl p counter; counter 
-    ) ^ ", t); }"
+    ) ^ ", t); }","")
 
-let compute_fm_not cmpfm helper = compute_function_head_mutable^" { auto sf = "^ cmpfm ^"(env,t); return b3_not (sf); }"
+let compute_fm_not (cmpfm,_) helper = (compute_function_head_mutable^" { auto sf = "^ cmpfm ^"(env,t); return b3_not (sf); }","")
 
-let compute_fm_or cmpfm1 cmpfm2 helper = compute_function_head_mutable^" { auto sf1 = "^ cmpfm1 ^"(env,t); auto sf2 = "^ cmpfm2 ^"(env,t); return b3_or (sf1, sf2); }"
+let compute_fm_or (cmpfm1,_) (cmpfm2,_) helper = (compute_function_head_mutable^" { auto sf1 = "^ cmpfm1 ^"(env,t); auto sf2 = "^ cmpfm2 ^"(env,t); return b3_or (sf1, sf2); }","")
 
-let compute_fm_less cmptr1 cmptr2 helper = compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ cmptr1 ^"; auto tr2 = "^ cmptr2 ^"; return b3_lessthan (tr1, tr2); }(env,t); }"
+let compute_fm_less (cmptr1,_) (cmptr2,_) helper = (compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ cmptr1 ^"; auto tr2 = "^ cmptr2 ^"; return b3_lessthan (tr1, tr2); }(env,t); }","")
 
-let compute_fm_uless gamma sf1 sf2 helper =
-  compute_function_head ^"
+let compute_fm_uless gamma (sf1,_) (sf2,_) helper =
+  (compute_function_head ^"
   {
     auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator helper^" iter) -> four_valued_type
     {
@@ -295,16 +295,15 @@ let compute_fm_uless gamma sf1 sf2 helper =
       b4_to_b3(eval_c);
   }
 
-  "
+  ","")
 
 
 
 
 (* monitor dependent c++ functions begin here *)
-let synth_cpp11_compute cluster_name monitor_name monitor_period formula compute helper =
+let synth_cpp11_compute (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
     (* Synthesize ocaml formula evaluation algorithm into c++ *)
-    let stream = open_out (cluster_name^"/"^monitor_name^"_compute.h") in
-    let code = "
+    let code1 = "
   #ifndef _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
   #define _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
 
@@ -314,12 +313,10 @@ let synth_cpp11_compute cluster_name monitor_name monitor_period formula compute
 
   #endif //_"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
     " in
-    Printf.fprintf stream "%s\n" code;
-    close_out stream;
 
 
-    let stream = open_out (cluster_name^"/"^String.capitalize_ascii monitor_name^".h") in
-    let code = "
+    
+    let code2 = "
   #ifndef MONITOR_"^String.uppercase_ascii monitor_name^"_H
   #define MONITOR_"^String.uppercase_ascii monitor_name^"_H
 
@@ -349,8 +346,22 @@ let synth_cpp11_compute cluster_name monitor_name monitor_period formula compute
   };
 
   #endif //MONITOR_"^String.uppercase_ascii monitor_name^"_H" in
-    Printf.fprintf stream "%s\n" code;
+
+
+  if out_file <> "" || out_dir <> "" then
+    begin
+    let stream = open_out (cluster_name^"/"^monitor_name^"_compute.h") in
+      Printf.fprintf stream "%s\n" code1;
     close_out stream;
+
+    let stream = open_out (cluster_name^"/"^String.capitalize_ascii monitor_name^".h") in
+      Printf.fprintf stream "%s\n" code2;
+    close_out stream;
+    end
+  else
+    (* print to console *)
+    print_endline code1;
+    print_endline code2
 
   (* monitor dependent functions ends here *)
 ;;

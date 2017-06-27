@@ -642,7 +642,7 @@ let m_duration_lessorequal2 cons2 cons1 formula = Or(m_duration_less2 cons2 cons
 
 let _ =
   Random.self_init ();
-  Printf.printf "Random Seed Initialized !\n";
+  (*Printf.printf "Random Seed Initialized !\n";*)
   
   activate_debug := false;
   let activate_graph_generation = ref false in

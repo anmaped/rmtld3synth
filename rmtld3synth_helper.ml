@@ -77,7 +77,13 @@ let set_counter_test_cases n (_,_,count,_,_) =
 
 (* lets parsing configuration file into global_int and monitor type variables *)
 let settings mon_filename = 
-  let remainig_elements = Sexp.load_sexps !mon_filename in
+  let remainig_elements =
+    if !mon_filename <> "" then
+      Sexp.load_sexps !mon_filename
+    else
+      Sexp.load_sexps "config/default"
+  in
+
   let list_global_int_settings, remainig_elements = List.fold_left (
     fun (lst,lst2) sexp_el -> ( try (global_int_of_sexp sexp_el) :: lst, lst2 with _ -> (lst, sexp_el::lst2) ) ) ([],[]) remainig_elements in
   let list_global_string_settings, remainig_elements = List.fold_left (
