@@ -61,6 +61,7 @@ and intermediate_ltx_fm =
   | Flor of intermediate_ltx_fm list
   | Always of intermediate_ltx_pm * intermediate_ltx_fm
   | Eventually of intermediate_ltx_pm * intermediate_ltx_fm
+  | ULess of intermediate_ltx_pm * intermediate_ltx_fm * intermediate_ltx_fm
   | FImplies of intermediate_ltx_fm * intermediate_ltx_fm
   | FIsol of intermediate_ltx_fm
   | FTerm of intermediate_ltx_tm list
@@ -237,6 +238,14 @@ let rec parse_latex_eq' l feed : intermediate_ltx_fm * string list =
           in (Eventually(pm, to_prop prefix),rlst)
         else raise (Failure ("malformed eventually"))
 
+      | "until" :: r -> (* feed is discarded *)
+        if (List.hd r) = "_" then
+          let pm, rlst = parse_latexeq_pm (List.tl r) (PEmpty())
+          in let prefix,rlst = parse_latex_eq' rlst emptystr
+          in (ULess(pm, to_prop feed, to_prop prefix),rlst)
+        else raise (Failure ("malformed until"))
+
+
       | "int" :: r         -> parse_latex_eq' r (Strr((match_feed feed)@["\\\\"; "int"]))
       | "frac" :: r        -> parse_latex_eq' r (Strr((match_feed feed)@["\\\\"; "frac"]))
       | "times" :: r       -> parse_latex_eq' r (Strr((match_feed feed)@["\\\\"; "times"]))
@@ -284,7 +293,38 @@ let parse_latex_eq l feed : intermediate_ltx_fm = let x,y = parse_latex_eq' l fe
 (*
     Translation to RMTLD3
 *)
-let rmtld3_fm_of_intermediate_ltx_fm () = ()
+let rec rmtld3_fm_of_intermediate_ltx_pm ipm : rmtld3_tm =
+  match ipm with
+  | PEmpty() -> Constant(0.)
+  | POp(op,tmlst) -> Constant(0.)
+  | PList(pmlst) -> Constant(0.)
+  | Pvar(id) -> Constant(0.)
+
+and intermediate_ltx_tm itm : rmtld3_tm =
+  match itm with
+    TTimes(tmlst) -> Constant(0.)
+  | TPlus(tmlst) -> Constant(0.)
+  | TMinus(tmlst) -> Constant(0.)
+  | TFrac(tm1,tm2) -> Constant(0.)
+  | TInt(tm1,tm2) -> Constant(0.)
+  | TVal(v) -> Constant(0.)
+  | TVar(id,tm) -> Constant(0.)
+  | TFun(id, tmlst1, tmlst2) -> Constant(0.)
+  | TEmpty() -> Constant(0.)
+
+and rmtld3_fm_of_intermediate_ltx_fm ifm : rmtld3_fm =
+  match ifm with
+    FIneq(fmoplst) -> mtrue (* consider this | FTerm(tmlst) -> intermediate_ltx_tm (hd tmlst) *)
+  | Fland(fmlst) -> mtrue
+  | Flor(fmlst) -> mtrue
+  | Always(pm,fm) -> mtrue
+  | Eventually(pm,fm) -> mtrue
+  | ULess(pm,fm1,fm2) -> mtrue
+  | FImplies(fm1,fm2) -> mimplies (rmtld3_fm_of_intermediate_ltx_fm fm1) (rmtld3_fm_of_intermediate_ltx_fm fm2)
+  | FIsol(fm) -> rmtld3_fm_of_intermediate_ltx_fm fm
+  | FProp(id) -> Prop(id)
+  | _ -> raise (Failure ("rmtld3_fm_of_intermediate_ltx_fm"))
+
 
 (* parsing latex sample
    (\int^{\pi_1} \psi_1=0\land 0\leq \int^{\pi_2} \psi_2<\theta )&\lor \ \ %\\
@@ -309,7 +349,12 @@ let s2 = "a=\\int^{\\var} \\psi_1 \\land \\alwaysless \\left(
 let test2_input = lex (String.explode s1)
 let test3_input = lex (String.explode s2)
 
-let texeq_unit_tests_enabled = false
+let texeq_unit_tests () =
+  print_endline "\nlexer 1:\n"; print_endline (Sexp.to_string_hum ( sexp_of_tokens test2_input ));
+  print_endline "\ntest 1:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq [ "G"; "\\\\"; "land"; "Y"; "\\\\"; "leq"; "X"; "\\\\"; "land"; "Z"; "\\\\"; "lor"; "H"; "\\\\"; "lor"; "HH"] emptystr)));
+  print_endline "\ntest 2:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq test2_input emptystr)));
+  print_endline "\ntest 3:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq test3_input emptystr)));
+;;
 
 let texeqparser str =
   begin
@@ -317,15 +362,6 @@ let texeqparser str =
     print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq (lex (String.explode str)) emptystr)));
 
     (* lets convert the intermediate representation into rmtld3 expressions *)
-    rmtld3_fm_of_intermediate_ltx_fm ();
+    rmtld3_fm_of_intermediate_ltx_fm (parse_latex_eq (lex (String.explode str)) emptystr)
 
-    if texeq_unit_tests_enabled then
-      begin
-        print_endline "\nlexer 1:\n"; print_endline (Sexp.to_string_hum ( sexp_of_tokens test2_input ));
-
-        print_endline "\ntest 1:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq [ "G"; "\\\\"; "land"; "Y"; "\\\\"; "leq"; "X"; "\\\\"; "land"; "Z"; "\\\\"; "lor"; "H"; "\\\\"; "lor"; "HH"] emptystr)));
-        print_endline "\ntest 2:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq test2_input emptystr)));
-
-        print_endline "\ntest 3:\n"; print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq test3_input emptystr)));
-      end
   end
