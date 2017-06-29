@@ -14,6 +14,7 @@ sig
   val compute_tm_duration : call_body -> call_body -> helper -> call_body
   val compute_tm_plus : call_body -> call_body -> helper -> call_body
   val compute_tm_times : call_body -> call_body -> helper -> call_body
+  val compute_fm_true : helper -> call_body
   val compute_fm_p : prop -> helper -> call_body
   val compute_fm_not : call_body -> helper -> call_body
   val compute_fm_or : call_body -> call_body -> helper -> call_body
@@ -34,6 +35,7 @@ module Conversion_cpp (Conv : Conversion) = struct
   (* Synthesis of the rmtld3 formula *)
   and compute formula helper =
     match formula with
+      | True()                  -> Conv.compute_fm_true helper
       | Prop p                  -> Conv.compute_fm_p p helper
       | Not sf                  -> Conv.compute_fm_not (compute sf helper) helper
       | Or (sf1, sf2)           -> Conv.compute_fm_or (compute sf1 helper) (compute sf2 helper) helper
@@ -85,12 +87,11 @@ open Rmtld3synth_ocaml
 let chose_synthesis a b c =
   if !cpp11_lang then a () else if !ocaml_lang then b () else if !spark14_lang then c ()
 
-let mon_gen () =
+let mon_gen fm =
   (* helper to support query's settings along execution *)
   let a,b,c = settings config_mon_filename in
   let c = if c <> [] then c else
-    if !rmtld_formula <> "" then [("mon0",0,(formula_of_sexp (Sexp.of_string !rmtld_formula)))]
-    else if !rmtld_formula_ltxeq <> "" then raise (Failure ("Unsupported latexeq.")) (* TODO: include support for latex equations *)
+    if fm <> mfalse then [("mon0",0,fm)]
     else []
   in
   let helper = (ref "", ref "", ref 0, (a,b,c), [(ref 0, Hashtbl.create 10); (ref 0, Hashtbl.create 10)]) in  
@@ -231,6 +232,24 @@ let _ =
   in let usage_msg = "rmtld3synth flags [options] input [output]\n\n Flags: "
   in Arg.parse (Arg.align speclist) print_endline usage_msg;
 
+  (* conversion for input formula *)
+  let input_fm =
+    (* rmtld_formula is undefined ? try rmtld_formula_ltxeq *)
+    if !rmtld_formula <> "" then
+      begin
+      verb (fun _ -> print_endline "Sexp parsing enabled.");
+      formula_of_sexp (Sexp.of_string !rmtld_formula)
+      end
+    else if !rmtld_formula_ltxeq <> "" then
+      begin
+      verb (fun _ -> print_endline "Latex Eq parsing enabled.");
+      Texeqparser.texeqparser !rmtld_formula_ltxeq
+      end
+    else
+      (* there is no imput formula *)
+      mfalse
+  in
+
   let to_simplify fm : rmtld3_fm =
     if !simplify_formula then
       let smp = simplify fm in
@@ -246,19 +265,10 @@ let _ =
   (* for sat case *)
   if !smtlibv2_formula <> false then
     begin
-      (* rmtld_formula is undefined ? try rmtld_formula_ltxeq *)
-      if !rmtld_formula <> "" then
-        begin
-          (* get satisfability of a plain formula *)
-          sat_gen (to_simplify (formula_of_sexp (Sexp.of_string !rmtld_formula)))
-        end
-      else if !rmtld_formula_ltxeq <> "" then
-        begin
-          verb (fun _ -> print_endline "Latex Eq parsing enabled.";
-            Texeqparser.texeqparser !rmtld_formula_ltxeq;
-            (* type convert to rmtld3_fm USE: sat_gen (to_simplify X) *)
-          );
-        end
+      if input_fm <> mfalse then
+      begin
+        sat_gen (to_simplify (input_fm));
+      end
       else
         begin
           verb (fun _ -> print_endline "Rmdsl parsing enabled.");
@@ -288,7 +298,7 @@ let _ =
   else if !config_mon_filename <> "" then
     begin
       print_endline ("Default synthesis filename: " ^ !config_mon_filename);
-      mon_gen ();
+      mon_gen input_fm;
     end
 
   else if !simplify_formula then
@@ -306,13 +316,13 @@ let _ =
   else if !ocaml_lang then
     begin
       verb_m 1 (fun _ -> print_endline "Synthesis for Ocaml language";);
-      mon_gen ();
+      mon_gen input_fm;
     end
 
   else if !cpp11_lang then
     begin
       verb_m 1 (fun _ -> print_endline "Synthesis for C++11 language";);
-      mon_gen ();
+      mon_gen input_fm;
     end
 
   else

@@ -7,57 +7,121 @@ open List
 open Str
 
 open Rmtld3
+open Rmtld3synth_helper
 
+let has_tm_dur = ref false
+let has_fm_uless = ref false
 
 (* ocaml module api *)
-let compute_tm_constant value helper = ("("^ (string_of_float value) ^")","")
+let compute_tm_constant value helper = ("(fun k s t -> "^ (string_of_float value) ^")","")
 let compute_tm_duration (tm_call,tm_body) (fm_call,fm_body) helper =
-  let id = "xx" (* [TODO: put id dynamic based on helper ] *)
-  in ("compute_term_duration"^ id ^" "^ fm_call ^" m (t, "^ tm_call ^") ", tm_body^fm_body^("
-compute_term_duration"^ id ^" (k,u) dt formula =
-        let indicator_function (k,u) t phi = if compute (k,u,t) phi = True then 1. else 0. in
-        let riemann_sum m dt (i,i') phi =
-          (* dt=(t,t') and t in ]i,i'] or t' in ]i,i'] *)
-          count_duration := !count_duration + 1 ;
-          let t,t' = dt in
-          if i <= t && t < i' then
-            (* lower bound *)
-            (i'-.t) *. (indicator_function m t phi)
-          else (
-            if i <= t' && t' < i' then
-              (* upper bound *)
-              (t'-.i) *. (indicator_function m t' phi)
-            else
-              (i'-.i) *. (indicator_function m i phi)
-          ) in
-        let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
-        m dt (i,t') phi) +. s) 0. x in
-        let t,t' = dt in
-        eval_eta (k,u) dt formula (sub_k (k,u,t) t')
+  has_tm_dur := true;
+  ("(compute_tm_duration "^ tm_call ^" "^ fm_call ^")", tm_body^fm_body)
+
+let compute_tm_duration_body = "
+let compute_tm_duration tm fm k u t =
+  let dt = (t,tm k u t) in
+
+  let indicator_function (k,u) t phi = if fm k u t = True then 1. else 0. in
+  let riemann_sum m dt (i,i') phi =
+    (* dt=(t,t') and t in ]i,i'] or t' in ]i,i'] *)
+    count_duration := !count_duration + 1 ;
+    let t,t' = dt in
+    if i <= t && t < i' then
+      (* lower bound *)
+      (i'-.t) *. (indicator_function m t phi)
+    else (
+      if i <= t' && t' < i' then
+        (* upper bound *)
+        (t'-.i) *. (indicator_function m t' phi)
+      else
+        (i'-.i) *. (indicator_function m i phi)
+    ) in
+  let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
+  m dt (i,t') phi) +. s) 0. x in
+  let t,t' = dt in
+  eval_eta (k,u) dt fm (sub_k (k,u,t) t')
 "
-))
-let compute_tm_plus cmptr1 cmptr2 helper = ("","")
-let compute_tm_times cmptr1 cmptr2 helper = ("","")
-let compute_fm_p p helper = ("(fun k s t -> env.evaluate env.trace \""^ p ^"\" t)","")
-let compute_fm_not cmpfm helper = ("b3_not ("^ fst cmpfm ^" env lg_env t)", snd cmpfm)
-let compute_fm_or cmpfm1 cmpfm2 helper = ("b3_or ("^ fst cmpfm1 ^" env lg_env t) ("^ fst cmpfm2 ^" env lg_env t)", (snd cmpfm1)^(snd cmpfm2))
-let compute_fm_less cmptr1 cmptr2 helper = ("","")
-let compute_fm_uless gamma sf1 sf2 helper = ("","")
+
+let compute_tm_plus cmptr1 cmptr2 helper =
+  ("(fun k s t -> ("^ fst cmptr1 ^" k s t) +. ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
+
+let compute_tm_times cmptr1 cmptr2 helper =
+  ("(fun k s t -> ("^ fst cmptr1 ^" k s t) *. ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
+
+let compute_fm_true helper = ("(fun k s t -> true)","")
+let compute_fm_p p helper = ("(fun k s t -> k.evaluate k.trace \""^ p ^"\" t)","")
+let compute_fm_not cmpfm helper = ("(fun k s t -> b3_not ("^ fst cmpfm ^" k s t))", snd cmpfm)
+let compute_fm_or cmpfm1 cmpfm2 helper =
+  ("(fun k s t -> b3_or ("^ fst cmpfm1 ^" k s t) ("^ fst cmpfm2 ^" k s t))", (snd cmpfm1)^(snd cmpfm2))
+
+let compute_fm_less cmptr1 cmptr2 helper =
+  ("(fun k s t -> b3_lessthan ("^ fst cmptr1 ^" k s t) ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
+
+let compute_fm_uless gamma sf1 sf2 helper =
+  has_fm_uless := true;
+  ("(compute_uless "^ (string_of_float gamma) ^" "^ (fst sf1) ^" "^ (fst sf2) ^")", (snd sf1)^(snd sf2))
+
+let compute_fm_uless_body =
+"
+let compute_uless gamma f1 f2 k u t =
+  let m = (k,u,t) in
+  let eval_i b1 b2 =
+    if b2 <> False then
+      b3_to_b4 b2
+    else if b1 <> True && b2 = False then
+      b3_to_b4 b1
+    else
+      Symbol
+  in
+
+  let eval_b (k,u,t) f1 f2 v =
+    if v <> Symbol then
+      v
+    else
+      eval_i (f1 k u t) (f2 k u t)
+  in
+
+  let eval_fold (k,u,t) f1 f2 x =
+    fst (fold_left (fun (v,t') (prop,(ii1,ii2)) -> (eval_b (k, u, t') f1 f2 v, ii2)) (Symbol,t) x)
+  in
+
+  if not (gamma >= 0.) then
+    raise  (Failure \"Gamma of U operator is a non-negative value\")
+  else
+  begin
+    let k,_,t = m in
+    let subk = sub_k m gamma in
+    let eval_c = eval_fold m f1 f2 subk in
+    if eval_c = Symbol then
+      if k.duration_of_trace <= (t +. gamma) then
+        Unknown
+      else (
+        False
+      )
+    else
+      b4_to_b3 eval_c
+  end
+  "
 
 
 
 let synth_ocaml_compute (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
   let mon_call,mon_body = compute formula helper
   in let mon = "
+open List
 open Rmtld3
+
 module type Trace = sig val trc : trace end
 (* one trace :: module OneTrace : Trace = struct let trc = [(\"a\",(1.,2.))] end *)
 
 module "^ (String.capitalize_ascii monitor_name) ^"  ( T : Trace  ) = struct \n"^ mon_body ^"
+  "^ (if !has_fm_uless then compute_fm_uless_body else "") ^"
+  "^ (if !has_tm_dur then compute_tm_duration_body else "") ^"
   let env = environment T.trc
   let lg_env = logical_environment
   let t = 0.
-  let mon = "^ mon_call ^"
+  let mon = "^ mon_call ^" env lg_env t
 end
   " in
 

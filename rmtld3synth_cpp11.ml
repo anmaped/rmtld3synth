@@ -176,6 +176,9 @@ let compute_tm_times (cmptr1,_) (cmptr2,_) helper = ("make_duration("^ cmptr1 ^"
 (*
  * compute formulas
 *)
+let compute_fm_true helper =
+  (compute_function_head_mutable^" { return T_TRUE; }","")
+
 let compute_fm_p p helper =
   let tbl = get_proposition_hashtbl helper in
   let counter = get_proposition_counter helper in 

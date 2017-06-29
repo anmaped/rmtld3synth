@@ -30,7 +30,7 @@ Note that `-n` is deprecated. For version 0.3-alpha1 use `--config-file` instead
 
 After executing this step, the `monitor_set1` folder contains the generated source files of the monitor for the `usecaseone` file.
 Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. 
-We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. At the version 0.3-alpha1 only C++ and Ocaml synthesis is fully supported but we include Spark2014 as experimental.
+We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. For version 0.3-alpha1, C++ and Ocaml synthesis are fully supported and Spark2014 is experimental.
 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
