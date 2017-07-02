@@ -16,4 +16,6 @@ depends: [
   "type_conv" {<= "113.00.02"}
 ]
 
-build: [make]
+build: [make "all"]
+
+build-test: [make "tests"]

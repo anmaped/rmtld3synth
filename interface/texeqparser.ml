@@ -8,6 +8,7 @@ open Sexplib
 open Sexplib.Conv
 
 open Rmtld3
+open Rmtld3synth_helper
 
 (* parsing latex equations *)
 
@@ -358,8 +359,8 @@ let texeq_unit_tests () =
 
 let texeqparser str =
   begin
-    print_endline ("Latexeq input: "^str^"\n");
-    print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq (lex (String.explode str)) emptystr)));
+    verb_m 1 (fun _ -> print_endline ("Latexeq input: "^str^"\n"););
+    verb_m 2 (fun _ -> print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (parse_latex_eq (lex (String.explode str)) emptystr))););
 
     (* lets convert the intermediate representation into rmtld3 expressions *)
     rmtld3_fm_of_intermediate_ltx_fm (parse_latex_eq (lex (String.explode str)) emptystr)

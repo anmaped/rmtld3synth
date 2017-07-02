@@ -48,7 +48,7 @@ end;;
 
 (* rmtld3 synthesis interface *)
 
-let config_mon_filename = ref ""
+let config_file = ref ""
 let rmtld_formula = ref ""
 let rmtld_formula_ltxeq = ref ""
 let expression_rmdsl = ref ""
@@ -60,7 +60,7 @@ let cpp11_lang = ref false
 let ocaml_lang = ref false
 let spark14_lang = ref false
 
-let set_config_file file = config_mon_filename := file
+let set_config_file file = config_file := file
 let set_formulas f = rmtld_formula := f
 let set_formulas_ltxeq f = rmtld_formula_ltxeq := f
 let set_exp_rmdsl f = expression_rmdsl := f
@@ -89,7 +89,7 @@ let chose_synthesis a b c =
 
 let mon_gen fm =
   (* helper to support query's settings along execution *)
-  let a,b,c = settings config_mon_filename in
+  let a,b,c = settings config_file in
   let c = if c <> [] then c else
     if fm <> mfalse then [("mon0",0,fm)]
     else []
@@ -295,11 +295,11 @@ let _ =
         end
     end
 
-  else if !config_mon_filename <> "" then
+  (*else if !config_file <> "" then
     begin
-      print_endline ("Default synthesis filename: " ^ !config_mon_filename);
+      print_endline ("Default synthesis filename: " ^ !config_file);
       mon_gen input_fm;
-    end
+    end*)
 
   else if !simplify_formula then
     begin

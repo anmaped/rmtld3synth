@@ -38,6 +38,8 @@ git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
 opam pin add pa_sexp_conv pa_sexp_conv/ -n
 opam install oasis
 opam install pa_sexp_conv
+
+export OPAMBUILDTEST=0
 # UNTIL HERE !
 
 cd -

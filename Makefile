@@ -27,5 +27,8 @@ all: version native-code
 version:
 	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > version.ml
 
+tests: version native-code
+	cd unittests && ./gen_monitor_tests.sh
+
 OCAMLMAKEFILE := OCamlMakefile
 include $(OCAMLMAKEFILE)
