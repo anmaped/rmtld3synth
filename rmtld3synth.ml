@@ -130,7 +130,7 @@ let mon_gen fm =
   (*
    * External and other dependencies for monitors (may include the RV model)
    *)
-  if !out_dir <> "" then
+  
   chose_synthesis (fun a ->
     begin
     (* c++ type templates with pattern 'evt_type < evt_subtype > '  *)
@@ -141,9 +141,13 @@ let mon_gen fm =
     set_event_type evt_type helper;
     set_event_subtype evt_subtype helper;
 
+    if !out_dir <> "" then
+    begin
     (* External dependencies and environment for cpp11 *)
     synth_cpp1_external_dep cluster_name helper;
     synth_cpp11_env cluster_name evt_subtype event_queue_size helper;
+    end
+    
     end
   )
   (fun _ -> ())
