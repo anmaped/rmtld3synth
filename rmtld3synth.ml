@@ -40,7 +40,7 @@ module Conversion_cpp (Conv : Conversion) = struct
       | Not sf                  -> Conv.compute_fm_not (compute sf helper) helper
       | Or (sf1, sf2)           -> Conv.compute_fm_or (compute sf1 helper) (compute sf2 helper) helper
       | Until (gamma, sf1, sf2) -> if gamma > 0. then Conv.compute_fm_uless gamma (compute sf1 helper) (compute sf2 helper) helper
-                                   else raise  (Failure "Gamma of U operator is a non-negative value") 
+                                   else raise  (Failure "Gamma of U operator is negative") 
       | LessThan (tr1,tr2)      -> Conv.compute_fm_less (compute_term tr1 helper) (compute_term tr2 helper) helper
       | _                       -> raise (Failure ("synth_mon: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
 
