@@ -19,18 +19,18 @@ For instance, schedulability analysis of hard real-time systems can be done by s
 
 ### Tarball binaries version 0.2-alpha for Windows
 
-New version [0.3-alpha1](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
+New version is now [0.3-alpha](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
 Old version [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
 
 Let us begin by an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as basis the [use case one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing the following command in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
 ```
 ./rmtld3synth.exe -n usecaseone
 ```
-Note that `-n` is deprecated. For version 0.3-alpha1 use `--config-file` instead of `-n`.
+Note that `-n` is deprecated. For versions >= 0.3-alpha use `--config-file` instead of `-n`.
 
 After executing this step, the `monitor_set1` folder contains the generated source files of the monitor for the `usecaseone` file.
 Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. 
-We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. For version 0.3-alpha1, C++ and Ocaml synthesis are fully supported and Spark2014 is experimental.
+We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. For version 0.3-alpha, C++ and Ocaml synthesis are fully supported and Spark2014 is experimental only.
 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
@@ -132,7 +132,7 @@ See [the overall parameters](doc/configparameters.md) for more details.
 
 `minimum_inter_arrival_time` establishes the minimum inter-arrival time that the events can have. It is a very pessimistic setting but provides some information for static checking.
 
-`maximum_period` sets the minimum inter-arrival time. It has a correlation between the periodic monitor and the minimum inter-arrival time. It provides static checks according to the size of time-stamps of events.
+`maximum_period` sets the maximum interval between two consecutive releases of tasks' jobs. It has a correlation between the periodic monitor and the minimum inter-arrival time. It provides static checks according to the size of time-stamps of events.
 
 `event_subtype` provides the type for the event data. In that case, it is an identifier that can distinct 255 events. However, if more events are required, the type should be modified to *uint32_t* or greater. The number of different events versus the available size for the identifier is also statically checked.
 
@@ -152,12 +152,46 @@ where `<constant>` is a real-number (interpreted as float/double), `<lvariable>`
 Let us interpret the sentence `"the duration of the task A with an arbitrary period greater than 10 and small than 20 is less than 5 units."`
 as a formula in RMTLD3. It can be described as
 ```
-(And (Not (And (Lessthan (Variable x) (Constant 20)) (Lessthan (Constant 10) (Variable x))))  (LessThan (Duration x (Or task_a_release (Or task_a_start ...))) 5) )
+(And
+  (Not (And (Lessthan (Variable x) (Constant 20)) (Lessthan (Constant 10) (Variable x))))  
+  (LessThan (Duration x (Or task_a_release (Or task_a_start ...))) 5)
+)
 
 ```
 The formula contains `...` meaning the remaining events triggered by the task A, and `x` is a logic variable meaning that the duration can be measured such as the inequality `10 < x < 20`. Note that `(And a b)` is a shortcut for `(Not (Or (Not a) (Not b)))`.
 
 Note that in this example the notion of event is as used in Discrete Event Systems. Events are directly encoded using propositions.
+
+
+
+#### Write formulas in latex and know how to use them
+
+Latex equation formulas are much less verbose than synbolic expressions. Due to that, we made available the synthesis for RMTLD3 formulas written as latex equations.
+Consider the formula
+```
+(a \rightarrow ((a \lor b) \until{<10} c)) \land \int^{10} c < 4
+```
+that intuitively describes that given an event `a`, `b` occurs until `c` and, at the same time, the duration of `b` shall be less than four time units over the next `10` time units.
+For instance, a trace that satisfies this formula is
+```
+(a,2),(b,2),(a,1),(c,3),(a,3),(c,10)
+```
+From rmtld3synth tool, we have synthesized the formula's example into the Ocaml language code described in the ![texeq_sample.ml](/examples/texeq_sample.ml?raw=true). For that, we have used the command
+```
+./rmtld3synth --synth-ocaml --input-latexeq
+"(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4"
+```
+We can also generate cpp11 monitors by replacing the argument `--synth-ocaml` with `--synth-cpp11`.
+The outcome is the monitor illustrated in the ![texeq_sample_mon0.h](/examples/texeq_sample_mon0.h?raw=true) and ![texeq_sample_mon0_compute.h](/examples/texeq_sample_mon0_compute.h?raw=true) files.
+Both monitors can now be coupled in the system under observation using rtmlib.
+
+To use those monitors in Ocaml, we need to define a trace for Ocaml reference as follows:
+```
+module OneTrace : Trace = struct let trc = [("a",(0.,2.));("b",(2.,4.));("a",(4.,5.));("c",(5.,8.));
+    ("a",(8.,11.));("c",(11.,21.))] end;;
+
+module MonA = Mon0(OneTrace);;
+```
 
 
 #### Unit test generation
