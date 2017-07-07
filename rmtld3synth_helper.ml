@@ -22,7 +22,7 @@ type helper = string ref * string ref * int ref * ( global_int list * global_str
 
 let verb_mode = ref 0
 
-let verb f = if !verb_mode = 2 then f () else ()
+let verb f = if !verb_mode >= 2 then f () else ()
 
 let verb_m mode f = if !verb_mode >= mode then f () else () 
 

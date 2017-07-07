@@ -178,7 +178,19 @@ let string_of_fm_map fm_map =
   in
   Fm_container.fold (stringify) fm_map ""
 
+let string_of_fm_map_ex fm_map_ex =
+  let stringify : 'a -> idx_ct_fm_disj_ex -> 'a -> 'a = fun ky value str ->
+    match value with
+      KUntil(pval,fm1,fm2) -> str ^ (ky ^ " -> Until " ^ (string_of_float pval) ^ " " ^ (Sexp.to_string (sexp_of_fm_disj_ex fm1)) ^ " " ^ (Sexp.to_string (sexp_of_fm_disj_ex fm2)) ^ "\n")
+    | KDuration(fm,tm)     -> str ^ (ky ^ " -> Duration " ^ (Sexp.to_string (sexp_of_fm_disj_ex fm)) ^ " " ^ (Sexp.to_string (sexp_of_tm_disj_ex tm)) ^ "\n" )
+    | KFormula(fm)         -> str ^ (ky ^ " -> Formula " ^ (Sexp.to_string (sexp_of_fm_disj_ex fm)) ^ "\n" )
+  in
+  Fm_container.fold (stringify) fm_map_ex ""
+  
+
 let print_fm_map fm_map = print_endline (string_of_fm_map fm_map)
+
+let print_fm_map_ex fm_map_ex = print_endline (string_of_fm_map_ex fm_map_ex)
 
 
 let fm_to_fm_disj_ex_map (fm: fm) : idx_ct_fm_disj_ex Fm_container.t =
@@ -271,13 +283,16 @@ let simplify (rmtld_formula: fm) : fm =
     let item,lst_dnf_wineq_remain = select lst_dnf_wineq in
     let fm_wineq_lst, fm_nineq_lst = isol_conj item in
     (* get one atom from fm_wineq_lst and merge both remainig elements *)
-    let el,lst = select fm_wineq_lst
-    in
-    let fm_nineq_lst = fm_nineq_lst @ lst
-    in
-    let fm_wineq, fm_nineq = (el, `Conj(fm_conj_ex_of_fm_atom_ex_lst fm_nineq_lst)) in
+    if fm_wineq_lst <> [] then
+      let el,lst = select fm_wineq_lst
+      in
+      let fm_nineq_lst = fm_nineq_lst @ lst
+      in
+      let fm_wineq, fm_nineq = (el, `Conj(fm_conj_ex_of_fm_atom_ex_lst fm_nineq_lst)) in
 
-    axiom_primitive pval (tc_disj dnf_fm (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_wineq_remain)) fm_wineq fm_nineq fm
+      axiom_primitive pval (tc_disj dnf_fm (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_wineq_remain)) fm_wineq fm_nineq fm
+    else
+      fm (* ###### CONFIRM THIS LINE *)
   in
 
   let replace_fm key (fm: idx_ct_fm_disj_ex) =
@@ -358,14 +373,20 @@ let simplify (rmtld_formula: fm) : fm =
           let lst_dnf_nineq,lst_dnf_wineq = isol_disj fm1 in
 
           if lst_dnf_wineq <> [] then
-            KFormula(apply_axiom axiom1_primitive pval (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_nineq) (lst_dnf_wineq) fm2)
+            if lst_dnf_nineq <> [] then
+              KFormula(apply_axiom axiom1_primitive pval (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_nineq) (lst_dnf_wineq) fm2)
+            else
+              KFormula(apply_axiom axiom1_primitive pval (`Conj(`X(True))) (lst_dnf_wineq) fm2) (* ###### CONFIRM THIS LINE *)
           else
             begin
               (* put fm2 in DNF and isolate inequalities *)
               let lst_dnf_nineq2,lst_dnf_wineq2 = isol_disj fm2 in
 
               if lst_dnf_wineq2 <> [] then
-                KFormula(apply_axiom axiom2_primitive pval (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_nineq2) (lst_dnf_wineq2) fm1)
+                if lst_dnf_nineq2 <> [] then
+                  KFormula(apply_axiom axiom2_primitive pval (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_nineq2) (lst_dnf_wineq2) fm1)
+                else
+                  KFormula(apply_axiom axiom2_primitive pval (`Conj(`X(True))) (lst_dnf_wineq2) fm1) (* ###### CONFIRM THIS LINE *)
               else
                 KUntil(pval,fm1,fm2)
             end
@@ -440,9 +461,13 @@ let simplify (rmtld_formula: fm) : fm =
 
   (* type conversion from fm to fm_disj_ex *)
   let map_ex = fm_to_fm_disj_ex_map rmtld_formula in
+
+  verb_m 1 (fun _ -> print_endline ("Type conversion from fm to fm_disj_ex done.\n"); print_fm_map_ex map_ex; );
   
   (* simplify using heuristic *)
   let fm_map_solved = heuristic map_ex in
+
+  verb_m 1 (fun _ -> print_endline ("Simplifcation using heuristic done.\n"); print_fm_map_ex fm_map_solved;);
 
   (* convert map_fm_disj_ex to fm *)
   let retval : fm = fm_of_fm_disj (fm_disj_of_fm_disj_ex (fm_disj_ex_of_map_fm_disj_ex fm_map_solved)) in

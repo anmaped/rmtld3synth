@@ -1,3 +1,4 @@
+(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
 
 (*
    RMTLD3 type extensions
@@ -5,7 +6,7 @@
 
 open Rmtld3
 
-type tm_var = Var of var_id
+type tm_var = Var of var_id with sexp
 
 (*
 	RMTLD index type for fm formula container
@@ -28,6 +29,7 @@ type tm_disj_ex = Var of var_id | C of value | Dur of tm_disj_ex * fm_disj_ex | 
 and fm_atom_ex = Not of fm_atom_ex | True | Prop of prop | Less of tm_disj_ex * tm_disj_ex | Equal of tm_disj_ex * tm_disj_ex | EqualD of tm_var * (tm_disj_ex * fm_disj_ex) | ULess of time * fm_disj_ex * fm_disj_ex | E of var_id * fm_disj_ex | RU of prop
 and fm_conj_ex = [`And of fm_atom_ex * fm_conj_ex |  `X of fm_atom_ex]
 and fm_disj_ex = [`Or of fm_conj_ex * fm_disj_ex | `Conj of fm_conj_ex]
+with sexp
 
 type idx_ct_fm_disj_ex = KUntil of time * fm_disj_ex * fm_disj_ex | KDuration of fm_disj_ex * tm_disj_ex | KFormula of fm_disj_ex
 
@@ -209,7 +211,10 @@ and fm_of_tm_disj_var (tmv: tm_var) : tm =
 (*
   type conversion for lists of conjunctions and disjunctions
 *)
-let select lst = (List.hd lst, List.tl lst)
+let select lst =
+  match lst with
+    x::l -> (x, l)
+  | _ -> raise (Failure ("Selected an element in an empty list."))
 
 let rec fm_atom_ex_lst_of_fm_conj_ex (fm: fm_conj_ex) : fm_atom_ex list =
   match fm with

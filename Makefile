@@ -20,8 +20,6 @@ USE_CAMLP4 := yes
 
 PACKS := unix type_conv sexplib batteries
 
-VERSION_RMTLD3SYNTH := echo "X"
-
 all: version native-code
 
 version:
