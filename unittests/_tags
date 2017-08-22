@@ -1,0 +1,3 @@
+<unittests.{byte,native}>: package(unix,type_conv,sexplib,batteries)
+"rmtld3.ml": package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
+<**/*.ml>: package(unix,type_conv,sexplib,batteries)

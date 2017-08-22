@@ -1,0 +1,9 @@
+<rmtld3synth.{byte,native}>: package(unix,type_conv,sexplib,batteries)
+"rmtld3.ml": package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
+"rmtld3_extension.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
+"rmtld3synth_helper.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
+"rmtld3synth_simplify.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
+"interface/mathkernel.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
+"interface/rmdslparser.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
+"interface/texeqparser.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
+<**/*.ml>: package(unix,type_conv,sexplib,batteries)
