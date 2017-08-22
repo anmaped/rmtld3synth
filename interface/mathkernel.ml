@@ -11,11 +11,12 @@
 
 open List
 open Batteries
-
 open Sexplib
 open Sexplib.Conv
-
 open Unix
+
+open Rmtld3synth_helper
+
 
 let matches s =
   let chars = String.explode s in
@@ -289,7 +290,7 @@ let mk_handshake () =
     mk_writeln ("InitTime = TimeUsed[]");
 
     let x = mk_readln () in
-    Printf.printf "%s\n" x;
+    verb_m 1 (fun _ -> Printf.printf "%s\n" x; );
 
     (* mk_writeln ("FullForm[1+1]");
        block_until_read "FullForm= 2\n\nIn[4]:= " *)
@@ -303,7 +304,7 @@ let mk_handshake () =
     mk_writeln ("While[True, NV = Input[\"In>\\n\"]; Print[NV]; If[NV == Quit, Quit[]]]");
 
     let x = mk_readln () in
-    Printf.printf "%s\n" x;
+    verb_m 1 (fun _ -> Printf.printf "%s\n" x; );
 
   );;
 
@@ -412,6 +413,9 @@ let m_fm_to_rmtld m_formula =
   | x     -> raise (Failure ("bad expression: " ^ (Sexp.to_string (sexp_of_m_fm x))))
 
 
+let rem_prop str = String.sub str 4 ((String.length str)-4)
+let is_prop str = String.sub str 0 4 = "prop"
+
 let rec tm_disj_of_m_tm (tm: m_tm) : tm_disj =
   (* type conversion from mathematica term into tm_disj *)
   match tm with
@@ -424,7 +428,7 @@ and fm_atoms_of_m_tm (tm: m_tm) : fm_atom =
   match tm with
   | Less [x; y]  -> Less(tm_disj_of_m_tm x, tm_disj_of_m_tm y)
   | Not x        -> Not(fm_atoms_of_m_tm x)
-  | Var vid      -> Prop(vid)  (* raise failure if var is not a prop !! *)
+  | Var vid when is_prop vid -> Prop(rem_prop vid)  (* raise failure if var is not a prop !! *)
   | _            -> raise (Failure ("bad expression4: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
 
 and fm_atoms_of_m_tm' (tm: m_tm) : fm_conj =
@@ -445,7 +449,7 @@ and fm_conj_of_m_tm (tm: m_tm) : fm_conj =
 
               | _ -> tc_conj a (fm_atoms_of_m_tm' b)          
             in fold_left fld (`X(True)) lst
-  | Var vid     -> `X(Prop(vid))  (* raise failure if var is not a prop !! *)
+  | Var vid  when is_prop vid -> `X(Prop(rem_prop vid))  (* raise failure if var is not a prop !! *)
   | _   -> raise (Failure ("bad expression3: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
 
 and fm_disj_of_m_tm (tm: m_tm) : fm_disj =
@@ -453,7 +457,7 @@ and fm_disj_of_m_tm (tm: m_tm) : fm_disj =
   | Or lst     -> let fld (a: fm_disj) (b: m_tm) : fm_disj =
                     tc_disj a (`Conj(fm_conj_of_m_tm b))
                   in fold_left fld (`Conj(`X(Not(True)))) lst
-  | Var vid    -> `Conj(`X(Prop(vid))) (* raise failure if var is not a prop !! *)
+  | Var vid when is_prop vid -> `Conj(`X(Prop(rem_prop vid))) (* raise failure if var is not a prop !! *)
   | And lst    -> `Conj(fm_conj_of_m_tm (And lst))
   | _          -> raise (Failure ("bad expression2: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
 
@@ -467,18 +471,18 @@ and fm_disj_of_m_fm (fm: m_fm) : fm_disj =
 let m_fm_convert mode m_formula =
   (* convert the rmtld formula into the intermediate parse tree for mathematica *)
 
-  print_endline ("m_fm_convert "^mode);
+  verb_m 1 (fun _ -> print_endline ("m_fm_convert "^mode); );
 
   let mt_formula_string = "OutputForm @ FullForm[" ^ m_tm_to_str (BoolConv(Simplify(m_formula), mode)) ^ "]" in
 
-  print_endline mt_formula_string;
+  verb_m 1 (fun _ -> print_endline mt_formula_string; );
   mk_writeln mt_formula_string;
 
   let answer = mk_readln () in
-  Printf.printf "BCONV: %s\n" answer;
+  verb_m 1 (fun _ -> Printf.printf "BCONV: %s\n" answer; );
 
   let out = m_fm_of_str answer in
-  print_endline ("Output: " ^ (Sexp.to_string (sexp_of_m_fm out)) ^ "\n");
+  verb_m 1 (fun _ -> print_endline ("Output: " ^ (Sexp.to_string (sexp_of_m_fm out)) ^ "\n"); );
   out
 
 let m_fm_cnf m_formula = m_fm_convert "CNF" m_formula

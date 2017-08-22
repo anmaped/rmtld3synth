@@ -1,0 +1,128 @@
+
+(* Input latexeq *)
+
+(* basic disjunction *)
+"c \lor d"
+"(c \lor d)"
+"c_1 \lor d_1^2" 
+
+(* variable indexes *)
+"c_1 \lor d_1^2 \land c_2"
+"c_1 \lor (d_1^2 \land c_2)"
+"(c_1 \lor d_1^2) \land c_2"
+
+(* or and and inner duration term *)
+"\int^{10} c \lor d < 4"
+"\int^{10} (c \lor d) < 4"
+"\int^{10} (c \lor d) \land f < 4"
+
+(* plus and minus terms *)
+"\int^{10 + 10} (c \lor d) \land f < 4"
+"\int^{10 - 10 + 20} (c \lor d) \land f < 4"
+
+(* plus and minus terms with parenthesis *)
+"\int^{(10 - 10) + 20} (c \lor d) \land f < 4
+
+
+(*
+   issues below
+ *)
+
+(* nested durations *)
+
+
+(*
+   SAME RESULT FOR BOTH
+ *)
+"\int^{(10 - 10) + 20} (c \lor \int^{2} b < 6) \land f < 4"      NOT OK
+"\int^{(10 - 10) + 20} c \lor \int^{2} b < 6 \land f < 4"
+"\int^{(10 - 10) + 20} (c \lor \int^{2} b < 6 \land f) < 4"
+
+(FIneq
+ (((FTerm
+    ((TInt (TPlus ((TMinus ((TVal 10) (TVal 10))) (TVal 20)))
+      (Flor
+       ((FVar c)
+        (Fland
+         ((FIneq
+           (((FTerm ((TInt (TVal 2) (FVar b)))) (Less ()))
+            ((FTerm ((TVal 6))) (N ()))))
+          (FVar f))))))))
+   (Less ()))
+  ((FTerm ((TVal 4))) (N ()))))
+
+
+
+
+"\int^{(10 - 10) + 20} c \lor \int^{2} b \lor d < 6 \land f < 4"
+"\int^{(10 - 10) + 20} (1 < 6) < 4"
+
+
+(*
+   SAME RESULT FOR BOTH
+ *)
+
+"\int^{(10 - 10) + 20} \int^{20} b < 6 < 4"
+"\int^{(10 - 10) + 20} (\int^{20} b < 6) < 4"
+
+(FIneq
+ (((FTerm
+    ((TInt (TPlus ((TMinus ((TVal 10) (TVal 10))) (TVal 20)))
+      (FIneq
+       (((FTerm ((TInt (TVal 20) (FVar b)))) (Less ()))
+        ((FTerm ((TVal 6))) (N ())))))))
+   (Less ()))
+  ((FTerm ((TVal 4))) (N ()))))
+
+
+
+"\int^{(10 - 10) + 20} (\int^{20} b < \int^{3} aa) < 4"
+
+(FIneq
+ (((FTerm
+    ((TInt (TPlus ((TMinus ((TVal 10) (TVal 10))) (TVal 20)))
+      (FIneq
+       (((FTerm ((TInt (TVal 20) (FVar b)))) (Less ()))
+        ((FTerm ((TInt (TVal 3) (FVar aa)))) (N ())))))))
+   (Less ()))
+  ((FTerm ((TVal 4))) (N ()))))
+
+
+
+
+
+"\int^{(10 - 10) + 20} (\int^{20} b < \int^{3} (\int^{8} ff < 5) ) < 4"
+
+(FIneq
+ (((FTerm
+    ((TInt (TPlus ((TMinus ((TVal 10) (TVal 10))) (TVal 20)))
+      (FIneq
+       (((FTerm ((TInt (TVal 20) (FVar b)))) (Less ()))
+        ((FTerm
+          ((TInt (TVal 3)
+            (FIneq
+             (((FTerm ((TInt (TVal 8) (FVar ff)))) (Less ()))
+              ((FTerm ((TVal 5))) (N ())))))))
+         (N ())))))))
+   (Less ()))
+  ((FTerm ((TVal 4))) (N ()))))
+
+
+
+
+"\int^{(10 - 10) + 20} c \lor \int^{2} b + 1 < 6 + a \land f < 4"
+
+(FIneq
+ (((FTerm
+    ((TInt (TPlus ((TMinus ((TVal 10) (TVal 10))) (TVal 20)))
+      (Flor
+       ((FVar c)
+        (Fland
+         ((FIneq
+           (((FTerm ((TPlus ((TInt (TVal 2) (FVar b)) (TVal 1))))) (Less ()))
+            ((FTerm ((TPlus ((TVal 6) (TVar a (TEmpty ())))))) (N ()))))
+          (FVar f))))))))
+   (Less ()))
+  ((FTerm ((TVal 4))) (N ()))))
+
+

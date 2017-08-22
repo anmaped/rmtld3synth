@@ -35,4 +35,10 @@ cd examples
 
 # For rmdsl synthesis
 
+```
+cd examples
+../rmtld3synth.exe --synth-smtlibv2 --input-rmdsl
+    "\rm{core_0}{ \tk{ts1}{10,8} \succ \tk{ts2}{5,20} \bowtie \tk{ts3}{7,27} }{\pi,\theta}"
+```
+
 [To be completed.]

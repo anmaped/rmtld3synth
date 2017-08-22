@@ -12,191 +12,15 @@ open Rmtld3synth_helper
 open Mathkernel
 
 
-type kmap = KVar of var_id | KProp of prop | KForm of string with sexp 
-
-let id_count = ref 1
-let get_unique_id () = id_count := !id_count + 1; (string_of_int !id_count)
+exception Empty_wineq_lst of unit;;
 
 (*
-(* continue here .... converting it to fm_disj_ex *)
-let rec repl_tm (tm: tm_disj) (rep_tab: idx_ct Fm_container.t ref) : term =
-  match tm with
-  | C value            -> Constant(value)
-  | Var id             -> Variable(id)
-  | Dur (trm,sf)       -> let o_fm = rpl_disj_fm sf rep_tab in
-    let o_tm = repl_tm trm rep_tab in
-
-    let varid = ("tm" ^ (get_unique_id ())) in
-
-    rep_tab := Fm_container.add varid (KDuration(o_fm,o_tm)) !rep_tab; (* add formula and sub-term *)
-
-    (* duration terms are replaced with free variables *)
-    Variable(varid)
-
-  | Plus (eta1,eta2)   -> FPlus(repl_tm eta1 rep_tab, repl_tm eta2 rep_tab)
-  | Times (eta1,eta2)  -> FTimes(repl_tm eta1 rep_tab, repl_tm eta2 rep_tab)
-
-and rpl_atoms_fm (fm: atoms) (rep_tab: idx_ct Fm_container.t ref) : formula =
-  match fm with
-  | Not(fm)                 -> Not(rpl_atoms_fm fm rep_tab)
-  | Prop p                 -> Prop(p)
-  | ULess (pval, sf1, sf2) -> let o_fm1 = rpl_disj_fm sf1 rep_tab in
-    let o_fm2 = rpl_disj_fm sf2 rep_tab in
-
-    let varid = ("fm" ^ (get_unique_id ()) ) in
-
-    rep_tab := Fm_container.add varid (KUntil(pval,o_fm1,o_fm2)) !rep_tab;
-
-    (* until operators are replaced by propositions *)
-    Prop(varid)
-
-  | E (var,sf)             -> Exists(var, rpl_disj_fm sf rep_tab)
-  | Less (tr1,tr2)         -> LessThan(repl_tm tr1 rep_tab, repl_tm tr2 rep_tab)
-
-and rpl_conj_fm (fm_conj: fm_conj) (rep_tab: idx_ct Fm_container.t ref) : formula =
-  match fm_conj with
-    And(fm1,fm2) -> Or(rpl_atoms_fm fm1 rep_tab, rpl_conj_fm fm2 rep_tab)
-
-and rpl_disj_fm (fm_disj: fm_disj) (rep_tab: idx_ct Fm_container.t ref) : formula =
-  match fm_disj with
-  | Or(fm1,fm2) -> Or(rpl_conj_fm fm1 rep_tab, rpl_disj_fm fm2 rep_tab)
-  | Conj(fm)    -> rpl_conj_fm fm rep_tab
-*)
-
-(*
-   Replacement functions for rmtld3 terms and formulas
+ * convert formula into a map of fm_disj_ex
  *)
-let rec rpl_tm (tm: tm) (rmap: idx_ct Fm_container.t ref) : tm =
-  match tm with
-  | Constant value      -> Constant(value)  
-  | Variable id         -> Variable(id)
-  | Duration (trm,sf)   -> (* replace duration with one free variable *)
-                           let o_fm = rpl_fm sf rmap in
-                           let o_tm = rpl_tm trm rmap in
-                           let varid = ("tm" ^ (get_unique_id ())) in
-                           let tag : idx_ct = KDuration(o_fm,o_tm) in
-                           add_map varid tag rmap; (* add formula and sub-term *)
-                           Variable(varid)
-                           
-  | FPlus (eta1,eta2)   -> FPlus(rpl_tm eta1 rmap,rpl_tm eta2 rmap)
-  | FTimes (eta1,eta2)  -> FTimes(rpl_tm eta1 rmap,rpl_tm eta2 rmap)
-
-and rpl_fm (fm: fm) (rmap: idx_ct Fm_container.t ref) : fm =
-  match fm with
-  | True()                 -> True()
-  | Prop p                 -> Prop(p)
-  | Not sf                 -> Not(rpl_fm sf rmap)
-  | Or (sf1, sf2)          -> Or(rpl_fm sf1 rmap,rpl_fm sf2 rmap)
-  | Until (pval, sf1, sf2) -> (* replace until operator with one proposition *)
-                              let o_fm1 = rpl_fm sf1 rmap in
-                              let o_fm2 = rpl_fm sf2 rmap in
-                              let varid = ("fm" ^ (get_unique_id ()) ) in
-                              let tag : idx_ct = KUntil(pval,o_fm1,o_fm2) in
-                              rmap := Fm_container.add varid tag !rmap;
-                              Prop(varid)
-
-  | Exists (var,sf)        -> Exists(var, rpl_fm sf rmap)
-  | LessThan (tr1,tr2)     -> LessThan(rpl_tm tr1 rmap, rpl_tm tr2 rmap)
-
-
-let rec tm_of_map_fm (tm: tm) (mapfm: idx_ct Fm_container.t) : tm =
-  match tm with
-  | Variable(id) ->
-    begin (* is the variable id replaced ? *)
-      try
-        match Fm_container.find id mapfm with
-        | KDuration(sf,trm) -> Duration (trm,sf)
-        | _                 -> raise (Failure ("tm_of_map_fm error: no KDuration"))
-      with Not_found -> Variable(id)
-    end
-
-  | _            -> raise (Failure ("bad unreplace: " ^ (string_of_rmtld_tm tm)))
-
-and fm_of_map_fm (fm: fm) (mapfm: idx_ct Fm_container.t) : fm = 
-  (* replace identified free variables and temporal operators into the formula fm *)
-  match fm with
-  | True()                 -> True()
-  | Not(Or(LessThan(Constant(1.), Variable(varid1)), LessThan(Variable(varid2), Constant(1.)))) when varid1 = varid2 ->
-    (* get available sub-formula *)
-    (
-    match Fm_container.find varid1 mapfm with
-    | KUntil(pval,fm1,fm2) -> Until(pval, (fm_of_map_fm fm1 mapfm), (fm_of_map_fm fm2 mapfm))
-    | _                    -> raise (Failure ("fm_of_map_fm error: no KUntil"))
-    )
-
-
-  | LessThan(tm1,tm2)      -> LessThan(tm_of_map_fm tm1 mapfm, tm_of_map_fm tm2 mapfm)
-
-  | Prop p                 -> Prop(p)
-  | Not sf                 -> Not(fm_of_map_fm sf mapfm)
-  | Or (sf1, sf2)          -> Or(fm_of_map_fm sf1 mapfm, fm_of_map_fm sf2 mapfm)
-  | Exists (var,sf)        -> Exists(var, fm_of_map_fm sf mapfm)
-  | _                      -> raise (Failure ("bad unreplace: " ^ (string_of_rmtld_fm fm)))
-
-
-(*
-   Convert map to tm and fm
-*)
-let rec tm_of_map_fm_disj_ex tm (mapfm: 'b Fm_container.t) =
-  match tm with
-  | `Var(id) -> `Var(id)
-
-  (* CONTINUE HERE !! *)
-
-and fm_disj_ex_of_map_fm_disj_ex' (fm: 'a) (mapfm: 'b Fm_container.t) : 'a = 
-  match fm with
-  | `Conj(fm_c)    -> `Conj(fm_c)
-  | `Or(fm1_c,fm2_d) -> `Or(fm1_c,fm_disj_ex_of_map_fm_disj_ex' fm2_d mapfm)
-  
-let fm_disj_ex_of_map_fm_disj_ex mapfm =
-  let id = "mainfm" in
-  let enc_fm =
-    (* get formula with id 'mainfm' *)
-    try
-      Fm_container.find (Sexp.to_string (sexp_of_kmap (KForm(id)))) mapfm
-    with Not_found -> raise (Failure ("fm_disj_ex_of_map_fm_disj_ex: mainfm is not present."))
-  in
-
-  let fm =
-    match enc_fm with
-    | KFormula(fm) -> fm
-    | _            -> raise (Failure ("fm_to_fm_disj_ex error: mainfm is malformed"))
-  in
-
-  let omapfm = rem_map id mapfm in (* map set without 'mainfm' *)
-  fm_disj_ex_of_map_fm_disj_ex' fm omapfm
-
-(*
-	helpers for map_fm sets
-*)
-let string_of_fm_map fm_map =
-  let stringify : 'a -> idx_ct -> 'a -> 'a = fun ky value str ->
-    match value with
-      KUntil(pval,fm1,fm2) -> str ^ (ky ^ " -> Until " ^ (string_of_float pval) ^ " " ^ (string_of_rmtld_fm fm1) ^ " " ^ (string_of_rmtld_fm fm2) ^ "\n")
-    | KDuration(fm,tm)     -> str ^ (ky ^ " -> Duration " ^ (string_of_rmtld_fm fm) ^ " " ^ (string_of_rmtld_tm tm) ^ "\n" )
-    | KFormula(fm)         -> str ^ (ky ^ " -> Formula " ^ (string_of_rmtld_fm fm) ^ "\n" )
-  in
-  Fm_container.fold (stringify) fm_map ""
-
-let string_of_fm_map_ex fm_map_ex =
-  let stringify : 'a -> idx_ct_fm_disj_ex -> 'a -> 'a = fun ky value str ->
-    match value with
-      KUntil(pval,fm1,fm2) -> str ^ (ky ^ " -> Until " ^ (string_of_float pval) ^ " " ^ (Sexp.to_string (sexp_of_fm_disj_ex fm1)) ^ " " ^ (Sexp.to_string (sexp_of_fm_disj_ex fm2)) ^ "\n")
-    | KDuration(fm,tm)     -> str ^ (ky ^ " -> Duration " ^ (Sexp.to_string (sexp_of_fm_disj_ex fm)) ^ " " ^ (Sexp.to_string (sexp_of_tm_disj_ex tm)) ^ "\n" )
-    | KFormula(fm)         -> str ^ (ky ^ " -> Formula " ^ (Sexp.to_string (sexp_of_fm_disj_ex fm)) ^ "\n" )
-  in
-  Fm_container.fold (stringify) fm_map_ex ""
-  
-
-let print_fm_map fm_map = print_endline (string_of_fm_map fm_map)
-
-let print_fm_map_ex fm_map_ex = print_endline (string_of_fm_map_ex fm_map_ex)
-
-
-let fm_to_fm_disj_ex_map (fm: fm) : idx_ct_fm_disj_ex Fm_container.t =
+let fm_to_fm_disj_ex_map (fm: fm) : map_of_fm_disj_ex =
 	(* do a replacement first; than continue with rmtld_fm_to_m *)
   let map = ref Fm_container.empty in
-  let tag : idx_ct = KFormula(rpl_fm fm map) in
+  let tag : idx_ct = KFormula(fm_map_of_fm fm map) in
   add_map "mainfm" tag map;
   verb (fun _ -> print_fm_map !map);
 
@@ -228,7 +52,10 @@ let fm_to_fm_disj_ex_map (fm: fm) : idx_ct_fm_disj_ex Fm_container.t =
 (* From Rmtld3.formula to fm_disj_ex *)
 let fm_to_fm_disj_ex (fm: fm) : fm_disj_ex =
   (* reconstruct formula *)
-  fm_disj_ex_of_map_fm_disj_ex (fm_to_fm_disj_ex_map fm)
+  (* convert fm to fm_disj_ex_map and then get fm from fm_disj_ex_map *)
+  (* convert fm to fm_disj_ex after doing the mapping *)
+  fm_disj_to_fm_disj_ex (fm_disj_of_fm (fm_of_map_fm_disj_ex (fm_to_fm_disj_ex_map fm)))
+
 
 
 let fm_to_fm_disj (fm: fm) : fm_disj =
@@ -240,10 +67,15 @@ let fm_to_fm_disj (fm: fm) : fm_disj =
 let simplify (rmtld_formula: fm) : fm = 
   verb_m 1 (fun _ -> print_endline "Simplification enabled.";);
 
-  let isol f lst = List.fold_left (fun (wineq,nineq) a -> if try f a; false with _ -> true then (a::wineq,nineq) else (wineq,a::nineq)) ([],[]) lst
+  let isol f lst =
+    List.fold_left (fun (nineq,wineq) a ->
+      if try f a; false with _ -> true then (nineq,a::wineq) else (a::nineq,wineq)
+    ) ([],[]) lst
+  in let isol_conj (fm: fm_conj_ex) : (fm_atom_ex list * fm_atom_ex list) =
+    isol (fm_atom_notless_of_fm_atom % fm_atom_of_fm_atom_ex) (fm_atom_ex_lst_of_fm_conj_ex fm)
+  in let isol_disj (fm: fm_disj_ex) : (fm_conj_ex list * fm_conj_ex list) =
+    isol (fm_conj_notless_of_fm_conj % fm_conj_of_fm_conj_ex) (fm_conj_ex_lst_of_fm_disj_ex fm)
   in
-  let isol_conj (fm: fm_conj_ex) : (fm_atom_ex list * fm_atom_ex list) = isol (fm_atom_notless_of_fm_atom % fm_atom_of_fm_atom_ex) (fm_atom_ex_lst_of_fm_conj_ex fm) in
-  let isol_disj (fm: fm_disj_ex) : (fm_conj_ex list * fm_conj_ex list) = isol (fm_conj_notless_of_fm_conj % fm_conj_of_fm_conj_ex) (fm_conj_ex_lst_of_fm_disj_ex fm) in
 
   
 
@@ -292,7 +124,7 @@ let simplify (rmtld_formula: fm) : fm =
 
       axiom_primitive pval (tc_disj dnf_fm (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_wineq_remain)) fm_wineq fm_nineq fm
     else
-      fm (* ###### CONFIRM THIS LINE *)
+      raise (Empty_wineq_lst ()) (* ###### CONFIRM THIS LINE *)
   in
 
   let replace_fm key (fm: idx_ct_fm_disj_ex) =
@@ -373,20 +205,24 @@ let simplify (rmtld_formula: fm) : fm =
           let lst_dnf_nineq,lst_dnf_wineq = isol_disj fm1 in
 
           if lst_dnf_wineq <> [] then
-            if lst_dnf_nineq <> [] then
+            (if lst_dnf_nineq <> [] then
               KFormula(apply_axiom axiom1_primitive pval (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_nineq) (lst_dnf_wineq) fm2)
             else
-              KFormula(apply_axiom axiom1_primitive pval (`Conj(`X(True))) (lst_dnf_wineq) fm2) (* ###### CONFIRM THIS LINE *)
+              KFormula(apply_axiom axiom1_primitive pval (`Conj(`X(True))) (lst_dnf_wineq) fm2)
+              (* ###### CONFIRM THIS LINE *)
+            )
           else
             begin
               (* put fm2 in DNF and isolate inequalities *)
               let lst_dnf_nineq2,lst_dnf_wineq2 = isol_disj fm2 in
 
               if lst_dnf_wineq2 <> [] then
-                if lst_dnf_nineq2 <> [] then
+                (if lst_dnf_nineq2 <> [] then
                   KFormula(apply_axiom axiom2_primitive pval (fm_disj_ex_of_fm_conj_ex_lst lst_dnf_nineq2) (lst_dnf_wineq2) fm1)
                 else
-                  KFormula(apply_axiom axiom2_primitive pval (`Conj(`X(True))) (lst_dnf_wineq2) fm1) (* ###### CONFIRM THIS LINE *)
+                  KFormula(apply_axiom axiom2_primitive pval (`Conj(`X(True))) (lst_dnf_wineq2) fm1)
+                  (* ###### CONFIRM THIS LINE *)
+                )
               else
                 KUntil(pval,fm1,fm2)
             end
@@ -402,13 +238,15 @@ let simplify (rmtld_formula: fm) : fm =
         | KUntil(pval, fm1, fm2) ->
             (* If all variables in fm1 and fm2 are solved then apply the axiom else skip it for next time *)
             if (is_fm_disj_ex_solved fm1 unsolved_map_fm solved_map_fm) && (is_fm_disj_ex_solved fm2 unsolved_map_fm solved_map_fm) then
+            begin
+              verb_m 2 (fun _ -> print_endline ( "fm1: "^( Sexp.to_string (sexp_of_fm_disj_ex fm1) )^"\nfm2: "^(Sexp.to_string (sexp_of_fm_disj_ex fm2))^"\n" ); );
               let out_fm = isol_until_oper pval fm1 fm2 (* let us begin by isolating this until operator *)
-              in
+              in verb_m 2 (fun _ -> print_endline ( "isol_until_oper: "^( Sexp.to_string (sexp_of_idx_ct_fm_disj_ex out_fm) )^"\n" ); );
               let unsolved_fm_x = replace_fm key out_fm (* replace until operators with new propositions and simplify the remaining formula *)
-              in
-              if unsolved_fm_x <> Fm_container.empty then
+              in if unsolved_fm_x <> Fm_container.empty then
                 (join_map_fm unsolved_fm_x unsolved_map_fm, solved_map_fm) (* add new replacements to the unsolved map as well as the remaining formula *)
               else (unsolved_map_fm, Fm_container.add key (out_fm) solved_map_fm)
+            end
             else (unsolved_map_fm, solved_map_fm)
 
 
@@ -420,8 +258,10 @@ let simplify (rmtld_formula: fm) : fm =
           else (unsolved_map_fm, solved_map_fm)
 
 
-        | KFormula(fm) -> 	(* main formula *)
-          (unsolved_map_fm, solved_map_fm)
+        | KFormula(fm) -> 	(* if formula is solved then mark as solved else continue solving *)
+          if is_fm_disj_ex_solved fm unsolved_map_fm solved_map_fm then
+            (unsolved_map_fm, Fm_container.add key (KFormula(fm)) solved_map_fm)
+          else (Fm_container.add key (KFormula(fm)) unsolved_map_fm, solved_map_fm)
 
         | _ -> raise (Failure ("simplify_heuristic applied to unknown tokens"))
     in
@@ -470,7 +310,8 @@ let simplify (rmtld_formula: fm) : fm =
   verb_m 1 (fun _ -> print_endline ("Simplifcation using heuristic done.\n"); print_fm_map_ex fm_map_solved;);
 
   (* convert map_fm_disj_ex to fm *)
-  let retval : fm = fm_of_fm_disj (fm_disj_of_fm_disj_ex (fm_disj_ex_of_map_fm_disj_ex fm_map_solved)) in
+  (*let retval : fm = fm_of_fm_disj (fm_disj_of_fm_disj_ex (fm_disj_ex_of_map_fm_disj_ex fm_map_solved)) in*)
+  let retval : fm = fm_of_map_fm_disj_ex fm_map_solved in
 
   (* close mathematica process *)
   Mathkernel.close_process_mathematica ();
