@@ -19,7 +19,7 @@ depends: [
 ]
 
 build: [
-  ["./configure"]
+  ["./configure" "--prefix=%{prefix}%"]
   [make "all"]
  ]
 
