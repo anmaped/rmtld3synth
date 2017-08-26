@@ -1,0 +1,30 @@
+
+ifeq ($(OS), Windows_NT)
+	EXT=.exe
+else
+	EXT=""
+endif
+
+
+all: version
+	ocamlbuild -use-ocamlfind rmtld3synth.byte rmtld3synth.native
+
+version:
+	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > version.ml
+
+tests: all
+	cd unittests && chmod 777 gen_monitor_tests.sh && ./gen_monitor_tests.sh
+
+install:
+	@echo "OS: ${OS}"
+	@echo "Installing rmtld3synth.native to ${PREFIX}/bin"
+	mkdir --parents ${PREFIX}/bin; cp _build/rmtld3synth.native ${PREFIX}/bin/rmtld3synth$(EXT)
+	@echo "Please install Z3 libs"
+
+uninstall:
+	rm -f ${PREFIX}/bin/rmtld3synth$(EXT)
+
+
+clean:
+	ocamlbuild -clean
+	rm -f *.byte *.native

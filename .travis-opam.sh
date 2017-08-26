@@ -13,6 +13,8 @@ get() {
   wget https://raw.githubusercontent.com/${fork_user}/ocaml-ci-scripts/${fork_branch}/$@
 }
 
+OLD_DIR=$(pwd)
+
 TMP_BUILD=$(mktemp -d 2>/dev/null || mktemp -d -t 'citmpdir')
 cd ${TMP_BUILD}
 
@@ -39,10 +41,17 @@ opam pin add pa_sexp_conv pa_sexp_conv/ -n
 opam install oasis
 opam install pa_sexp_conv
 
+git clone https://github.com/Z3Prover/z3.git z3
+cd z3
+python scripts/mk_make.py --ml
+cd build
+make
+sudo PATH=$PATH make install
+
 export OPAMBUILDTEST=0
 # UNTIL HERE !
 
-cd -
+cd ${OLD_DIR}
 
 echo -en "travis_fold:end:prepare.ci\r"
 ${TMP_BUILD}/ci-opam

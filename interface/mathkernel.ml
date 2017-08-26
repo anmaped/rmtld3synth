@@ -260,7 +260,12 @@ let rec m_tm_to_str t =
   | _                -> raise (Failure "cannot convert Mathematica tm to string")
 
 (* change it for MACOS *)
-let mk_proc = ref (Unix.open_process "math -noprompt");;
+let mk_proc = ref (Unix.open_process "");;
+
+let mk_init () =
+  (* test if mathematica is installed *)
+  if Unix.system "math -noprompt -run \"Quit[]\"" = WEXITED(1) then print_endline "Mathematica is not available or not in PATH." else
+  mk_proc := Unix.open_process "math -noprompt"
 
 let mk_writeln s =
   output_string (snd (!mk_proc)) (s ^ "\n");
@@ -326,40 +331,6 @@ let mk_close ignore_outcome =
 let minisleep (sec: float) =
   ignore (Unix.select [] [] [] sec);;
 
-
-let mathkernel_cad formula =
-  (* Open a Mathematica MathKernel process. *)
-  (*let channel_from_mathematica, channel_to_mathematica = Unix.open_process "math -noprompt";;*)
-  (*minisleep 10.;;*)
-  mk_handshake ();
-
-  (*let answer_from_mathematica = BatIO.nread (fst !mk_proc) 6 ;;
-    Printf.printf "%s\n" answer_from_mathematica;;*)
-
-  let x = mk_readln () in
-  Printf.printf "%s\n" x;
-
-  (*let x = try Char.escaped (BatIO.read (fst !mk_proc)) with BatIO.No_more_input -> "End of string";;*)
-
-  mk_writeln "Quit";
-  mk_close ();
-  (*BatInnerIO.output channel_to_mathematica ("ss" ^ "\n");;
-    (*Printf.fprintf channel_to_mathematica "Tell me if this is equal ...\n";;*)*)
-
-
-
-  (*let mk_proc = ref (NONE : ((TextIO.instream, TextIO.outstream) Unix.proc * TextIO.instream * TextIO.outstream) option)*)
-
-
-  (* Test code for parsing.
-
-     	let x = m_fm_of_str "Plus[Times[Rational[-1, 2], Power[b, 3], c], 
-     	 Times[Rational[1, 2], Power[a, 3], Power[c, 2]], 
-     	 Times[Rational[3, 2], a, b, Power[c, 2]], 
-     	 Times[Rational[1, 2], Power[c, 3]]]" in
-
-     	Printf.printf "%s" (Sexp.to_string (sexp_of_m_fm x));;
-  *)
 
 open Rmtld3
 open Rmtld3_extension

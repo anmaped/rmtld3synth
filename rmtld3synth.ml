@@ -59,6 +59,7 @@ let out_dir = ref ""
 let cpp11_lang = ref false
 let ocaml_lang = ref false
 let spark14_lang = ref false
+let smt_solver = ref ""
 
 let set_config_file file = config_file := file
 let set_formulas f = rmtld_formula := f
@@ -71,6 +72,7 @@ let set_out_dir f = out_dir := f
 let set_ocaml_language f = ocaml_lang := true
 let set_cpp_language f = cpp11_lang := true
 let set_spark14_language f = spark14_lang := true
+let set_solve_z3 f = smt_solver := "z3"
 
 open Batteries
 open Unix
@@ -205,6 +207,7 @@ end
 
 open Version
 open Rmdslparser
+open Z3solver
 
 (*
    Command Line Interface
@@ -217,7 +220,8 @@ let _ =
     ("--synth-ocaml", Arg.Unit (set_ocaml_language)," Enables synthesis for Ocaml language");
     ("--synth-cpp11", Arg.Unit (set_cpp_language), " Enables synthesis for C++11 language");
     ("--synth-spark2014", Arg.Unit (set_spark14_language), " Enables synthesis for Spark2014 language (Experimental)");
-    ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD (Experimental)\n\n Input:");
+    ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD (Experimental)");
+    ("--solve-z3",  Arg.Unit (set_solve_z3), " Enables solving smtlibv2 problems using Z3 SMT solver\n\n Input:");
 
     (* input models *)
     ("--input-sexp", Arg.String (set_formulas), " Inputs sexp expression (RMTLD3 formula)");
@@ -272,6 +276,8 @@ let _ =
       if input_fm <> mfalse then
       begin
         sat_gen (to_simplify (input_fm));
+
+        Z3solver.parse_smtlibv2 ();
       end
       else
         begin

@@ -290,6 +290,7 @@ let simplify (rmtld_formula: fm) : fm =
 
   try
   (* open  mathematica task to aid simplification *)
+  Mathkernel.mk_init ();
   Mathkernel.mk_handshake ();
 
   (* test if mathematica has been correctly initalized *)

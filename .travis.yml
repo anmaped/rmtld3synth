@@ -1,11 +1,27 @@
 language: c
 sudo: required
 install:
-        wget https://raw.githubusercontent.com/anmaped/rmtld3synth/dev/.travis-opam.sh
+  - wget https://raw.githubusercontent.com/anmaped/rmtld3synth/dev/.travis-opam.sh
 
-script: bash -ex .travis-opam.sh
+script:
+  - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
+  - sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
+  - gcc --version
+  - g++ --version
+  - chmod ugo+x configure
+  - bash -ex .travis-opam.sh
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-5
+    - g++-5
+
 env:
-  - OCAML_VERSION=4.03
+  - OCAML_VERSION=4.03 PACKAGE=rmtld3synth
+
 os:
   - linux
   - osx

@@ -1,4 +1,6 @@
 opam-version: "1.2"
+name:         "rmtld3synth"
+version:      "0.3-alpha"
 maintainer:   "apedro.1@gmail.com"
 homepage:     "https://github.com/anmaped/rmtld3synth"
 bug-reports:  "https://github.com/anmaped/rmtld3synth/issues"
@@ -16,6 +18,12 @@ depends: [
   "type_conv" {<= "113.00.02"}
 ]
 
-build: [make "all"]
+build: [
+  ["./configure"]
+  [make "all"]
+ ]
+
+install: [make "install"]
+remove: ["ocamlfind" "remove" "rmtld3synth"]
 
 build-test: [make "tests"]
