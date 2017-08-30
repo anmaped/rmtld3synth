@@ -7,7 +7,7 @@ open Sexplib.Conv
 
 open Rmtld3synth_helper
 
-let rmtld3synthsmt formula = 
+let rmtld3synthsmt formula helper = 
 
 	let common_types = "
 (define-sort Proptype () Int)
@@ -108,25 +108,25 @@ let rmtld3synthsmt formula =
 )
 	" in
 
-	let duration t dt formula =
-		let indicator = "
-(define-fun indicator ((mk Trace) (mt Time)) Int
+	let duration id t dt formula =
+		let indicator id = "
+(define-fun indicator"^ id ^" ((mk Trace) (mt Time)) Int
 	(ite (= "^ formula ^" TVTRUE) 1 0)
 )
 		" in
-		let evaleta =
+		let evaleta id =
 "
-(declare-fun evaleta ((Time) (Time)) Int)
+(declare-fun evaleta"^ id ^" ((Time) (Time)) Int)
 (assert (forall ((x Time) (i Time)) (=> (and (>= x 0) (<= x (+ "^ (string_of_int t) ^" "^ dt ^") )) (ite
 	(and (and (< x (+ "^ (string_of_int t) ^" "^ dt ^") ) (>= i 0)) (> x i))
-	(= (evaleta x i) (+ (evaleta (- x 1) i) (indicator trc x) ))
-	(= (evaleta x i) (indicator trc x) )
+	(= (evaleta"^ id ^" x i) (+ (evaleta"^ id ^" (- x 1) i) (indicator"^ id ^" trc x) ))
+	(= (evaleta"^ id ^" x i) (indicator"^ id ^" trc x) )
 	)))
 )
 		" in
-	("(computeduration "^ dt ^" "^ (string_of_int t) ^")", indicator^evaleta^"
-(define-fun computeduration ((mt Time) (mtb Time)) Duration
-	(evaleta (- mt 1) mtb)
+	("(computeduration"^ id ^" "^ dt ^" "^ (string_of_int t) ^")", (indicator id) ^ (evaleta id) ^"
+(define-fun computeduration"^ id ^" ((mt Time) (mtb Time)) Duration
+	(evaleta"^ id ^" (- mt 1) mtb)
 )
 	")
 	in
@@ -136,9 +136,10 @@ let rmtld3synthsmt formula =
 let rec synth_smtlib_tm t term helper =
   match term with
     | Constant value       -> (string_of_int(int_of_float value), "")
-    | Duration (di,phi)    -> let tr_out1, tr_out2 = synth_smtlib_tm t di helper in
+    | Duration (di,phi)    -> let idx = get_duration_counter helper in
+                              let tr_out1, tr_out2 = synth_smtlib_tm t di helper in
     						  let sf_out1, sf_out2 = synth_smtlib_fm t phi helper in
-    						  let dur_out1, dur_out2 = duration t tr_out1 sf_out1 in
+    						  let dur_out1, dur_out2 = duration (string_of_int idx) t tr_out1 sf_out1 in
     						  (dur_out1, tr_out2^sf_out2^dur_out2)
     | FPlus (tr1,tr2)      -> ("", "")
     | FTimes (tr1,tr2)     -> ("", "")
@@ -148,7 +149,7 @@ and synth_smtlib_fm t formula helper =
     | True()                  -> ("TVTRUE","")
     | Prop p                  -> let tbl = get_proposition_hashtbl helper in
                                  let counter = get_proposition_counter helper in 
-                                 let val1,val2 = try (Hashtbl.find tbl p,"") with Not_found -> Hashtbl.add tbl p counter; (counter, compute_proposition (string_of_int counter)) in
+                                 let val1,val2 = try (Hashtbl.find tbl p,"") with Not_found -> set_proposition_two_way_map p counter helper; (counter, compute_proposition (string_of_int counter)) in
                                  ("(computeprop"^ (string_of_int val1) ^" mk mt "^ (string_of_int val1) ^")", val2)
 
     | Not sf                  -> let sf_out1, sf_out2 = synth_smtlib_fm t sf helper in
@@ -184,14 +185,8 @@ and synth_smtlib_fm t formula helper =
 (*let formula2 = Until(10., Prop("A"), Prop("B")) in
 let formula = Until(10., Until(10., Prop("A"), Prop("B")), Prop("B")) in*)
 
-let helper = ("", "", ref 0, ([],[],[]), [(ref 0, Hashtbl.create 10); (ref 0, Hashtbl.create 10)]) in
 let toassert,x = synth_smtlib_fm 0 formula helper in
 
 common_types ^ map_macros ^ evali ^ new_trace ^ x ^ "
 (assert (= "^ toassert ^" TVTRUE) )
-" ^"
-(check-sat)
-(get-model)
-
-(get-info :all-statistics)
 "
