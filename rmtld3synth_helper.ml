@@ -18,7 +18,8 @@ type formula = Rmtld3.formula with sexp
 exception Settings_Not_Found of string;;
 
 (* reformulate this rmtld3synth state *)
-type helper = string ref * string ref * int ref * ( global_int list * global_string list * monitor list ) * ((int ref * (string, int) t) list)
+type counter_maps = Proposition_map of (string * int ref * (string, int) t) | Proposition_map_reverse of (string * int ref * (int, string) t) | Counter_without_map of string * int ref
+type helper = string ref * string ref * int ref * ( global_int list * global_string list * monitor list ) * (counter_maps list)
 
 let verb_mode = ref 0
 
@@ -26,6 +27,43 @@ let verb f = if !verb_mode >= 2 then f () else ()
 
 let verb_m mode f = if !verb_mode >= mode then f () else () 
 
+
+
+let default_counter_map = 
+  [
+    Proposition_map("prop",ref 0, Hashtbl.create 10) ;
+    Proposition_map_reverse("prop", ref 0, Hashtbl.create 10) ;
+    Counter_without_map("counter_until",ref 0) ;
+    Counter_without_map("counter_duration",ref 0) ;
+  ]
+
+let mk_helper =
+  (ref "", ref "", ref 0, ([],[],[]), default_counter_map)
+
+let set_parameters p (a,b,c,_,e) =
+  (a,b,c,p,e)
+
+let get_proposition_map id lst =
+  let fnd = List.find (fun a -> match a with Proposition_map(id_m,_,_) -> if id_m = id then true else false | _ -> false ) lst in
+  match fnd with
+  | Proposition_map(a,b,c) -> (a,b,c)
+  | _ ->raise (Failure ("proposition_map mismatch."))
+
+let get_proposition_map_rev id lst =
+  let fnd = List.find (fun a -> match a with Proposition_map_reverse(id_m,_,_) -> if id_m = id then true else false | _ -> false ) lst in
+  match fnd with
+  | Proposition_map_reverse(a,b,c) -> (a,b,c)
+  | _ ->raise (Failure ("proposition_map mismatch."))
+
+let get_counter_without_map id lst =
+  let fnd = List.find (fun a -> match a with Counter_without_map(id_m,_) -> if id_m = id then true else false | _ -> false ) lst in
+  match fnd with
+  | Counter_without_map(a,b) -> (a,b)
+  | _ ->raise (Failure ("counter_without_map mismatch."))
+
+(*
+  helper for monitor configuration of events
+ *)
 let get_event_fulltype (t1,t2,_,_,_) = 
   !t1 ^ "< " ^ !t2 ^" >"
 
@@ -38,17 +76,37 @@ let set_event_type type_event (t1,_,_,_,_) =
 let set_event_subtype sub_type_event (_,t2,_,_,_) =
   t2 := sub_type_event
 
-let get_proposition_hashtbl (_,_,_,_,list) =
-  let _, tbl = List.hd list in
+
+
+let get_proposition_hashtbl (_,_,_,_,lst) =
+  let _,_,tbl = get_proposition_map "prop" lst in
   tbl
 
-let get_proposition_counter (_,_,_,_,list) =
-  let count,_ = List.hd list in
+let get_proposition_rev_hashtbl (_,_,_,_,lst) =
+  let _,_,tbl = get_proposition_map_rev "prop" lst in
+  tbl
+
+let get_proposition_counter (_,_,_,_,lst) =
+  let _,count,_ = get_proposition_map "prop" lst in
   count := !count + 1;
   !count
 
-let get_until_counter (_,_,_,_,list) =
-  let count,_ = List.hd (List.tl list) in
+let find_proposition_rev_hashtbl a helper =
+  try Hashtbl.find (get_proposition_rev_hashtbl helper) a with Not_found -> "idle"
+
+let set_proposition_two_way_map p id helper =
+  begin
+    Hashtbl.add (get_proposition_hashtbl helper) p id ;
+    Hashtbl.add (get_proposition_rev_hashtbl helper) id p ;
+  end
+
+let get_until_counter (_,_,_,_,lst) =
+  let _,count = get_counter_without_map "counter_until" lst in
+  count := !count + 1;
+  !count
+
+let get_duration_counter (_,_,_,_,lst) =
+  let _,count = get_counter_without_map "counter_duration" lst in
   count := !count + 1;
   !count
 

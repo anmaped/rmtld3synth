@@ -60,6 +60,8 @@ let cpp11_lang = ref false
 let ocaml_lang = ref false
 let spark14_lang = ref false
 let smt_solver = ref ""
+let solver_statistics_flag = ref false
+let get_schedule_flag = ref false
 
 let set_config_file file = config_file := file
 let set_formulas f = rmtld_formula := f
@@ -73,6 +75,10 @@ let set_ocaml_language f = ocaml_lang := true
 let set_cpp_language f = cpp11_lang := true
 let set_spark14_language f = spark14_lang := true
 let set_solve_z3 f = smt_solver := "z3"
+let set_solve_statistics f = solver_statistics_flag := true
+let set_get_schedule f = get_schedule_flag := true
+
+let isSolverEnabled () = !smt_solver = ""
 
 open Batteries
 open Unix
@@ -85,6 +91,7 @@ open Rmtld3synth_unittest
 open Rmtld3synth_smt
 open Rmtld3synth_cpp11
 open Rmtld3synth_ocaml
+open Z3solver
 
 let chose_synthesis a b c =
   if !cpp11_lang then a () else if !ocaml_lang then b () else if !spark14_lang then c ()
@@ -96,7 +103,7 @@ let mon_gen fm =
     if fm <> mfalse then [("mon0",0,fm)]
     else []
   in
-  let helper = (ref "", ref "", ref 0, (a,b,c), [(ref 0, Hashtbl.create 10); (ref 0, Hashtbl.create 10)]) in  
+  let helper = set_parameters (a,b,c) mk_helper in
   let create_dir dir_name = try let state = Sys.is_directory dir_name in if state then () else  Unix.mkdir dir_name 0o666; with _ -> Unix.mkdir dir_name 0o666 in
   
 
@@ -192,22 +199,58 @@ let mon_gen fm =
 
 let sat_gen formula =
 begin
+  let helper = mk_helper in
+  let stmlibv2_str = rmtld3synthsmt formula helper in
+
+  if !smt_solver = "z3" then
+  begin
+    verb (fun _ -> print_endline "Z3 solver enabled."; ) ;
+    let ctx,exp = parse_smtlibv2 stmlibv2_str in
+    let out,solver = solve_ ctx exp in
+    verb (fun _ -> print_endline ("Result: "^out) ) ;
+     
+    if not !get_schedule_flag then print_endline out;
+
+    if out = "satisfiable" then
+    begin
+      let model = get_model ctx solver in
+      if not !get_schedule_flag then print_endline (string_of_z3model model) ;
+      if !get_schedule_flag then
+      begin
+        let scheduler_trace = get_scheduler ctx model helper in
+        print_endline (Sexp.to_string (sexp_of_trace_untimed scheduler_trace)) ;
+        ()
+      end;
+    end
+
+
+  end;
+
+  let stmlibv2_str = stmlibv2_str^"(check-sat)
+(get-model)
+
+(get-info :all-statistics)
+" in
+
   if String.exists (!out_file) ".smt2" then
     let stream = open_out (!out_file) in
-    Printf.fprintf stream "%s\n" (rmtld3synthsmt formula);
+    Printf.fprintf stream "%s\n" (stmlibv2_str);
     close_out stream;
-    verb (fun _ -> print_endline ("SMTLIBv2 file "^(!out_file)^" saved."));
+    verb (fun _ -> print_endline ("SMTLIBv2 file "^(!out_file)^" saved.")) ;
   else
   begin
-    verb (fun _ -> print_endline "SMTLIBv2 file: \n");
-    print_endline (rmtld3synthsmt formula);
+    (* do not print if solver is enabled *)
+    if isSolverEnabled () then
+    begin
+      verb (fun _ -> print_endline "SMTLIBv2 file: \n") ;
+      print_endline stmlibv2_str ;
+    end;
   end
 end
 
 
 open Version
 open Rmdslparser
-open Z3solver
 
 (*
    Command Line Interface
@@ -217,11 +260,16 @@ let _ =
   let speclist = [
     (* action flags *)
     ("--synth-smtlibv2", Arg.Unit (set_smt_formula), " Enables synthesis for SMT-LIBv2 language");
-    ("--synth-ocaml", Arg.Unit (set_ocaml_language)," Enables synthesis for Ocaml language");
+    ("--synth-ocaml", Arg.Unit (set_ocaml_language), " Enables synthesis for Ocaml language");
     ("--synth-cpp11", Arg.Unit (set_cpp_language), " Enables synthesis for C++11 language");
-    ("--synth-spark2014", Arg.Unit (set_spark14_language), " Enables synthesis for Spark2014 language (Experimental)");
+    ("--synth-spark2014", Arg.Unit (set_spark14_language), " Enables synthesis for Spark2014 language (unsupported)\n\n Flags for solving: ");
+
     ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD (Experimental)");
-    ("--solve-z3",  Arg.Unit (set_solve_z3), " Enables solving smtlibv2 problems using Z3 SMT solver\n\n Input:");
+    ("--solve-z3",  Arg.Unit (set_solve_z3), " Enables solving smtlibv2 problems using Z3 SMT solver");
+
+    ("--solve-statistics",  Arg.Unit (set_solve_statistics), " Enables printing the solve statistics") ;
+    ("--get-schedule",  Arg.Unit (set_get_schedule), " Returns the schedule\n\n Input:") ;
+    
 
     (* input models *)
     ("--input-sexp", Arg.String (set_formulas), " Inputs sexp expression (RMTLD3 formula)");
@@ -237,7 +285,7 @@ let _ =
     ("--verbose", Arg.Set_int verb_mode, " Enables verbose mode");
     ("--version", Arg.Unit (fun () -> print_endline ("Git version "^(Version.git)); exit 0), " Version and SW information\n");
   ]
-  in let usage_msg = "rmtld3synth flags [options] input [output]\n\n Flags: "
+  in let usage_msg = "rmtld3synth flags [options] input [output]\n\n Flags for synthesis: "
   in Arg.parse (Arg.align speclist) print_endline usage_msg;
 
   (* conversion for input formula *)
@@ -276,8 +324,6 @@ let _ =
       if input_fm <> mfalse then
       begin
         sat_gen (to_simplify (input_fm));
-
-        Z3solver.parse_smtlibv2 ();
       end
       else
         begin
@@ -293,10 +339,12 @@ let _ =
           let _ = List.fold_left (fun a b ->
             let ex,ex2 = b (mtrue,mtrue) mtrue in (* TODO skip ex2 *)
             verb (fun _ ->
-              print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex));
+              print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex)) ;
+              print_endline "##*##" ;
+              print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex2)) ;
               print_endline "--------------------------------------------------------------------------------\n";
-            );
-            sat_gen (to_simplify ex);
+            ) ;
+            sat_gen (to_simplify ( mand ex ex2 ) );
             a + 1
           ) 1 fm_lst in
           

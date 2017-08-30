@@ -164,7 +164,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name helper=
 
     		let oc = open_out_gen [Open_creat; Open_text; Open_append] 0o640 ("smt/"^cluster_name^"/"^id^".smt2") in
     		(*let smtlibv2 = Sexp.to_string (sexp_of_formula formula) in*)
-    		let smtlibv2 = rmtld3synthsmt formula in
+    		let smtlibv2 = rmtld3synthsmt formula helper in
     		output_string oc smtlibv2;
     		close_out oc;
 

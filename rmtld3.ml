@@ -40,7 +40,18 @@ type rmtld3_fm = formula with sexp
 type rmtld3_tm = term with sexp
 type tm = rmtld3_tm with sexp
 type fm = rmtld3_fm with sexp
-(*type foobar = Foo of int | Bar with sexp*)
+
+(*
+   Untimed trace is a time of the form, prop1,prop2,...
+*)
+type trace_untimed = (prop) list with sexp
+
+(*
+ *  trace is a list of n elements of the form,
+ *    (prop, interval_1),...,(prop, interval_n)
+ *)
+type trace = (prop * (time*time)) list with sexp
+type trace_short = (prop * time) list with sexp
 
 
 type term_indefeasible = V of value | Indefeasible
@@ -84,12 +95,6 @@ let b3_not b3 = if b3 = True then False else if b3=False then True else Unknown
 (* Relation operator < *)
 let b3_lessthan n1 n2 = if n1 < n2 then True else (if n1 >= n2 then False else Unknown)
 
-
-(*
- *  trace is a list of n elements of the form,
- *    (prop, interval_1),...,(prop, interval_n)
- *)
-type trace = (prop * (time*time)) list
 
 (* environment record type *)
 type ev =
