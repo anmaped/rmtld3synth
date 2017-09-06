@@ -7,3 +7,4 @@
 "interface/rmdslparser.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
 "interface/texeqparser.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
 <**/*.ml>: package(unix,type_conv,sexplib,batteries,Z3)
+true: warn_error_A

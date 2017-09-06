@@ -230,9 +230,10 @@ let simplify (rmtld_formula: fm) : fm =
         in
 
         (* to isolate duration terms *)
-        let isol_dur_oper t (tm: tm_disj_ex) (fm: fm_disj_ex) : idx_ct_fm_disj_ex =
+        (* [TODO] this is unnused *)
+        (*let isol_dur_oper t (tm: tm_disj_ex) (fm: fm_disj_ex) : idx_ct_fm_disj_ex =
           KFormula(`Conj(`X(True)))
-        in
+        in*)
 
         match tuple with
         | KUntil(pval, fm1, fm2) ->
@@ -263,7 +264,7 @@ let simplify (rmtld_formula: fm) : fm =
             (unsolved_map_fm, Fm_container.add key (KFormula(fm)) solved_map_fm)
           else (Fm_container.add key (KFormula(fm)) unsolved_map_fm, solved_map_fm)
 
-        | _ -> raise (Failure ("simplify_heuristic applied to unknown tokens"))
+        (* | _ -> raise (Failure ("simplify_heuristic applied to unknown tokens")) *)
     in
 
     let rec solve depth dnfmap = (* depth: max depth for search *)

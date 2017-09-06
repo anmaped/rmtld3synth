@@ -16,6 +16,7 @@ open Z3.FuncDecl
 open Z3enums
 open Z3.Symbol
 open Z3.Arithmetic
+open Z3.Tactic
 
 open Rmtld3synth_helper
 
@@ -28,9 +29,10 @@ let parse_smtlibv2 smtlibv2_str =
   (ctx,exp)
 
 let solve_ ctx exp =
-  let solver = mk_simple_solver ctx in
-  let _ = add solver [exp] in
-  (string_of_status (check solver []), solver)
+  let tactic_set = and_then ctx (mk_tactic ctx "qe") (mk_tactic ctx "smt") []
+  in let solver = mk_solver_t ctx tactic_set
+  in let _ = add solver [exp]
+  in (string_of_status (check solver []), solver)
 
 
 
@@ -62,8 +64,9 @@ let get_scheduler ctx model helper =
     let rpl_exp = Expr.substitute_vars exp2 [Integer.mk_numeral_i ctx a] in
     let exx = (match eval model rpl_exp true with Some x -> x | None -> raise (Failure ("Interp interpret is not possible."))) in
     let name = (Z3.AST.to_string (ast_of_expr exx)) in
+    verb (fun _ -> print_endline ("NM: "^name) ; ) ;
     verb (fun _ -> print_endline (string_of_int a^" -> "^ (find_proposition_rev_hashtbl (int_of_string name)  helper)) ) ;
     (find_proposition_rev_hashtbl (int_of_string name)  helper)::b
     (* print_endline (Z3.AST.to_string (ast_of_expr rpl_exp)) ; *)
-  ) (List.of_enum (1--20)) []
+  ) (List.of_enum (0--20)) []
   

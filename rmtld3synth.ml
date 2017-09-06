@@ -226,7 +226,8 @@ begin
 
   end;
 
-  let stmlibv2_str = stmlibv2_str^"(check-sat)
+  let stmlibv2_str = stmlibv2_str^"(check-sat-using (then qe smt))
+
 (get-model)
 
 (get-info :all-statistics)
@@ -329,25 +330,18 @@ let _ =
         begin
           verb (fun _ -> print_endline "Rmdsl parsing enabled.");
           let ex = Rmdslparser.rmdslparser !expression_rmdsl in
-          let fm_lst = Rmdslparser.rmtld3_fm_of_rmdsl ex in
+          let fm_lst = Rmdslparser.rmtld3_fm_lst_of_rmdsl_lst ex in
           verb (fun _ ->
             print_endline "--------------------------------------------------------------------------------\n";
             print_endline "rmtld3 formula(s): ";
             print_endline ("Available goals: "^(string_of_int (List.length fm_lst)));
           );
 
-          let _ = List.fold_left (fun a b ->
-            let ex,ex2 = b (mtrue,mtrue) mtrue in (* TODO skip ex2 *)
-            verb (fun _ ->
-              print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex)) ;
-              print_endline "##*##" ;
-              print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex2)) ;
-              print_endline "--------------------------------------------------------------------------------\n";
-            ) ;
-            sat_gen (to_simplify ( mand ex ex2 ) );
+          let _ = List.fold_left (fun a fm_goal ->
+            sat_gen (to_simplify fm_goal) ;
             a + 1
           ) 1 fm_lst in
-          
+
           ()
 
         end

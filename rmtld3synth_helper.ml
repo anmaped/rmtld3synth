@@ -11,9 +11,9 @@ type global_int = string * int with sexp
 (* global_string settings *)
 type global_string = string * string with sexp
 (* monitor setting entry*)
-type monitor = string * int * Rmtld3.formula with sexp
+type monitor = string * int * Rmtld3.fm with sexp
 
-type formula = Rmtld3.formula with sexp
+type formula = Rmtld3.fm with sexp
 
 exception Settings_Not_Found of string;;
 

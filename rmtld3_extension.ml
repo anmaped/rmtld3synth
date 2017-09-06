@@ -65,8 +65,6 @@ and fm_disj_notless = [`Or of fm_conj_notless * fm_disj_notless | `Conj of fm_co
  *)
 module Fm_container = Map.Make(String);;
 
-(* RMTLD index type for fm type container *)
-type idx_ct = KUntil of time * formula * formula | KDuration of formula * term | KFormula of formula
 (* RMTLD index type for fm_disj_ex type container *)
 type idx_ct_fm_disj_ex = KUntil of time * fm_disj_ex * fm_disj_ex | KDuration of fm_disj_ex * tm_disj_ex | KFormula of fm_disj_ex with sexp
 
@@ -289,6 +287,8 @@ and fm_map_of_fm (fm: fm) (rmap: idx_ct Fm_container.t ref) : fm =
 
   | Exists (var,sf)        -> Exists(var, fm_map_of_fm sf rmap)
   | LessThan (tr1,tr2)     -> LessThan(tm_map_of_tm tr1 rmap, tm_map_of_tm tr2 rmap)
+
+  | a                      -> raise (Failure ("Unsupported term "^ Sexp.to_string_hum (sexp_of_fm a) ))
 
 
 let rec tm_of_tm_map (tm: tm) (mapfm: idx_ct Fm_container.t) : tm =

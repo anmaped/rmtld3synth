@@ -10,6 +10,22 @@ open Rmtld3synth_helper
 let rmtld3synthsmt formula helper = 
 
 	let common_types = "
+(set-option :auto_config false) ; Usually a good idea
+(set-option :model.v2 true)
+(set-option :smt.phase_selection 0)
+
+(set-option :smt.restart_strategy 0)
+(set-option :smt.restart_factor |1.5|)
+
+(set-option :smt.arith.random_initial_value true)
+(set-option :smt.case_split 10)
+
+(set-option :smt.delay_units true)
+(set-option :smt.delay_units_threshold 300)
+
+(set-option :smt.qi.eager_threshold 400)
+
+
 (define-sort Proptype () Int)
 (define-sort Time () Int)
 (define-sort Duration () Time)
@@ -124,7 +140,7 @@ let rmtld3synthsmt formula helper =
 	)))
 )
 		" in
-	("(computeduration"^ id ^" "^ dt ^" "^ (string_of_int t) ^")", (indicator id) ^ (evaleta id) ^"
+	("(computeduration"^ id ^" (+ mt "^ dt ^") mt)", (indicator id) ^ (evaleta id) ^"
 (define-fun computeduration"^ id ^" ((mt Time) (mtb Time)) Duration
 	(evaleta"^ id ^" (- mt 1) mtb)
 )
@@ -164,7 +180,7 @@ and synth_smtlib_fm t formula helper =
     							 let sf1_out1, sf1_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf1 helper) in
     							 let sf2_out1, sf2_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf2 helper) in
     	 					     (
-    								"(computeUless!" ^ (string_of_int idx) ^" "^ (string_of_int (int_of_float gamma)) ^" "^ (string_of_int t) ^")"
+    								"(computeUless!" ^ (string_of_int idx) ^" "^ (string_of_int (t + int_of_float gamma)) ^" mt )"
     							  ,
 							    	(compute_until
 							    		("!"^(string_of_int idx))
@@ -174,6 +190,8 @@ and synth_smtlib_fm t formula helper =
 							    		(sf2_out1, sf2_out2)
 							    	)
 								 )
+
+	| Until_eq (gamma,sf1,sf2)-> "",""
 
     | LessThan (tr1,tr2)      -> let tr1_out1, tr1_out2 = (synth_smtlib_tm t tr1 helper) in
     							 let tr2_out1, tr2_out2 = (synth_smtlib_tm t tr2 helper) in
@@ -188,5 +206,8 @@ let formula = Until(10., Until(10., Prop("A"), Prop("B")), Prop("B")) in*)
 let toassert,x = synth_smtlib_fm 0 formula helper in
 
 common_types ^ map_macros ^ evali ^ new_trace ^ x ^ "
-(assert (= "^ toassert ^" TVTRUE) )
+(define-fun allcheck  ((mk Trace) (mt Time)) Bool (= "^ toassert ^" TVTRUE) )
+
+(assert (forall ((t Time)) (>= (select trc t) 0)  ))
+(assert (allcheck trc 0) )
 "

@@ -121,6 +121,19 @@ let rmdslparser str =
   rs
 
 
+(* auxiliar fuctions *)
+let rec gcd u v =
+  if v <> 0 then (gcd v (u mod v))
+  else (abs u)
+ 
+let lcm m n =
+  match m, n with
+  | 0, _ | _, 0 -> 0
+  | m, n -> abs (m * n) / (gcd m n)
+
+let lcm_list lst =
+  List.fold_left (fun a b -> lcm a b) (hd lst) (tl lst)
+
 (*
   Type conversions:
     - to rmtld3_fm
@@ -132,13 +145,15 @@ let get_float el = float_of_int (get_int el)
 
 let rec prop_list_of_fm' (fm: rmtld3_fm) : rmtld3_fm list = 
   match fm with
-  | True()                  -> []
-  | Prop p                  -> [Prop(p)]
-  | Not sf                  -> prop_list_of_fm' sf
-  | Or (sf1, sf2)           -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
-  | Until (gamma, sf1, sf2) -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
-  | LessThan (tr1,tr2)      -> []
-  | _ -> raise (Failure "error: prop_list_of_fm'")
+  | True()                      -> []
+  | Prop p                      -> [Prop(p)]
+  | Not sf                      -> prop_list_of_fm' sf
+  | Or (sf1, sf2)               -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
+  | Until (gamma, sf1, sf2)     -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
+  | Until_eq (gamma, sf1, sf2)  -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
+  | Until_leq (gamma, sf1, sf2) -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
+  | LessThan (tr1,tr2)          -> []
+  | a                           -> raise (Failure ("Unsupported formula " ^ Sexp.to_string_hum (sexp_of_fm a)) )
 
 let rec remove_dups lst =
   match lst with
@@ -147,41 +162,147 @@ let rec remove_dups lst =
 
 let prop_list_of_fm fm : rmtld3_fm = fold_left (fun a b -> Or(a,b)) (Not(mtrue)) (remove_dups (prop_list_of_fm' fm)) (* it removes duplications *)
 
-let rec rmtld3_fm_of_rmdsl_tm tm st : (rmtld3_fm * rmtld3_fm) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm) =
-  let tsk_prop nm t (phi1, phi2) filter = (mand phi1 (Until (t, Or(Prop("B#"^nm),Or(Prop("R#"^nm),Or(Prop("S#"^nm),filter))), Prop("E#"^nm) )),  mtrue) in
+type tp_tuple = float list * rmtld3_fm list with sexp
+let mk_empty_tuple = ([],[])
+
+let rec rmtld3_fm_of_rmdsl_tm tm st : (rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm * 'a) =
+
+  (* these are old definitions; huge overhead; let's simplify *)
+  (*let dur nm t d = equal
+  (
+    Duration(
+      Constant(t),
+      Or(
+        Prop("B#"^nm),
+        Or(
+          Prop("R#"^nm),
+          Or(
+            Prop("S#"^nm),
+            Prop("E#"^nm)
+          )
+        )
+      )
+    )
+  ) (
+    Constant(d)
+  ) in
+  let subb nm t filter = mand_list
+  [
+    ( malways 20. ( mimplies (Prop("S#"^nm)) (Until (t, Or( Prop("S#"^nm), filter), Prop("R#"^nm))) ) ) ; (* [TODO] HARDCODED BOUND *)
+    ( malways 20. ( mimplies (Prop("R#"^nm)) (Until (t, Or( Prop("R#"^nm), filter), Or( Prop("S#"^nm), Prop("E#"^nm) ) )) ) ) ;
+    ( malways 20. ( mimplies (Prop("E#"^nm)) (Until (t, Or( Prop("E#"^nm), filter), Prop("B#"^nm))) ) ) ;
+  ]
+  in
+  let tsk_prop nm t d (phi1, phi2) filter =
+    (mand phi1 (mand (Until (t, Or(Prop("B#"^nm),Or(Prop("R#"^nm),Or(Prop("S#"^nm),filter))), Prop("E#"^nm) )) (subb nm t filter) ), mand phi2 (dur nm t d) )
+  in*)
+
+  let dur nm t d =
+  mimplies
+    (Prop("RE#"^nm))
+    (equal
+      (
+        Duration(
+          Constant(t),
+            Prop("RU#"^nm)
+        )
+      ) (
+        Constant(d)
+      )
+    )
+  in
+  let tsk_prop nm t d (phi1, phi2, tuple) filter =
+    (
+      mand phi1 (
+        mimplies (Prop("RE#"^nm))
+        (mand 
+          (meventually_eq t (Prop("RE#"^nm)) )
+          (Until(2., Prop("RE#"^nm), (Until (t, Or(Prop("RU#"^nm),mfalse), Prop("SO#"^nm) )) ))
+        )
+      ),
+      mand phi2 (dur nm t d),
+      (
+        t::(fst tuple),
+        Prop(("RE#"^nm))::(snd tuple)
+      )
+    )
+  in
+
+
+
   match tm with
-  | Tsk(str,plst) when length plst = 2 -> tsk_prop (st^str) (get_float (hd plst))
+  | Tsk(str,plst) when length plst = 2 -> tsk_prop (st^str) (get_float (hd plst)) (get_float (hd (tl plst)))
+
   | Pri(tk1,tk2)  -> let f1 = rmtld3_fm_of_rmdsl_tm tk1 st
                      in let f2 = rmtld3_fm_of_rmdsl_tm tk2 st
-                     in (fun (phi1,phi2) filter -> let fm1 = f1 (phi1,phi2) (prop_list_of_fm filter)
-                        in let fm2 = f2 fm1 (prop_list_of_fm (fst fm1) )
-                        in fm2)
+                     in (fun (phi1,phi2,tp) filter -> let fm1fst,fm1snd,fm1tp = f1 (phi1,phi2,tp) (prop_list_of_fm filter)
+                           in let fm2 = f2 (fm1fst,fm1snd,fm1tp) (prop_list_of_fm fm1fst )
+                           in fm2
+                        )
 
   | Arb(tk1,tk2)  -> let f1 = rmtld3_fm_of_rmdsl_tm tk1 st
                      in let f2 = rmtld3_fm_of_rmdsl_tm tk2 st
-                     in let fm1 = f1 (mtrue,mtrue) (prop_list_of_fm mtrue)
-                     in let fm2 = f2 (mtrue,mtrue) (prop_list_of_fm mtrue)
 
-                     in (fun (phi1,phi2) filter -> let fm11 = f1 (phi1,phi2) (prop_list_of_fm (Or((fst fm2), filter)))
-                       in let fm22 = f2 fm11 (prop_list_of_fm (Or((fst fm1),filter)))
-                       in fm22 )
+                     in (fun (phi1,phi2,tp) filter ->
+                          let fm1fst,fm1snd,fm1tp = f1 (mtrue,mtrue,tp) (prop_list_of_fm mtrue)
+                          in let fm2fst,fm2snd,fm2tp = f2 (mtrue,mtrue,tp) (prop_list_of_fm mtrue)
+                          in
+                          let fm11 = f1 (phi1,phi2,tp) (prop_list_of_fm (Or(fm2fst, filter)))
+                          in let fm22 = f2 fm11 (prop_list_of_fm (Or(fm1fst,filter)))
+                          in fm22
+                        )
+
+  | a             -> raise (Failure ("Unsupported expression rmdsl_tk "^ Sexp.to_string_hum (sexp_of_rmdsl_tk a) ))
 
 
-  | _             -> raise (Failure ("bad rmdsl expression tm"))
-
-let rec rmtld3_fm_of_rmdsl ex : ((rmtld3_fm * rmtld3_fm) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm)) list =
+let rec rmtld3_fm_of_rmdsl' ex : ((rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm * 'a)) list =
   match ex with
     Emp ()           -> []
-  | Res(str,tk,plst) -> [fun (a,c) b -> rmtld3_fm_of_rmdsl_tm tk str (a,c) b ]
-  | Par(rs1,rs2)     -> (rmtld3_fm_of_rmdsl rs1)@(rmtld3_fm_of_rmdsl rs2) (* unreal paralell (split case) *)
-  | Seq(rs1,rs2)     -> [fun (a,c) b -> (True(),True()) ] (* TODO *)
-  | Cmp(rs1,rs2)     -> [fun (a,c) filter ->
-                          let f1 = List.hd (rmtld3_fm_of_rmdsl rs1) in (* skip other list elements; TODO raise something *)
-                          let f2 = List.hd (rmtld3_fm_of_rmdsl rs2) in
-                          let out1 = f1 (mtrue,mtrue) (prop_list_of_fm mtrue) in
-                          let out2 = f2 (mtrue,mtrue) (prop_list_of_fm mtrue) in
-                          let out11 = f1 (a,c) (prop_list_of_fm (Or((fst out2), filter))) in
-                          let out22 = f2 out11 (prop_list_of_fm (Or((fst out1), filter))) in
+
+  | Res(nm,tk,plst) when length plst = 2 ->
+    let p = (get_float (hd plst))
+    in let b = (get_float (hd (tl plst)))
+    in let dur_res filter = (mimplies (Prop("RN#"^nm)) (mand (meventually_eq p (Prop("RN#"^nm))) ( LessThan(Duration(Constant(p), filter), Constant(b)) )) )
+    in [ fun (a,c,tp) b ->
+           let fm_out1,fm_out2,tp = rmtld3_fm_of_rmdsl_tm tk nm (a,c,tp) b
+           in let all_prop = prop_list_of_fm fm_out1
+           in (mand (dur_res all_prop) (fm_out1), fm_out2, tp)
+        ]
+
+  | Par(rs1,rs2)     -> (rmtld3_fm_of_rmdsl' rs1)@(rmtld3_fm_of_rmdsl' rs2) (* unreal paralell (split case) *)
+  | Seq(rs1,rs2)     -> [fun (a,c,tp) b -> (True(),True(), tp) ] (* TODO *)
+  | Cmp(rs1,rs2)     -> [fun (a,c,tp) filter ->
+                          let f1 = List.hd (rmtld3_fm_of_rmdsl' rs1) in (* skip other list elements; TODO raise something *)
+                          let f2 = List.hd (rmtld3_fm_of_rmdsl' rs2) in
+                          let out1fst,_,_ = f1 (mtrue,mtrue,mk_empty_tuple) (prop_list_of_fm mtrue) in
+                          let out2fst,_,_ = f2 (mtrue,mtrue,mk_empty_tuple) (prop_list_of_fm mtrue) in
+                          let out11 = f1 (a,c,tp) (prop_list_of_fm (Or(out2fst, filter))) in
+                          let out22 = f2 out11 (prop_list_of_fm (Or(out1fst, filter))) in
                           out22
                         ]
+
+  | a                -> raise (Failure ("Unsupported expression rmdsl_rs "^ Sexp.to_string_hum (sexp_of_rmdsl_rs a) ))
+
+
+let rmtld3_fm_lst_of_rmdsl_lst expression = let rmdsl_lst = rmtld3_fm_of_rmdsl' expression in
+  fold_left (fun a b ->
+    let ex,ex2,tp = b (mtrue,mtrue,mk_empty_tuple) mtrue in
+    let hy = lcm_list (List.map (fun a -> int_of_float a) (fst tp)) in
+    let fm = malways (float_of_int hy) (mand ex ex2) in
+    let fm = mand (meventually 1. (mand (Prop("RN#core0")) (meventually 1. (Prop("RE#core0ts1")) )) ) (*) (Until(1.,(Prop("RN#core0")),(Prop("RE#core0ts1"))))*) fm in
+    (*let fm = (mand (fold_left (fun a b -> Until(1., a, b) ) mtrue (snd tp) ) (mimplies (Prop "RE#core0ts1") (Until(3., Prop "RE#core0ts1", Prop "RX#core0ts1")))) in*)
+    (* constructs sequence of operation *)
+
+    verb (fun _ ->
+           print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex)) ;
+           print_endline "##*##" ;
+           print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex2)) ;
+           print_endline "##*##" ;
+           print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm fm)) ;
+           print_endline "##*##\ntp:\n" ;
+           print_endline ( Sexp.to_string_hum (sexp_of_tp_tuple tp)) ;
+           print_endline "--------------------------------------------------------------------------------\n" ;
+         ) ;
+    fm::a
+  ) [] rmdsl_lst
 

@@ -137,6 +137,13 @@ and parse_m_tm' l =
   | "Less"  :: r      -> let (tm_lst, s) = parse_m_tm_lst r in
     (Less tm_lst, s)
 
+  (*| "LessEqual" :: r  -> let (tm_lst, s) = parse_m_tm_lst r in
+    (Less tm_lst, s) [TODO: get rmtd3 expression]
+
+  | "GreaterEqual" :: r -> let (tm_lst, s) = parse_m_tm_lst r in
+    (Less tm_lst, s) [TODO: get rmtd3 expression]
+  *)
+
 
   | "Function" :: r   -> let (tm_lst, s) = parse_m_tm_lst r in
     (Function tm_lst, s)
@@ -318,7 +325,7 @@ let mk_handshake () =
 (* Close MathKernel process *)
 
 let mk_close ignore_outcome =
-  let status = Unix.close_process !mk_proc in
+  let _ = Unix.close_process !mk_proc in
   ();;
 (*Printf.printf status;
 

@@ -20,26 +20,56 @@ type prop   = string with sexp
 type time   = float with sexp
 type value  = float with sexp
 
-type formula =
+type fm =
           True of unit
         | Prop of prop
-        | Not of formula
-        | Or of formula * formula
-        | Until of time * formula * formula
-        | Exists of var_id * formula
-        | LessThan of term * term
-and term =
+        | Not of fm
+        | Or of fm * fm
+        | And of fm * fm              (* extensional operator *)
+        | Implies of fm * fm          (* extensional operator *)
+        | Until of time * fm * fm
+        | Until_leq of time * fm * fm (* extensional operator *)
+        | Until_eq of time * fm * fm  (* extensional operator *)
+        | Exists of var_id * fm
+        | LessThan of tm * tm
+        | Less_eq of tm * tm          (* extensional operator *)
+        | Greater of tm * tm          (* extensional operator *)
+        | Greater_eq of tm * tm       (* extensional operator *)
+and tm =
           Constant of value
         | Variable of var_id
-        | FPlus of term * term
-        | FTimes of term * term
-        | Duration of term * formula
+        | FPlus of tm * tm
+        | FTimes of tm * tm
+        | Duration of tm * fm
 with sexp
 
-type rmtld3_fm = formula with sexp
-type rmtld3_tm = term with sexp
-type tm = rmtld3_tm with sexp
-type fm = rmtld3_fm with sexp
+type rmtld3_tm = tm with sexp
+type rmtld3_fm = fm with sexp
+
+
+(* RMTLD3 abreviations *)
+let mtrue : rmtld3_fm = True () (*Or(Prop "NOSYMBOL", Not(Prop "NOSYMBOL"))*)
+let mfalse = Not(mtrue)
+let mand phi1 phi2 = Not (Or (Not phi1, Not phi2))
+let mand_list lst = List.fold_left (fun a b -> mand a b) (hd lst) (tl lst)
+let mimplies phi1 phi2 = Or (Not (phi1), phi2)
+let meventually t phi = Until (t, mtrue, phi)
+let meventually_eq t phi = Until_eq (t, mtrue, phi)
+let meventually_leq t phi = Until_leq (t, mtrue, phi)
+let malways t phi = Not (meventually t (Not phi))
+let malways_eq t phi = Not (meventually_eq t (Not phi))
+let malways_leq t phi = Not (meventually_leq t (Not phi))
+let forall var phi = Not(Exists(var, Not(phi)))
+
+let greater tm1 tm2 = LessThan(tm2, tm1)
+let not_equal tm1 tm2 = Or(LessThan(tm1, tm2), LessThan(tm2,tm1))
+let equal tm1 tm2 = Not(not_equal tm1 tm2)
+let less_or_equal tm1 tm2 = Or(LessThan(tm1, tm2), equal tm1 tm2)
+let greater_or_equal tm1 tm2 = Or(greater tm1 tm2, equal tm1 tm2)
+
+
+(* rmtld3 index type for fm type container *)
+type idx_ct = KUntil of time * fm * fm | KDuration of fm * tm | KFormula of fm
 
 (*
    Untimed trace is a time of the form, prop1,prop2,...
@@ -217,6 +247,8 @@ and measure_formula formula =
                                let x2,y2 = measure_term tr2 in
                                (x1+x2, y1+y2)
 
+   | a                      -> raise (Failure ("Unsupported formula "^ Sexp.to_string_hum (sexp_of_fm a) ))
+
 (* create an uniform trace of the type
  * (p1, (i1, i1')), ... ,(pn, (in, in')) list 
  *)
@@ -317,6 +349,8 @@ and slatex_of_rmtld_fm formula =
    | Exists (var,sf)        -> "\\exists " ^ var ^ " \\ \\left(" ^ (slatex_of_rmtld_fm sf) ^ "\\right)"
    | LessThan (tr1,tr2)     -> "\\left(" ^ (slatex_of_rmtld_tm tr1) ^ "< " ^ (slatex_of_rmtld_tm tr2) ^ "\\right)"
 
+   | a                      -> raise (Failure ("Unsupported formula "^ Sexp.to_string_hum (sexp_of_fm a) ))
+
 (* Print formulas and terms for latex *)
 let print_latex_formula f = print_endline (slatex_of_rmtld_fm f)
 
@@ -339,6 +373,8 @@ and string_of_rmtld_fm rmtld_fm =
   | Until (pval, sf1, sf2) -> "(" ^ (string_of_rmtld_fm sf1) ^ " U_" ^ (string_of_float pval) ^ " " ^ (string_of_rmtld_fm sf2) ^ ")"
   | Exists (var,sf)        -> "exists " ^ var ^ " (" ^ (string_of_rmtld_fm sf) ^ ")"
   | LessThan (tr1,tr2)     -> "(" ^ (string_of_rmtld_tm tr1) ^ " < " ^ (string_of_rmtld_tm tr2) ^ ")"
+
+  | a                      -> raise (Failure ("Unsupported formula "^ Sexp.to_string_hum (sexp_of_fm a) ))
 
 (* print formulas and terms in plaintext *)
 let print_plaintext_formula f = print_endline (string_of_rmtld_fm f)
@@ -615,20 +651,7 @@ and calculate_t_upper_bound_term term =
     | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
 
 
-(* RMTLD3 abreviations *)
-let mtrue : formula = True() (*Or(Prop "NOSYMBOL", Not(Prop "NOSYMBOL"))*)
-let mfalse = Not(mtrue)
-let mand phi1 phi2 = Not (Or (Not phi1, Not phi2))
-let mimplies phi1 phi2 = Or (Not (phi1), phi2)
-let meventually t phi = Until (t, mtrue, phi)
-let malways t phi = Not (meventually t (Not phi))
-let forall var phi = Not(Exists(var, Not(phi)))
 
-let greater tm1 tm2 = LessThan(tm2, tm1)
-let not_equal tm1 tm2 = Or(LessThan(tm1, tm2), LessThan(tm2,tm1))
-let equal tm1 tm2 = Not(not_equal tm1 tm2)
-let less_or_equal tm1 tm2 = Or(LessThan(tm1, tm2), equal tm1 tm2)
-let greater_or_equal tm1 tm2 = Or(greater tm1 tm2, equal tm1 tm2)
 
 
 
