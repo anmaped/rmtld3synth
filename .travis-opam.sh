@@ -13,27 +13,14 @@ get() {
   wget https://raw.githubusercontent.com/${fork_user}/ocaml-ci-scripts/${fork_branch}/$@
 }
 
-OLD_DIR=$(pwd)
-
-TMP_BUILD=$(mktemp -d 2>/dev/null || mktemp -d -t 'citmpdir')
-cd ${TMP_BUILD}
-
 get .travis-ocaml.sh
-get yorick.mli
-get yorick.ml
-get ci_opam.ml
-
 sh .travis-ocaml.sh
+
 export OPAMYES=1
 eval $(opam config env)
 
-# This could be removed with some OPAM variable plumbing into build commands
-opam install ocamlfind
-
-ocamlc.opt yorick.mli
-ocamlfind ocamlc -c yorick.ml
-
-ocamlfind ocamlc -o ci-opam -package unix -linkpkg yorick.cmo ci_opam.ml
+opam depext -y conf-m4
+opam pin add travis-opam https://github.com/${fork_user}/ocaml-ci-scripts.git#${fork_branch}
 
 # MODIFIED HERE !
 git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
@@ -66,7 +53,5 @@ sudo PATH=$PATH make install
 export OPAMBUILDTEST=0
 # UNTIL HERE !
 
-cd ${OLD_DIR}
-
 echo -en "travis_fold:end:prepare.ci\r"
-${TMP_BUILD}/ci-opam
+opam config exec -- ci-opam
