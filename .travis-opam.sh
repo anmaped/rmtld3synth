@@ -23,6 +23,8 @@ opam depext -y conf-m4
 opam pin add travis-opam https://github.com/${fork_user}/ocaml-ci-scripts.git#${fork_branch}
 
 # MODIFIED HERE !
+OLD_DIR=$(pwd) 
+
 git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
 opam pin add pa_sexp_conv pa_sexp_conv/ -n
 opam install oasis
@@ -51,6 +53,8 @@ make
 sudo PATH=$PATH make install
 
 export OPAMBUILDTEST=0
+
+cd ${OLD_DIR}
 # UNTIL HERE !
 
 echo -en "travis_fold:end:prepare.ci\r"
