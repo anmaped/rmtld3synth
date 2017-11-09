@@ -23,7 +23,8 @@ opam depext -y conf-m4
 opam pin add travis-opam https://github.com/${fork_user}/ocaml-ci-scripts.git#${fork_branch}
 
 # MODIFIED HERE !
-OLD_DIR=$(pwd) 
+OLD_DIR=$(pwd)
+cd ..
 
 git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
 opam pin add pa_sexp_conv pa_sexp_conv/ -n
