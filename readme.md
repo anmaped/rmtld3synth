@@ -7,7 +7,7 @@ RMTLD3 synthesis toolchain allows us to automatically generate monitors and STML
 Polynomial inequalities are supported by this formalism as well as the common operators of temporal logics. Existential quantification over formulas is also supported by the cylindrical algebraic decomposition (CAD) abstraction of such formulas into several conditions without these quantifiers.
 
 Synthesis for Z3 SMT solver is another feature. It can be used to discard before execution several constraints involving duration and temporal order of propositions.
-For instance, schedulability analysis of hard real-time systems can be done by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMTLibv2 and then using Z3 to solve it. The ideia is to know if there exists a trace for what the RMTLD3 problem is satisfiable, otherwise if the SMT gives unsat it means that is impossible to schedule such system, which enforces the refinement by drawing a counter-example.
+For instance, schedulability analysis of hard real-time systems can be done by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMTLibv2 and then using Z3 to solve it. The idea is to know if there exists a trace for what the RMTLD3 problem is satisfiable, otherwise, if the SMT gives unsatisfiable then it means that is impossible to schedule such system, which enforces the refinement by drawing a counter-example.
 
 # Contents
 
@@ -22,7 +22,7 @@ For instance, schedulability analysis of hard real-time systems can be done by s
 New version is now [0.3-alpha](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
 Old version [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
 
-Let us begin by an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as basis the [use case one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing the following command in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
+Let us begin with an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as the basis the [use case one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing the following command in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
 ```
 ./rmtld3synth.exe -n usecaseone
 ```
@@ -73,7 +73,7 @@ Compilation of the rmtld3synth may be done manually using the make command.
 
 #### To compile RTMLIB
 rtmlib is a support library for monitors synthesis. We can skip this step if we only need the synthesis of RMTLD3 in SMT-Libv2.
-Use `make` to perform the compilation of the library. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterwards (only for gcc 4.7.0 version).
+Use `make` to perform the compilation of the library. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterward (only for gcc 4.7.0 version).
 
 More details are available in the [rtmlib repository](https://github.com/anmaped/rtmlib/tree/ea11f011861e0a27253f531df043ca8ef41944e3).
 
@@ -149,7 +149,7 @@ f ::= (Prop `<proposition>`) | (LessThan t t) | (Or f f) | (Not f) | (Until `<nu
 ```
 where `<constant>` is a real-number (interpreted as float/double), `<lvariable>` is a logic variable (identified by unique strings), `<proposition>` is a proposition (identified by unique strings), and `<number>` is a non-negative real-number (interpreted as float/double). For more details you can read the syntax defined in the paper [[3]](http://link.springer.com/chapter/10.1007%2F978-3-319-23820-3_11).
 
-Let us interpret the sentence `"the duration of the task A with an arbitrary period greater than 10 and small than 20 is less than 5 units."`
+Let us interpret the sentence `"the duration of task A with an arbitrary period greater than 10 and small than 20 is less than 5 units."`
 as a formula in RMTLD3. It can be described as
 ```
 (And
@@ -166,7 +166,7 @@ Note that in this example the notion of event is as used in Discrete Event Syste
 
 #### Write formulas in latex and know how to use them
 
-Latex equation formulas are much less verbose than synbolic expressions. Due to that, we made available the synthesis for RMTLD3 formulas written as latex equations.
+Latex equation formulas are much less verbose than symbolic expressions. Due to that, we made available the synthesis of RMTLD3 formulas written as latex equations.
 Consider the formula
 ```
 (a \rightarrow ((a \lor b) \until{<10} c)) \land \int^{10} c < 4
@@ -183,7 +183,7 @@ From rmtld3synth tool, we have synthesized the formula's example into the Ocaml 
 ```
 We can also generate cpp11 monitors by replacing the argument `--synth-ocaml` with `--synth-cpp11`.
 The outcome is the monitor illustrated in the ![texeq_sample_mon0.h](/examples/texeq_sample_mon0.h?raw=true) and ![texeq_sample_mon0_compute.h](/examples/texeq_sample_mon0_compute.h?raw=true) files.
-Both monitors can now be coupled in the system under observation using rtmlib.
+Both monitors can now be coupled to the system under observation using rtmlib.
 
 To use those monitors in Ocaml, we need to define a trace for Ocaml reference as follows:
 ```
@@ -204,9 +204,9 @@ There are two flags. The `gen_unit_tests` enables the automatic generation of mo
 
 To compile the generated monitors please use the generated `Makefile`. Please be aware that you need the `rtmlib.a` library.
 
-Use `make x86-mon` to compile the monitors with x86 target or use `x86-mtest` argument to compile both monitors and the unit tests at the same time.
+Use `make x86-mon` to compile the monitors with the x86 target or use `x86-mtest` argument to compile both monitors and the unit tests at the same time.
 
-Use `make arm-mon` to compile the monitors for ARM architecture with support of the NuttX OS. After this step we shall link the monitors as a standalone app or module as provided in the `rtmlib/nuttx` directory.
+Use `make arm-mon` to compile the monitors for ARM architecture with the support of the NuttX OS. After this step, we shall link the monitors as a standalone app or module as provided in the `rtmlib/nuttx` directory.
 For that try to install the module files `main.cpp` and `module.mk` in the NuttX modules directory.
 
 For the monitors to be used with Ardupilot replace the external Px4 makefile `px4_common.mk` in `modules/Px4` directory of the Ardupilot.
