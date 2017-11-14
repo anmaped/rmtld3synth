@@ -21,7 +21,7 @@ depends: [
 build: [
   ["./configure" "--prefix=%{prefix}%"]
   [make "all"]
- ]
+]
 
 install: [make "install"]
 remove: ["ocamlfind" "remove" "rmtld3synth"]

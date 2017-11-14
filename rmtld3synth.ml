@@ -91,7 +91,7 @@ open Rmtld3synth_unittest
 open Rmtld3synth_smt
 open Rmtld3synth_cpp11
 open Rmtld3synth_ocaml
-open Z3solver
+open Z3solver_
 
 let chose_synthesis a b c =
   if !cpp11_lang then a () else if !ocaml_lang then b () else if !spark14_lang then c ()
@@ -252,6 +252,7 @@ end
 
 open Version
 open Rmdslparser
+open Rmtld3synth_helper
 
 (*
    Command Line Interface
@@ -287,7 +288,7 @@ let _ =
     ("--version", Arg.Unit (fun () -> print_endline ("Git version "^(Version.git)); exit 0), " Version and SW information\n");
   ]
   in let usage_msg = "rmtld3synth flags [options] input [output]\n\n Flags for synthesis: "
-  in Arg.parse (Arg.align speclist) print_endline usage_msg;
+  in Arg.parse_argv (Sys.argv) (Arg.align speclist) print_endline usage_msg;
 
   (* conversion for input formula *)
   let input_fm =

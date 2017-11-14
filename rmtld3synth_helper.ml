@@ -5,6 +5,7 @@ open Sexplib
 open Sexplib.Conv
 
 open Rmtld3
+include Js_helper_
 
 (* global_int settings *)
 type global_int = string * int with sexp

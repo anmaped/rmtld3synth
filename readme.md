@@ -12,15 +12,19 @@ For instance, schedulability analysis of hard real-time systems can be done by s
 # Contents
 
 - Usage options:
+  - [Online demonstrator using js_of_ocaml](#online-demonstrator-using-js_of_ocaml)
   - [Tarball binaries for Windows](#tarball-binaries-for-windows)
   - [Building from Git](#building-from-git)
 - [Documentation](#documentation)
 - [License](#license)
 
-### Tarball binaries version 0.2-alpha for Windows
+### Online demonstrator using js_of_ocaml
+[Try it](https://anmaped.github.io/rmtld3synth).
 
-New version is now [0.3-alpha](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
-Old version [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
+### Tarball binaries for Windows
+
+Current version is [0.3-alpha](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
+Old version is [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
 
 Let us begin with an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as the basis the [use case one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing the following command in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
 ```
@@ -30,13 +34,14 @@ Note that `-n` is deprecated. For versions >= 0.3-alpha use `--config-file` inst
 
 After executing this step, the `monitor_set1` folder contains the generated source files of the monitor for the `usecaseone` file.
 Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. 
-We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. For version 0.3-alpha, C++ and Ocaml synthesis are fully supported and Spark2014 is experimental only.
+We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. For version 0.3-alpha, C++ and Ocaml synthesis are fully supported and Spark2014 is not yet implemented.
 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
 
-#### To compile rmtld3synth for Linux and Mac OS using Opam and Ocaml 4.03
-Just use the following commands. The dependencies will be installed automatically.
+#### To compile rmtld3synth for Linux and Mac OS using Opam and Ocaml 4.03.0
+Just use the following commands and switch the opam compiler to version `4.03.0` if needed. The dependencies should be installed automatically.
+
 ```
 git clone https://github.com/anmaped/rmtld3synth.git rmtld3synth
 cd rmtld3synth/
@@ -45,20 +50,38 @@ opam pin add rmtld3synth . -n
 opam install rmtld3synth
 ```
 
-#### To compile windows version using ocaml 4.03
+Use the following commands to switch opam to the OCaml compiler version 4.03.0
 ```
-opam switch 4.03
+opam switch 4.03.0
 eval `opam config env`
-export PATH=/flexdll-bin-0.35:$PATH
 ```
-Use this [link](http://alain.frisch.fr/flexdll/flexdll-bin-0.35.zip) to download the new flexdll.
-Decompress the archive in the root directory with folder name `flexdll-bin-0.35`.
-Next, install the packages typing
+
+Use the commands below to compile z3 solver and respective ml bindings.
+```
+git clone https://github.com/Z3Prover/z3.git z3
+cd z3
+python scripts/mk_make.py --ml
+cd build; make
+sudo make install
+```
+Make sure that you have at least the python 2.2.7 installed, the gcc-5, and the g++-5.
+
+#### To compile rmtld3synth for Windows using ocaml 4.03.0
+Get the [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/). Using the available ocaml console switch the opam compiler to version `4.03.0`.
+```
+opam switch 4.03.0+mingw64
+eval `opam config env`
+```
+Case you have not properlly installed the flexdll, download the new flexdll [here](http://alain.frisch.fr/flexdll/flexdll-bin-0.35.zip), and decompress the archive in the current directory (PWD) with folder name `flexdll-bin-0.35`.
+```
+export PATH=$(PWD)/flexdll-bin-0.35:$PATH
+```
+Then, install the required packages by using the following commands
 ```
 opam install ocamlbuild ocamlfind batteries pa_sexp_conv sexplib type_conv
 ```
-If pa_sexp_conv does not found a valid version we need to compile it manually.
-Get version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Use opam to compile this version and install them.
+WARNING!! If opam does not found a valid version for `pa_sexp_conv` package then we need to compile this package manually.
+Get the version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Then, use opam to compile this version, compile the `oasis` dependency and install them.
 ```
 opam install oasis
 
@@ -68,14 +91,26 @@ opam pin add pa_sexp_conv . -n
 opam install pa_sexp_conv
 ```
 
-Compilation of the rmtld3synth may be done manually using the make command.
+Use the same commands, as described above for the case of compiling rmtld3synth using Linux and Mac OS, to conclude the compilation.
+
+Case the correct version of GCC is not found then use the environment variables below.
+```
+CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar
+```
+
+Case the libz3 is not found then use the command below for manually copy the libraries.
+```
+cp z3/build/libz3.dll.a /lib/
+```
 
 
-#### To compile RTMLIB
-rtmlib is a support library for monitors synthesis. We can skip this step if we only need the synthesis of RMTLD3 in SMT-Libv2.
-Use `make` to perform the compilation of the library. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterward (only for gcc 4.7.0 version).
+#### Instructions to compile rtmlib
+rtmlib is a support library for embedding runtime monitors. Current version is `v0.1-alpha`. We can skip this step if we do not need to integrate the monitors in the target system or we just want to synthesize RMTLD3 specifications in SMT-Libv2.
+Use the `make` command to perform the compilation of the library as usual. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterward (only for gcc 4.7.0 version).
 
 More details are available in the [rtmlib repository](https://github.com/anmaped/rtmlib/tree/ea11f011861e0a27253f531df043ca8ef41944e3).
+
+
 
 ### Documentation
 
