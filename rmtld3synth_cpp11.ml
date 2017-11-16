@@ -300,7 +300,9 @@ let compute_fm_uless gamma (sf1,_) (sf2,_) helper =
 
   ","")
 
+let compute_fm_ueq gamma (sf1,_) (sf2,_) helper = ("X","")
 
+let compute_fm_ulesseq gamma (sf1,_) (sf2,_) helper = ("X","")
 
 
 (* monitor dependent c++ functions begin here *)

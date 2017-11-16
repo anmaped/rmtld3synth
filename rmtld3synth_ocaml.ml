@@ -11,6 +11,9 @@ open Rmtld3synth_helper
 
 let has_tm_dur = ref false
 let has_fm_uless = ref false
+let has_fm_ueq = ref false
+let has_fm_ulesseq = ref false
+
 
 (* ocaml module api *)
 let compute_tm_constant value helper = ("(fun k s t -> "^ (string_of_float value) ^")","")
@@ -62,6 +65,14 @@ let compute_fm_uless gamma sf1 sf2 helper =
   has_fm_uless := true;
   ("(compute_uless "^ (string_of_float gamma) ^" "^ (fst sf1) ^" "^ (fst sf2) ^")", (snd sf1)^(snd sf2))
 
+let compute_fm_ueq gamma sf1 sf2 helper =
+  has_fm_ueq := true;
+  ("(compute_ueq "^ (string_of_float gamma) ^" "^ (fst sf1) ^" "^ (fst sf2) ^")", (snd sf1)^(snd sf2))
+
+let compute_fm_ulesseq gamma sf1 sf2 helper =
+  has_fm_ulesseq := true;
+  ("(compute_ulesseq "^ (string_of_float gamma) ^" "^ (fst sf1) ^" "^ (fst sf2) ^")", (snd sf1)^(snd sf2))
+
 let compute_fm_uless_body =
 "
 let compute_uless gamma f1 f2 k u t =
@@ -87,7 +98,7 @@ let compute_uless gamma f1 f2 k u t =
   in
 
   if not (gamma >= 0.) then
-    raise  (Failure \"Gamma of U operator is a non-negative value\")
+    raise  (Failure \"Gamma of U< operator is a non-negative value\")
   else
   begin
     let k,_,t = m in
@@ -104,6 +115,13 @@ let compute_uless gamma f1 f2 k u t =
   end
   "
 
+let compute_fm_ueq_body = "
+[TODO]
+"
+
+let compute_fm_ulesseq_body = "
+[TODO]
+"
 
 
 let synth_ocaml_compute (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
@@ -117,6 +135,8 @@ module type Trace = sig val trc : trace end
 
 module "^ (String.capitalize_ascii monitor_name) ^"  ( T : Trace  ) = struct \n"^ mon_body ^"
   "^ (if !has_fm_uless then compute_fm_uless_body else "") ^"
+  "^ (if !has_fm_ueq then compute_fm_ueq_body else "") ^"
+  "^ (if !has_fm_ulesseq then compute_fm_ulesseq_body else "") ^"
   "^ (if !has_tm_dur then compute_tm_duration_body else "") ^"
   let env = environment T.trc
   let lg_env = logical_environment

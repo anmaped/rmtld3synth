@@ -17,6 +17,7 @@ module Sys = struct
     let file_exists c = false
     let remove c = ()
     let time c = 0.
+    let is_directory c = false
 end
 
 let output_buffer_ = Buffer.create 1000

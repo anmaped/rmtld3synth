@@ -585,8 +585,13 @@ and rmtld3_fm_of_intermediate_ltx_fm ifm : rmtld3_fm =
   | Flor(el::el2::[]) -> Or(rmtld3_fm_of_intermediate_ltx_fm el,rmtld3_fm_of_intermediate_ltx_fm el2)
   | Flor(el::fmlst) -> Or(rmtld3_fm_of_intermediate_ltx_fm el,rmtld3_fm_of_intermediate_ltx_fm (Flor(fmlst)))
 
-  | Always(pm,fm) -> mtrue
-  | Eventually(pm,fm) -> mtrue
+  | Always(POp(Less(),[TVal(a)]),fm) -> malways (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
+  | Always(POp(Eq(),[TVal(a)]),fm) -> malways_eq (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
+  | Always(POp(Leq(),[TVal(a)]),fm) -> malways_leq (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
+
+  | Eventually(POp(Less(),[TVal(a)]),fm) -> meventually (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
+  | Eventually(POp(Eq(),[TVal(a)]),fm) -> meventually_eq (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
+  | Eventually(POp(Leq(),[TVal(a)]),fm) -> meventually_leq (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
 
   | ULess(POp(Less(),[TVal(a)]),fm1,fm2) -> let gamma = float_of_int a in
       Until(gamma, rmtld3_fm_of_intermediate_ltx_fm fm1, rmtld3_fm_of_intermediate_ltx_fm fm2)
@@ -636,7 +641,10 @@ let texeqparser str =
     verb_m 1 (fun _ -> print_endline ("Latexeq input: "^str^"\n"););
     let rsl = (parse_latexeq_eq (lex (String.explode str)) [])
     in
-    verb_m 2 (fun _ -> print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm rsl) ); );
+    verb_m 2 (fun _ ->
+      print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm rsl) ) ;
+      print_endline "" ;
+    ) ;
 
     (* lets convert the intermediate representation into rmtld3 expressions *)
     rmtld3_fm_of_intermediate_ltx_fm rsl

@@ -639,9 +639,11 @@ let rec calculate_t_upper_bound (formula: rmtld3_fm) =
     | Prop p                  -> 0.
     | Not sf                  -> calculate_t_upper_bound sf
     | Or (sf1, sf2)           -> Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
-    | Until (gamma, sf1, sf2) -> gamma +. Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
+    | Until (gamma, sf1, sf2)    -> gamma +. Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
+    | Until_eq (gamma, sf1, sf2) -> gamma +. Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
+    | Until_leq (gamma,sf1,sf2)  -> gamma +. Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
     | LessThan (tr1,tr2)      -> Pervasives.max (calculate_t_upper_bound_term tr1) (calculate_t_upper_bound_term tr2)
-    | _ -> raise (Failure "ERROR: Calculating bound for unsupported formula.") 
+    | _ -> raise (Failure ("ERROR: Calculating bound for unsupported formula="^(Sexp.to_string (sexp_of_rmtld3_fm formula)))) 
 and calculate_t_upper_bound_term term =
   match term with
     | Constant value       -> 0.

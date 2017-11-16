@@ -20,6 +20,8 @@ sig
   val compute_fm_or : call_body -> call_body -> helper -> call_body
   val compute_fm_less : call_body -> call_body -> helper -> call_body
   val compute_fm_uless : value -> call_body -> call_body -> helper -> call_body
+  val compute_fm_ueq : value -> call_body -> call_body -> helper -> call_body
+  val compute_fm_ulesseq : value -> call_body -> call_body -> helper -> call_body
 end;;
 
 module Conversion_cpp (Conv : Conversion) = struct
@@ -39,8 +41,12 @@ module Conversion_cpp (Conv : Conversion) = struct
       | Prop p                  -> Conv.compute_fm_p p helper
       | Not sf                  -> Conv.compute_fm_not (compute sf helper) helper
       | Or (sf1, sf2)           -> Conv.compute_fm_or (compute sf1 helper) (compute sf2 helper) helper
-      | Until (gamma, sf1, sf2) -> if gamma > 0. then Conv.compute_fm_uless gamma (compute sf1 helper) (compute sf2 helper) helper
-                                   else raise  (Failure "Gamma of U operator is negative") 
+      | Until (gamma, sf1, sf2)     -> if gamma > 0. then Conv.compute_fm_uless gamma (compute sf1 helper) (compute sf2 helper) helper
+                                       else raise  (Failure "Gamma of U< operator is negative")
+      | Until_eq (gamma, sf1, sf2)  -> if gamma > 0. then Conv.compute_fm_ueq gamma (compute sf1 helper) (compute sf2 helper) helper
+                                       else raise  (Failure "Gamma of U= operator is negative")
+      | Until_leq (gamma, sf1, sf2) -> if gamma > 0. then Conv.compute_fm_ulesseq gamma (compute sf1 helper) (compute sf2 helper) helper
+                                       else raise  (Failure "Gamma of U<= operator is negative")
       | LessThan (tr1,tr2)      -> Conv.compute_fm_less (compute_term tr1 helper) (compute_term tr2 helper) helper
       | _                       -> raise (Failure ("synth_mon: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
 
@@ -92,6 +98,8 @@ open Rmtld3synth_smt
 open Rmtld3synth_cpp11
 open Rmtld3synth_ocaml
 open Z3solver_
+open Rmtld3synth_helper
+
 
 let chose_synthesis a b c =
   if !cpp11_lang then a () else if !ocaml_lang then b () else if !spark14_lang then c ()
@@ -243,7 +251,10 @@ begin
     (* do not print if solver is enabled *)
     if isSolverEnabled () then
     begin
-      verb (fun _ -> print_endline "SMTLIBv2 file: \n") ;
+      verb (fun _ ->
+        print_endline "Synthesis for SMTLIBv2 \n" ;
+        print_endline ("--------------------------------------------------------------------------------\n") ;
+      ) ;
       print_endline stmlibv2_str ;
     end;
   end
@@ -368,13 +379,19 @@ let _ =
 
   else if !ocaml_lang then
     begin
-      verb_m 1 (fun _ -> print_endline "Synthesis for Ocaml language";);
+      verb_m 1 (fun _ ->
+        print_endline "Synthesis for Ocaml language" ;
+        print_endline ("--------------------------------------------------------------------------------\n") ;
+      ) ;
       mon_gen input_fm;
     end
 
   else if !cpp11_lang then
     begin
-      verb_m 1 (fun _ -> print_endline "Synthesis for C++11 language";);
+      verb_m 1 (fun _ ->
+        print_endline "Synthesis for C++11 language" ;
+        print_endline ("--------------------------------------------------------------------------------\n") ;
+      ) ;
       mon_gen input_fm;
     end
 

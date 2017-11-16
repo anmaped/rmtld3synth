@@ -19,7 +19,7 @@ For instance, schedulability analysis of hard real-time systems can be done by s
 - [License](#license)
 
 ### Online demonstrator using js_of_ocaml
-[Try it](https://anmaped.github.io/rmtld3synth).
+:camel: [Try it](https://anmaped.github.io/rmtld3synth).
 
 ### Tarball binaries for Windows
 
