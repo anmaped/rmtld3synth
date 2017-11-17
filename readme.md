@@ -80,7 +80,7 @@ Then, install the required packages by using the following commands
 ```
 opam install ocamlbuild ocamlfind batteries pa_sexp_conv sexplib type_conv
 ```
-WARNING!! If opam does not found a valid version for `pa_sexp_conv` package then we need to compile this package manually.
+:heavy_exclamation_mark:WARNING!! If opam does not found a valid version for `pa_sexp_conv` package then we need to compile this package manually.
 Get the version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Then, use opam to compile this version, compile the `oasis` dependency and install them.
 ```
 opam install oasis

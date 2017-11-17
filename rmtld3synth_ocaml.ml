@@ -52,7 +52,7 @@ let compute_tm_plus cmptr1 cmptr2 helper =
 let compute_tm_times cmptr1 cmptr2 helper =
   ("(fun k s t -> ("^ fst cmptr1 ^" k s t) *. ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
 
-let compute_fm_true helper = ("(fun k s t -> true)","")
+let compute_fm_true helper = ("(fun k s t -> True)","")
 let compute_fm_p p helper = ("(fun k s t -> k.evaluate k.trace \""^ p ^"\" t)","")
 let compute_fm_not cmpfm helper = ("(fun k s t -> b3_not ("^ fst cmpfm ^" k s t))", snd cmpfm)
 let compute_fm_or cmpfm1 cmpfm2 helper =
@@ -73,8 +73,7 @@ let compute_fm_ulesseq gamma sf1 sf2 helper =
   has_fm_ulesseq := true;
   ("(compute_ulesseq "^ (string_of_float gamma) ^" "^ (fst sf1) ^" "^ (fst sf2) ^")", (snd sf1)^(snd sf2))
 
-let compute_fm_uless_body =
-"
+let compute_fm_uless_body = "
 let compute_uless gamma f1 f2 k u t =
   let m = (k,u,t) in
   let eval_i b1 b2 =
@@ -113,14 +112,91 @@ let compute_uless gamma f1 f2 k u t =
     else
       b4_to_b3 eval_c
   end
-  "
-
-let compute_fm_ueq_body = "
-[TODO]
 "
 
+(* differs from uless on "eval_i" and "sub_k m (gamma +. Float.epsilon)" *)
+let compute_fm_ueq_body = "
+let compute_ueq gamma f1 f2 k u t =
+  let t_i = t in
+  let m = (k,u,t) in
+  let eval_i b1 b2 =
+    if t_i +. gamma >=t then
+      b3_to_b4 b2
+    else if b1 <> True then
+      b3_to_b4 b1
+    else
+      Symbol
+  in
+
+  let eval_b (k,u,t) f1 f2 v =
+    if v <> Symbol then
+      v
+    else
+      eval_i (f1 k u t) (f2 k u t)
+  in
+
+  let eval_fold (k,u,t) f1 f2 x =
+    fst (fold_left (fun (v,t') (prop,(ii1,ii2)) -> (eval_b (k, u, t') f1 f2 v, ii2)) (Symbol,t) x)
+  in
+
+  if not (gamma >= 0.) then
+    raise  (Failure \"Gamma of U= operator is a non-negative value\")
+  else
+  begin
+    let k,_,t = m in
+    let subk = sub_k m (gamma +. epsilon_float) in
+    let eval_c = eval_fold m f1 f2 subk in
+    if eval_c = Symbol then
+      if k.duration_of_trace <= (t +. gamma) then
+        Unknown
+      else (
+        False
+      )
+    else
+      b4_to_b3 eval_c
+  end
+"
+
+(* differs from uless on "sub_k m (gamma +. epsilon_float)" *)
 let compute_fm_ulesseq_body = "
-[TODO]
+let compute_uless gamma f1 f2 k u t =
+  let m = (k,u,t) in
+  let eval_i b1 b2 =
+    if b2 <> False then
+      b3_to_b4 b2
+    else if b1 <> True && b2 = False then
+      b3_to_b4 b1
+    else
+      Symbol
+  in
+
+  let eval_b (k,u,t) f1 f2 v =
+    if v <> Symbol then
+      v
+    else
+      eval_i (f1 k u t) (f2 k u t)
+  in
+
+  let eval_fold (k,u,t) f1 f2 x =
+    fst (fold_left (fun (v,t') (prop,(ii1,ii2)) -> (eval_b (k, u, t') f1 f2 v, ii2)) (Symbol,t) x)
+  in
+
+  if not (gamma >= 0.) then
+    raise  (Failure \"Gamma of U<= operator is a non-negative value\")
+  else
+  begin
+    let k,_,t = m in
+    let subk = sub_k m (gamma +. epsilon_float) in
+    let eval_c = eval_fold m f1 f2 subk in
+    if eval_c = Symbol then
+      if k.duration_of_trace <= (t +. gamma) then
+        Unknown
+      else (
+        False
+      )
+    else
+      b4_to_b3 eval_c
+  end
 "
 
 
