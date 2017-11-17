@@ -118,6 +118,11 @@ var menuData = [{
             id: "1_1_2",
             name: "Simple Duration Monitor",
             cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
+        },
+        {
+            id: "1_1_3",
+            name: "Bounded Invariant",
+            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\always_{< 4} \\ a \\rightarrow \\eventually_{= 2} \\ b\" --verbose 2"
         }]
     }, {
         id: "1_2",
