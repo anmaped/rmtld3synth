@@ -4,3 +4,4 @@
 (event_type Event)
 (event_subtype int)
 (cluster_name mon1)
+(gen_tests false)

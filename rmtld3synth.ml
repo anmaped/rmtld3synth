@@ -128,7 +128,11 @@ let mon_gen fm =
   (* monitor cluster name *)
   let cluster_name = search_settings_string "cluster_name" helper in (* search 'cluster_name' setting in the global_string parameters *)
   
-  if !out_dir <> "" then create_dir cluster_name;
+  let cluster_name = if !out_dir <> "" then Filename.basename !out_dir else cluster_name in
+
+  verb_m 2 (fun _ -> print_endline ("cluster_name: "^cluster_name); );
+
+  if !out_dir <> "" then create_dir !out_dir;
 
   (* create dir for storage of SMT benchmarks *)
   (* 
@@ -137,7 +141,7 @@ let mon_gen fm =
     of s-expressions into SMT-LIBv2 is available in the hardcoded sub directory
     "smt/".
   *)
-  if !out_dir <> "" then create_dir ("smt/"^cluster_name);
+  if !out_dir <> "" then create_dir (!out_dir^"/smt/");
 
 
   (* for cpp11 and ocaml synthesis *)
@@ -198,7 +202,7 @@ let mon_gen fm =
   (* lets generate the tests *)
   if !out_dir <> "" && (search_settings_string "gen_tests" helper) = "true" then
   begin
-    create_dir (cluster_name^"/tests");
+    create_dir (!out_dir^"/tests");
     Rmtld3synth_unittest.test () cluster_name helper;
 
     Rmtld3synth_unittest.rmtld3_unit_test_generation () (fun a b -> let x,_ = Conv_cpp11.compute a b in x) helper cluster_name helper;

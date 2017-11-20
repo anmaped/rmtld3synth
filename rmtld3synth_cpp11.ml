@@ -168,9 +168,9 @@ let compute_tm_duration (di,_) (tf,_) helper =
 
     }(env,t)","")
 
-let compute_tm_plus (cmptr1,_) (cmptr2,_) helper = ("make_duration("^ cmptr1 ^" + "^cmptr2^",false)","")
+let compute_tm_plus (cmptr1,_) (cmptr2,_) helper = ("sum_dur("^ cmptr1 ^" , "^cmptr2^")","")
 
-let compute_tm_times (cmptr1,_) (cmptr2,_) helper = ("make_duration("^ cmptr1 ^" * "^ cmptr2 ^",false)","")
+let compute_tm_times (cmptr1,_) (cmptr2,_) helper = ("mult_dur("^ cmptr1 ^" , "^ cmptr2 ^")","")
 
 
 (*
@@ -677,6 +677,14 @@ let synth_cpp1_external_dep cluster_name helper =
 
   #define make_duration(r,b) std::make_pair ((realnumber)r,b)
 
+  inline duration sum_dur(const duration& lhs, const duration& rhs){
+    return make_duration(lhs.first + rhs.first, lhs.second || rhs.second );
+  }
+
+  inline duration mult_dur(const duration& lhs, const duration& rhs){
+    return make_duration(lhs.first * rhs.first, lhs.second || rhs.second );
+  }
+
   // type conversion from three_valued_type to four_valued_type
   #define b3_to_b4(b3) (b3 == T_TRUE) ? FV_TRUE : ( ( b3 == T_FALSE ) ? FV_FALSE : FV_UNKNOWN )
 
@@ -781,11 +789,17 @@ let code =
 
 DIR = tests
 
+GXX = g++
+
+ifeq ($(OS),Windows_NT)
+  GXX=i686-w64-mingw32-g++
+endif
+
 arm-monitor:
 \t arm-none-eabi-g++ -std=c++0x -march=armv7-m -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
 
 x86-monitor:
-\t g++ -Wall -g -O0 -std=c++0x -I../../ -D__x86__ --verbose -c "^cluster_name^".cpp
+\t$(GXX) -Wall -g -O0 -std=c++11 -I../../rtmlib -D__x86__ --verbose -c "^cluster_name^".cpp
 
 .PHONY: tests
 tests:
