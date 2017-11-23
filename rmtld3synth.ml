@@ -68,6 +68,7 @@ let spark14_lang = ref false
 let smt_solver = ref ""
 let solver_statistics_flag = ref false
 let get_schedule_flag = ref false
+let gen_rmtld_formula = ref false
 
 let set_config_file file = config_file := file
 let set_formulas f = rmtld_formula := f
@@ -83,6 +84,7 @@ let set_spark14_language f = spark14_lang := true
 let set_solve_z3 f = smt_solver := "z3"
 let set_solve_statistics f = solver_statistics_flag := true
 let set_get_schedule f = get_schedule_flag := true
+let set_gen_rmtld_formula f = gen_rmtld_formula := true
 
 let isSolverEnabled () = !smt_solver = ""
 
@@ -276,6 +278,7 @@ let _ =
 
   let speclist = [
     (* action flags *)
+    ("--gen-rmtld-formula", Arg.Unit (set_gen_rmtld_formula), " Call `gen_formula_default` function" );
     ("--synth-smtlibv2", Arg.Unit (set_smt_formula), " Enables synthesis for SMT-LIBv2 language");
     ("--synth-ocaml", Arg.Unit (set_ocaml_language), " Enables synthesis for Ocaml language");
     ("--synth-cpp11", Arg.Unit (set_cpp_language), " Enables synthesis for C++11 language");
@@ -369,18 +372,6 @@ let _ =
       mon_gen input_fm;
     end*)
 
-  else if !simplify_formula then
-    begin
-      if !rmtld_formula <> "" then
-      begin
-        print_endline ("Processing formula: "^(!rmtld_formula));
-        let fm = simplify (formula_of_sexp (Sexp.of_string !rmtld_formula)) in
-        print_endline (Sexp.to_string_hum (sexp_of_rmtld3_fm fm));
-      end
-      else
-        print_endline "No formula specified. Use --input-sexp"
-    end
-
   else if !ocaml_lang then
     begin
       verb_m 1 (fun _ ->
@@ -399,6 +390,35 @@ let _ =
       mon_gen input_fm;
     end
 
+   else if !simplify_formula then
+    begin
+      (*if !rmtld_formula <> "" then
+      begin
+        print_endline ("Processing formula: "^(!rmtld_formula));
+        let fm = simplify (formula_of_sexp (Sexp.of_string !rmtld_formula)) in
+        print_endline (Sexp.to_string_hum (sexp_of_rmtld3_fm fm));
+      end
+      else if !rmtld_formula_ltxeq <> "" then
+      begin
+        print_endline ("Processing latexeq formula: "^(!rmtld_formula_ltxeq));
+
+        let fm = simplify (formula_of_sexp (Sexp.of_string !rmtld_formula)) in
+        print_endline (Sexp.to_string_hum (sexp_of_rmtld3_fm fm));
+      end
+      else
+        print_endline "No formula specified. Use --input-sexp"*)
+      let inn = input_fm in
+      if inn <> mfalse then
+        let smp = to_simplify inn in
+        print_latex_formula smp
+      else raise (Failure ("cannot simplify the specified input."))
+      
+    end
+
+  else if !gen_rmtld_formula then
+    let fm = gen_formula_default () in
+    print_latex_formula fm
+  
   else
     print_endline "Nothing to do. Type --help"
   

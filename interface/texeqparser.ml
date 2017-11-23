@@ -60,6 +60,8 @@ and intermediate_ltx_fm =
     FIneq of  (intermediate_ltx_fm * op) list
   | Fland of intermediate_ltx_fm list
   | Flor of intermediate_ltx_fm list
+  | FNot of intermediate_ltx_fm
+  | FExists of intermediate_ltx_tm * intermediate_ltx_fm
   | Always of intermediate_ltx_pm * intermediate_ltx_fm
   | Eventually of intermediate_ltx_pm * intermediate_ltx_fm
   | ULess of intermediate_ltx_pm * intermediate_ltx_fm * intermediate_ltx_fm
@@ -155,6 +157,9 @@ let rec match_feed feed : string list = match feed with Strr(a) -> a | FIsol(x) 
 type parenthesis = LF | LT
 let parenthesis_stack = Stack.create ()
 
+type level = FM | TM
+let nested_stack = Stack.create ()
+
 let rec parse_latexeq_pm (l: string list) (feed: intermediate_ltx_pm list) : intermediate_ltx_pm list * string list =
   match l with
   | "{" :: r    -> parse_latexeq_pm r feed
@@ -183,11 +188,18 @@ and parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm list) : interm
   | "\\\\" :: r                   -> begin
       match r with 
       | "int" :: "^" :: r ->
+        Stack.push FM nested_stack;
         let pf,rlst = if (hd r) = "{" then parse_latexeq_tm' (tl r) [] else ([TVal(int_of_string (hd r))], tl (tl r)) in (* TODO: this can be tvar as well *)
         let pf2,rlst2 = parse_latexeq_eq' rlst [FBreak([])]
         (* cleanup fbreak *)
         in let pf2,_ = propagate pf2
+        in let _ = Stack.pop nested_stack
         in ([TInt(hd pf, hd pf2)], rlst2)
+
+      (* skip keywords *)
+      | "left" :: r       -> parse_latexeq_tm' r feed
+      | "right" :: r      -> parse_latexeq_tm' r feed
+
       | _                 ->
         verb_m 3 (fun _ -> print_endline ("\\var -> "^(Sexp.to_string_hum (sexp_of_tokens l))) );
         (feed,l)
@@ -198,6 +210,9 @@ and parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm list) : interm
   
   | "-" :: r                      ->
     let pf,rlst = parse_latexeq_tm' r [] in ([TMinus([List.hd feed; List.hd pf])], rlst)
+
+  | "*" :: r                      ->
+    let pf,rlst = parse_latexeq_tm' r [] in ([TTimes([List.hd feed; List.hd pf])], rlst)
 
   | "{" :: r                      -> let pf,rlst = parse_latexeq_tm' r feed in (pf,rlst)
   | "}" :: r                      -> (feed, r)
@@ -259,9 +274,11 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
             Flor(a)          -> Flor(feed@a)
 
           | Strr(a)          -> Flor(feed@[ Strr(a)])
-          | FIneq(a)         -> Flor(feed @[ FIneq(a)])
+          | FIneq(a)         -> Flor(feed@[ FIneq(a)])
           | Always (a,b)     -> Flor(feed@[ Always(a,b)])
           | Eventually (a,b) -> Flor(feed@[ Eventually(a,b)])
+          | ULess (a,b,c)    -> Flor(feed@[ ULess(a,b,c)])
+          | FExists (a,b)    -> Flor(feed@[ FExists(a,b)])
           | Fland(a)         -> Flor(feed@[ Fland(a)])
           | FIsol(a)         -> Flor(feed@[ FIsol(a)])
           | FVar(a)          -> Flor(feed@[ FVar(a)])
@@ -319,19 +336,31 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
           | _ -> raise (Failure ("issues along durations" ^ (Sexp.to_string_hum (sexp_of_tokens rlst)) ))
         in
         rep tm rlst
-        
+
+      | "exists" :: r      -> (* get the variable and then the formula *)
+        let feed,feed_to_break = propagate feed
+        in let tm, rlst = parse_latexeq_tm' (List.tl r) []
+        in let prefix,rlst = parse_latexeq_eq' rlst feed_to_break
+        in ([FExists(hd tm, hd prefix)],rlst)
+
+      | "neg" :: r         ->
+        let feed,feed_to_break = propagate feed
+        in let prefix,rlst = parse_latexeq_eq' r feed_to_break
+        in ([FNot(hd prefix)],rlst)
+
 
       (* TODO
       | "frac" :: r        -> parse_latexeq_eq' r (Strr((match_feed feed)@["\\\\"; "frac"]))
       | "times" :: r       -> parse_latexeq_eq' r (Strr((match_feed feed)@["\\\\"; "times"]))
       *)
 
-      (* skip keywords *)
-      | "scriptstyle" :: r -> parse_latexeq_eq' r feed
-      | "left" :: r        -> parse_latexeq_eq' r feed
-      | "right" :: r       -> parse_latexeq_eq' r feed
+      | "\\\\" :: r'       -> (* skip space slashes *) parse_latexeq_eq' r feed
 
-      | _                  -> parse_latexeq_eq' r feed (* we are skipping every unknown variable *)
+      | x :: r'            ->
+        verb_m 2 (fun () -> print_endline ("skipping: "^x) ; ) ;
+        parse_latexeq_eq' r' feed (* we are skipping every unknown variable *)
+
+      | []                 -> parse_latexeq_eq' r feed
     end
 
   | "(" :: r             -> (* feed is skipped TODO !!! *)
@@ -371,7 +400,15 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
       parse_latexeq_eq' rlst ([FIneq([(hd feed, Less());(FTerm(prefix),N())] )])  (*(ineq_parse prefix feed (Less()),rlst)*)
     )
 
-  | "+" :: r -> (feed,l)
+  | "+" :: r | "*" :: r  ->
+    if not (Stack.is_empty nested_stack) then (feed,l) else (
+      match feed with
+      | FVar(a) :: [] ->
+        let tm,rlst = parse_latexeq_tm' l [TVar(a,TEmpty())]
+        in parse_latexeq_eq' rlst [FTerm(tm)]
+
+      | _ -> raise (Failure ("+ op"))
+    )
 
   (*
   | ">" :: r             -> let prefix,rlst = parse_latexeq_eq' r termlabel in (ineq_parse prefix feed (Greater()),rlst)
@@ -551,7 +588,7 @@ let termlabel = Strr(["---"])
 
 *)
 
-let parse_latexeq_eq l feed : intermediate_ltx_fm = let x,y = parse_latexeq_eq' l feed in if y = [] then List.hd x else raise (Failure ("bad expression; check parenthesis"))
+let parse_latexeq_eq l feed : intermediate_ltx_fm = let x,y = parse_latexeq_eq' l feed in if y = [] then List.hd x else raise (Failure ("bad expression; check parenthesis"^( Sexp.to_string_hum (sexp_of_tokens y)) ))
 
 (*
     Translation to RMTLD3
@@ -585,6 +622,8 @@ and rmtld3_fm_of_intermediate_ltx_fm ifm : rmtld3_fm =
   | Flor(el::el2::[]) -> Or(rmtld3_fm_of_intermediate_ltx_fm el,rmtld3_fm_of_intermediate_ltx_fm el2)
   | Flor(el::fmlst) -> Or(rmtld3_fm_of_intermediate_ltx_fm el,rmtld3_fm_of_intermediate_ltx_fm (Flor(fmlst)))
 
+  | FNot(fm) -> Not(rmtld3_fm_of_intermediate_ltx_fm fm)
+
   | Always(POp(Less(),[TVal(a)]),fm) -> malways (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
   | Always(POp(Eq(),[TVal(a)]),fm) -> malways_eq (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
   | Always(POp(Leq(),[TVal(a)]),fm) -> malways_leq (float_of_int a) (rmtld3_fm_of_intermediate_ltx_fm fm)
@@ -595,6 +634,8 @@ and rmtld3_fm_of_intermediate_ltx_fm ifm : rmtld3_fm =
 
   | ULess(POp(Less(),[TVal(a)]),fm1,fm2) -> let gamma = float_of_int a in
       Until(gamma, rmtld3_fm_of_intermediate_ltx_fm fm1, rmtld3_fm_of_intermediate_ltx_fm fm2)
+
+  | FExists(TVar(a,TEmpty()), fm) -> Exists(a, rmtld3_fm_of_intermediate_ltx_fm fm)
 
   | FImplies(fm1,fm2) -> mimplies (rmtld3_fm_of_intermediate_ltx_fm fm1) (rmtld3_fm_of_intermediate_ltx_fm fm2)
   | FIsol(fm) -> rmtld3_fm_of_intermediate_ltx_fm fm

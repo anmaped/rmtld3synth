@@ -6,7 +6,8 @@
  * evaluation of the logical formulas is given by the models function, and the
  * generation of RMTLD formulas is given by gen_formula function.
  *
- * *)
+ *
+ *)
 
 open Batteries
 open List
@@ -25,16 +26,17 @@ type fm =
         | Prop of prop
         | Not of fm
         | Or of fm * fm
-        | And of fm * fm              (* extensional operator *)
-        | Implies of fm * fm          (* extensional operator *)
         | Until of time * fm * fm
-        | Until_leq of time * fm * fm (* extensional operator *)
-        | Until_eq of time * fm * fm  (* extensional operator *)
         | Exists of var_id * fm
         | LessThan of tm * tm
-        | Less_eq of tm * tm          (* extensional operator *)
+        | Until_leq of time * fm * fm (* extensional operator *)
+        | Until_eq of time * fm * fm  (* extensional operator *)
+(*        | Less_eq of tm * tm          (* extensional operator *)
+        | And of fm * fm              (* extensional operator *)
+        | Implies of fm * fm          (* extensional operator *)
         | Greater of tm * tm          (* extensional operator *)
         | Greater_eq of tm * tm       (* extensional operator *)
+ *)
 and tm =
           Constant of value
         | Variable of var_id
@@ -150,63 +152,91 @@ let count = ref 0
 let count_duration = ref 0
 
 (* Generating RMTLD formulas *)
-(* Generation Specifications:
+(*
+ * We use a set of parameters:
+ * c_I, i_I, u_I, n_v, n_p, pr_u, pr_e, pr_<
  *
- * For Constant we use a normal distribution to select values (10,3)
- * For Variable name we use letters of alphabet
- * For Integral Value we use the exponential distribution
- * 
- * For Prop name we use the alphabet letters
- * For Until Value we use the exponential distribution
- * For Exist name we use the alphabet letters
+ * Generation Spec:
  *
- * To chose a formula we apply the uniform distribution from 1 to 6
- * To chose a term we apply the uniform distribution from 1 to 3
+ * - For Constant we use the normal distribution to select values (c_I is the interval of values)
+ * - For Variable name we use letters of alphabet (n_v is the number of symbols)
+ * - For Integral Value we use the same probability as terms and for formulas (pr_d)
+ *
+ * - For Prop name we use the alphabet letters (n_p is the number of propositions)
+ * - For Until Value we use the normal distribution to select values (u_I is the interval of values, pr_u is the probability of chosing an until operator)
+ * - For Exist name we use the alphabet letters (pr_e is the probability of chosing an exists)
+ * - For < relation (pr_l is the probability of chosing a relation)
+ * - For other formulas (not,or,true) the probability is the same
+ *
+ * - To chose a formula we use the same proability for other cases and pr_u, pr_e and pr_l for each formula until, exists and less
+ * - To chose a term we use the same probability for other cases and pr_d for the case of duration term
+ *
+ * Default settings for intervals   : c_I:=[1,4], u_I:=[1,4]
+ *                  for symbols     : n_v:=5, n_p:=5
+ *                  for probability : pr_u:=0.3, pr_e:=0.2, pr_l:=0.4, pr_d:=0.2
+ *                  for samples     : size:=500
  *)
 
-(* Flag for quantifier generation *)
-let gen_quantifiers = ref true
-
 (* gen_formula function *)
-let rec gen_term size p =
-   if size > 0 then
-   match Random.int (if gen_quantifiers = ref true then 3 else 2) with (* remove existential generation *)
-     | 0 -> Constant(Random.float p)
-     | 1 -> Duration(gen_term (size-1) p, gen_formula (size-1) p)
-     | 2 -> Variable(
-                     match Random.int 2 with
-                     | 0 -> "va"
-                     | 1 -> "vb"
-                     | _ -> "vc"
-                    )
-     | _ -> Constant(0.)
-   else
-     Constant(Random.float p)
-and gen_formula size p =
-   if size > 0 then
-     (* Get sample for formula *)
-     match Random.int (if gen_quantifiers = ref true then 6 else 5) with
-     | 0 -> Prop(
-                        match Random.int 2 with
-                        | 0 -> "A"
-                        | 1 -> "B"
-                        | _ -> "C"
-                       )
-     | 1 -> Not (gen_formula (size-1) p)
-     | 2 -> Or (gen_formula (size-1) p, gen_formula (size-1) p)
-     | 3 -> Until (Random.float p, gen_formula (size-1) p, gen_formula (size-1) p)
-     | 4 -> LessThan (gen_term size p, gen_term size p)
-     | 5 -> Exists (
-                    (
-                      match Random.int 2 with
-                      | 0 -> "va"
-                      | 1 -> "vb"
-                      | _ -> "vc"
-                    ), gen_formula (size-1) p
-                   )
-     | _ -> Prop("exceed")
-   else
-     Prop("E")
+let gen_formula size (n_v,n_p, c_I,u_I, pr_u,pr_e,pr_l,pr_d) =
+  let s_ l = if l >= 2 then 1 + ( Random.int (l - 2 ) ) else 1 in
+  let t_ l s = l - s - 1 in
+
+  let rec gen_term size =
+    if size > 2 then
+      let s = s_ size in
+      match Random.float 1. with (*default p=.2, we have pr_d *)
+      | x when x < pr_d -> Duration( gen_term s , gen_formula_ (t_ size s) )
+      | _ -> (
+        match Random.int 2 with
+        | 0 -> FPlus( gen_term s, gen_term (t_ size s) )
+        | 1 -> FTimes( gen_term s, gen_term (t_ size s) )
+        | _ -> raise ( Failure ("gen_term: bad random int") )
+      )
+
+    else (* the formula could be small than n_samples *)
+      match Random.int 2 with
+      | 0 -> Constant( float_of_int ( Random.int ( (snd c_I) - 1) + 1 ) )
+      | 1 -> Variable( "v"^(string_of_int (Random.int n_v) ) )
+      | _ -> raise ( Failure ("gen_term: bad random int <=2") )
+
+  and gen_formula_ size =
+    let prop () = Prop( "p"^(string_of_int (Random.int n_p) ) ) in
+    if size > 2 then
+      (* Get sample for formula *)
+      let s = s_ size in
+      match Random.float 1. with
+      | x when x < pr_u ->
+        (* gen until formula *)
+        Until ( float_of_int ( Random.int ( (snd u_I) - 1 ) + 1 ), gen_formula_ s, gen_formula_ (t_ size s) )
+
+      | x when x < pr_u +. pr_e ->
+        (* gen exists formula *)
+        Exists ( "v"^(string_of_int (Random.int n_v) ), gen_formula_ (size-1) )
+
+      | x when x < pr_u +. pr_e +. pr_l ->
+        (* gen less than formula *)
+        LessThan ( gen_term (s), gen_term (t_ size s) )
+
+      | _ -> (
+        let s = s_ size in
+        match Random.int 2 with
+        | 0 -> Not ( gen_formula_ (size-1) )
+        | 1 -> Or ( gen_formula_ (s) , gen_formula_ (t_ size s) )
+        | _ -> raise ( Failure ("gen_formula_: bad random int") )
+      )
+
+    else if size = 2 then
+      Not(prop ())
+    else
+      prop ()
+  in gen_formula_ size
+
+(*
+ * settings id: size (n_v,n_p, c_I,u_I, pr_u,pr_e,pr_l,pr_d);
+ * note that: pr_u + pr_e + pr_l < 1 and pr_d < 1
+ *)
+let gen_formula_default () = gen_formula 20 (5,5, (1,4),(1,4), 0.2,0.1,0.3,0.3)
 
 
 (*
@@ -334,7 +364,7 @@ let rec print_trace trace =
 (* convert rmtld formulas to latex language *)
 let rec slatex_of_rmtld_tm term =
    match term with
-   | Constant value      -> (string_of_float value) ^ " "
+   | Constant value      -> (string_of_int (int_of_float value) ) ^ " "
    | Variable id         -> id ^ " "
    | Duration (trm,sf)   -> "\\int^{" ^ (slatex_of_rmtld_tm trm) ^ "} \\left(" ^ (slatex_of_rmtld_fm sf) ^ "\\right) "
    | FPlus (eta1,eta2)   -> "\\left( " ^ (slatex_of_rmtld_tm eta1) ^ " + " ^ (slatex_of_rmtld_tm eta2) ^ "\\right)"
@@ -345,8 +375,8 @@ and slatex_of_rmtld_fm formula =
    | Prop p                 -> p ^ " "
    | Not sf                 -> "\\neg \\left(" ^ (slatex_of_rmtld_fm sf) ^ "\\right) "
    | Or (sf1, sf2)          -> "\\left(" ^ (slatex_of_rmtld_fm sf1) ^ "\\lor " ^ (slatex_of_rmtld_fm sf2) ^ "\\right)"
-   | Until (pval, sf1, sf2) -> "\\left(" ^ slatex_of_rmtld_fm sf1 ^ "\\ U_{" ^ (string_of_float pval) ^ "} \\ " ^ (slatex_of_rmtld_fm sf2) ^ "\\right)"
-   | Exists (var,sf)        -> "\\exists " ^ var ^ " \\ \\left(" ^ (slatex_of_rmtld_fm sf) ^ "\\right)"
+   | Until (pval, sf1, sf2) -> "\\left(" ^ slatex_of_rmtld_fm sf1 ^ "\\ U_{" ^ (string_of_int (int_of_float pval) ) ^ "} \\ " ^ (slatex_of_rmtld_fm sf2) ^ "\\right)"
+   | Exists (var,sf)        -> "\\exists {" ^ var ^ "} \\ \\left(" ^ (slatex_of_rmtld_fm sf) ^ "\\right)"
    | LessThan (tr1,tr2)     -> "\\left(" ^ (slatex_of_rmtld_tm tr1) ^ "< " ^ (slatex_of_rmtld_tm tr2) ^ "\\right)"
 
    | a                      -> raise (Failure ("Unsupported formula "^ Sexp.to_string_hum (sexp_of_fm a) ))
@@ -789,11 +819,12 @@ let _ =
     let oc = open_out "data.tex" in
     let nsamples = 1000 in
     let sizeof_trace = 100 in
-    (* Calculate the execution time of the formula with height 5 *)
-    let height = 5 in
-    gen_quantifiers := false; (* formulas without quantifiers *)
+    (*gen_quantifiers := false;*) (* formulas without quantifiers; set probability p_e to 0. *)
     for i=1 to nsamples do
-       let formula = gen_formula height ((2. ** (float_of_int (height)))/. (float_of_int sizeof_trace)) in (* let formula = gen_formula height in *)
+       let formula =
+         (* this generation manner is deprecated *) (*gen_formula height ((2. ** (float_of_int (height)))/. (float_of_int sizeof_trace)) in*)
+         (* use "gen_formula height in" instead *)
+         gen_formula_default () in
        (* generate uniform traces *)
        let trace = rev (generate_uniform_traces 0. sizeof_trace []) in
        (*print_trace trace ;*)
