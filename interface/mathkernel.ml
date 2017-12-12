@@ -356,6 +356,7 @@ and fm_conj_of_m_tm (tm: m_tm) : fm_conj =
               | _ -> tc_conj a (fm_atoms_of_m_tm' b)          
             in fold_left fld (`X(True)) lst
   | Var vid  when is_prop vid -> `X(Prop(rem_prop vid))  (* raise failure if var is not a prop !! *)
+  | Not el -> `X(fm_atoms_of_m_tm (Not el))
   | _   -> raise (Failure ("bad expression3: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
 
 and fm_disj_of_m_tm (tm: m_tm) : fm_disj =
@@ -365,6 +366,7 @@ and fm_disj_of_m_tm (tm: m_tm) : fm_disj =
                   in fold_left fld (`Conj(`X(Not(True)))) lst
   | Var vid when is_prop vid -> `Conj(`X(Prop(rem_prop vid))) (* raise failure if var is not a prop !! *)
   | And lst    -> `Conj(fm_conj_of_m_tm (And lst))
+  | Not el     -> `Conj(fm_conj_of_m_tm (Not el))
   | _          -> raise (Failure ("bad expression2: " ^ (Sexp.to_string (sexp_of_m_tm tm))))
 
 and fm_disj_of_m_fm (fm: m_fm) : fm_disj =

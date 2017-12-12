@@ -6,26 +6,41 @@ open Rmtld3synth_helper
 
 
 (* change it for MACOS *)
-let mk_proc = ref (Unix.open_process "");;
+let mk_proc = ref (Unix.open_process "")
+
+let initialized = ref true
 
 let mk_init () =
   (* test if mathematica is installed *)
-  if Unix.system "math -noprompt -run \"Quit[]\"" = WEXITED(1) then print_endline "Mathematica is not available or not in PATH." else
-  mk_proc := Unix.open_process "math -noprompt"
+  if Unix.system "math -noprompt -run \"Quit[]\"" = WEXITED(1) then
+    print_endline "Mathematica is not available or not in PATH."
+  else
+  begin
+    initialized := true;
+    mk_proc := Unix.open_process "math -noprompt"
+  end
 
 let mk_writeln s =
-  output_string (snd (!mk_proc)) (s ^ "\n");
-  BatIO.flush (snd (!mk_proc));;
+  if !initialized then
+  begin
+    output_string (snd (!mk_proc)) (s ^ "\n");
+    BatIO.flush (snd (!mk_proc))
+  end
+  else
+    print_endline s
 
 let rec mk_readln () =
-  let block_size = 250
-  in let r = String.create (block_size + 1)
-  in let n = input (fst !mk_proc) r 0 block_size
-  in
-  if n=block_size && (String.get r block_size) <> '\n' then (* TODO: we are not sure about the ending of a complete query *)
-    (String.sub r 0 n) ^ (mk_readln ()) (* size is not enough *)
+  if !initialized then
+    let block_size = 250
+    in let r = String.create (block_size + 1)
+    in let n = input (fst !mk_proc) r 0 block_size
+    in
+    if n=block_size && (String.get r block_size) <> '\n' then (* TODO: we are not sure about the ending of a complete query *)
+      (String.sub r 0 n) ^ (mk_readln ()) (* size is not enough *)
+    else
+      String.sub r 0 n
   else
-    String.sub r 0 n
+    ""
 
 
 
@@ -56,6 +71,17 @@ let mk_handshake () =
 
     let x = mk_readln () in
     verb_m 1 (fun _ -> Printf.printf "%s\n" x; );
+
+
+    (* test if mathematica has been correctly initalized *)
+    if !initialized then
+    begin
+      mk_writeln "$Version";
+      let answer = mk_readln () in
+      if answer <> "" then
+        verb_m 1 (fun _ -> print_endline ("Mathematica has been initialized sucessfully with version "^(BatString.strip answer)^".");)
+      else raise (Failure ("Mathematica has not been initialized properly."));
+    end
 
   );;
 

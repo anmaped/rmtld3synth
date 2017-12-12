@@ -32,7 +32,10 @@ let solve_ ctx exp =
   let tactic_set = and_then ctx (mk_tactic ctx "qe") (mk_tactic ctx "smt") []
   in let solver = mk_solver_t ctx tactic_set
   in let _ = add solver [exp]
-  in (string_of_status (check solver []), solver)
+  in let sol = (string_of_status (check solver []), solver)
+  in verb (fun _ -> print_endline (Statistics.to_string (get_statistics solver) ) ) ;
+  sol
+  
 
 
 

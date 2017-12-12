@@ -124,6 +124,44 @@ let rmtld3synthsmt formula helper =
 )
 	" in
 
+(*
+  synthesis of until equal [TODO: CONFIRM IF CHANGES ARE OK THEN ACCEPT]
+*)
+	let compute_until_equal id t gamma (comp1, comp1_append) (comp2, comp2_append) =
+		let evaliEq id = "
+(define-fun evaliEq" ^ id ^ " ((b1 Threevalue) (b2 Threevalue) (mt Time) (mtb Time)) Fourvalue
+	(ite (and (not (= b2 TVFALSE)) (> mt (+ mtb "^ string_of_int gamma ^")) ) (mapb4 b2) (ite (and (not (= b1 TVTRUE)) (= b2 TVFALSE)) (mapb4 b1) FVSYMBOL ) )
+)
+	    " in
+
+		let evalb id comp1 comp2 = "
+(define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (mtb Time) (v Fourvalue) ) Fourvalue
+	(ite (= v FVSYMBOL) (evaliEq" ^ id ^ " "^ comp1 ^" "^ comp2 ^" mt mtb ) v )
+)
+		" in
+
+		let evalfold id = "
+(declare-fun evalfold" ^ id ^ " ( (Time) (Time)) Fourvalue )
+(assert (forall ((x Time) (i Time)) (=> (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) (ite
+	(and (and (< x "^ (string_of_int (gamma + t)) ^") (>= i 0)) (> x i))
+	(= (evalb" ^ id ^ " trc x i (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i )  )
+	(= (evalb" ^ id ^ " trc x i FVSYMBOL) (evalfold" ^ id ^ " x i))
+   )))
+)
+		" in 
+		let evalc id = "
+(define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+	(mk-pair (<= trc_size " ^ (string_of_int gamma) ^ ") (evalfold" ^ id ^ " (- mt 1) mtb ))
+)
+		" in comp1_append ^ comp2_append ^ evaliEq id ^ (evalb id comp1 comp2) ^ (evalfold id) ^ (evalc id) ^ "
+(define-fun computeUequal" ^ id ^ "  ((mt Time) (mtb Time)) Threevalue
+	(mapb3 (evalc" ^ id ^ " mt mtb))
+)
+	" in
+(*
+  END synthesis of until equal
+*)
+
 	let duration id t dt formula =
 		let indicator id = "
 (define-fun indicator"^ id ^" ((mk Trace) (mt Time)) Int
@@ -191,7 +229,20 @@ and synth_smtlib_fm t formula helper =
 							    	)
 								 )
 
-	| Until_eq (gamma,sf1,sf2)-> "",""
+	| Until_eq (gamma,sf1,sf2)-> let idx = get_until_counter helper in
+	                             let sf1_out1, sf1_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf1 helper) in
+    							 let sf2_out1, sf2_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf2 helper) in
+                                 (
+                                   "(computeUequal!" ^ (string_of_int idx) ^" "^ (string_of_int (t + int_of_float gamma)) ^" mt )"
+                                   ,
+                                   (compute_until_equal
+							    		("!"^(string_of_int idx))
+							    		t
+							    		(int_of_float gamma)
+							    		(sf1_out1, sf1_out2)
+							    		(sf2_out1, sf2_out2)
+							    	)
+                                 )
 
     | LessThan (tr1,tr2)      -> let tr1_out1, tr1_out2 = (synth_smtlib_tm t tr1 helper) in
     							 let tr2_out1, tr2_out2 = (synth_smtlib_tm t tr2 helper) in

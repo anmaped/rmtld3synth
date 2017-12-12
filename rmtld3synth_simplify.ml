@@ -294,13 +294,6 @@ let simplify (rmtld_formula: fm) : fm =
   Mathkernel.mk_init ();
   Mathkernel.mk_handshake ();
 
-  (* test if mathematica has been correctly initalized *)
-  Mathkernel.mk_writeln "$Version";
-  let answer = Mathkernel.mk_readln () in
-  if answer <> "" then
-    verb_m 1 (fun _ -> print_endline ("Mathematica has been initialized sucessfully with version "^(BatString.strip answer)^".");)
-  else raise (Failure ("Mathematica has not been initialized properly."));
-
   (* type conversion from fm to fm_disj_ex *)
   let map_ex = fm_to_fm_disj_ex_map rmtld_formula in
 
