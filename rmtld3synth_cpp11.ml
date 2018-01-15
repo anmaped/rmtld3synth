@@ -145,27 +145,6 @@ let compute_tm_duration (di,_) (tf,_) helper =
 
     return eval_eta(env, t, t_upper, sub_k(env, t, t_upper));
 
-    /*let indicator_function (k,u) t phi = if compute (k,u,t) phi = True then 1. else 0. in
-        let riemann_sum m dt (i,i') phi =
-          (* dt=(t,t') and t in ]i,i'] or t' in ]i,i'] *)
-          count_duration := !count_duration + 1 ;
-          let t,t' = dt in
-          if i <= t && t < i' then
-            (* lower bound *)
-            (i'-.t) *. (indicator_function m i' phi)
-          else (
-            if i <= t' && t' < i' then
-              (* upper bound *)
-              (t'-.i) *. (indicator_function m t' phi)
-            else
-              (i'-.i) *. (indicator_function m i' phi)
-          ) in
-        let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
-        m dt (i,t') phi) +. s) 0. x in
-        let t,t' = dt in
-        eval_eta (k,u) dt formula (sub_k (k,u,t) t')*/
-
-
     }(env,t)","")
 
 let compute_tm_plus (cmptr1,_) (cmptr2,_) helper = ("sum_dur("^ cmptr1 ^" , "^cmptr2^")","")

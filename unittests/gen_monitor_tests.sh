@@ -23,11 +23,11 @@ echo "Generating Test Units for Cpp11"
 
 CMDGENCPP="../rmtld3synth.native --config-file "../config/default" --synth-cpp11"
 
-$CMDGENCPP --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-src=./mon1/ --verbose 2
+$CMDGENCPP --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-src=mon1 --verbose 2
 
-$CMDGENCPP --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-src=./mon2/ --verbose 2
+$CMDGENCPP --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-src=mon2 --verbose 2
 
-$CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-src=./mon3/ --verbose 2
+$CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-src=mon3 --verbose 2
 
 echo "Generating Unit tests for smtlibv2"
 
@@ -102,26 +102,26 @@ make
 # execute and get result
 ./unittests.native
 
-read -p "Press enter to continue"
+# read -p "Press enter to continue or wait 90s" -t 90
 
-make clean
+# make clean
 
-# remove files
-rm Makefile
-rm rmtld3.ml
-rm mon1.ml
-rm mon2.ml
-rm mon3.ml
-rm mon_sat1.ml
-rm mon_sat2.ml
-rm mon_sat3.ml
-rm mon_sat1.trace
-rm mon_sat2.trace
-rm mon_sat3.trace
-rm mon_sat4.trace
+# # remove files
+# rm Makefile
+# rm rmtld3.ml
+# rm mon1.ml
+# rm mon2.ml
+# rm mon3.ml
+# rm mon_sat1.ml
+# rm mon_sat2.ml
+# rm mon_sat3.ml
+# rm mon_sat1.trace
+# rm mon_sat2.trace
+# rm mon_sat3.trace
+# rm mon_sat4.trace
 
-#remove cpp11 files
-rm -r -f mon1/
-rm -r -f mon2/
-rm -r -f mon3/
+# #remove cpp11 files
+# rm -r -f mon1/
+# rm -r -f mon2/
+# rm -r -f mon3/
 

@@ -116,7 +116,7 @@ let mon_gen fm =
     else []
   in
   let helper = set_parameters (a,b,c) mk_helper in
-  let create_dir dir_name = try let state = Sys.is_directory dir_name in if state then () else  Unix.mkdir dir_name 0o666; with _ -> Unix.mkdir dir_name 0o666 in
+  let create_dir dir_name = try let state = Sys.is_directory dir_name in if state then () else  Unix.mkdir dir_name 0o777; with _ -> Unix.mkdir dir_name 0o777 in
   
 
   (* monitor synthesis settings *)
@@ -136,7 +136,7 @@ let mon_gen fm =
 
   verb_m 2 (fun _ -> print_endline ("cluster_name: "^cluster_name); );
 
-  if !out_dir <> "" then create_dir !out_dir;
+  if !out_dir <> "" then create_dir !out_dir ;
 
   (* create dir for storage of SMT benchmarks *)
   (* 
@@ -145,7 +145,7 @@ let mon_gen fm =
     of s-expressions into SMT-LIBv2 is available in the hardcoded sub directory
     "smt/".
   *)
-  if !out_dir <> "" then create_dir (!out_dir^"/smt/");
+  if !out_dir <> "" then create_dir (!out_dir^"/smt/") ;
 
 
   (* for cpp11 and ocaml synthesis *)
@@ -313,7 +313,9 @@ let _ =
     ("--version", Arg.Unit (fun () -> print_endline ("Git version "^(Version.git)); exit 0), " Version and SW information\n");
   ]
   in let usage_msg = "rmtld3synth flags [options] input [output]\n\n Flags for synthesis: "
-  in Arg.parse_argv (Sys.argv) (Arg.align speclist) print_endline usage_msg;
+  in try Arg.parse_argv (Sys.argv) (Arg.align speclist) print_endline usage_msg ; with Arg.Help msg | Arg.Bad msg -> print_endline msg ; ;
+  
+  verb_m 2 (fun a -> print_endline (Version.git^"\n") ) ;
 
   (* conversion for input formula *)
   let input_fm =

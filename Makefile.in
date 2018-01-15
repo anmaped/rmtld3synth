@@ -15,8 +15,11 @@ all: version
 version:
 	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > version.ml
 
-tests: all
-	cd unittests && chmod 777 gen_monitor_tests.sh && ./gen_monitor_tests.sh
+tests:
+	mkdir _build_tests && cp unittests/* _build_tests && cd _build_tests && bash -ex gen_monitor_tests.sh
+
+clean-tests:
+	rm _build_tests -r -f
 
 install:
 	@echo "OS: ${OS}"
