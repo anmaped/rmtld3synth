@@ -5,8 +5,9 @@ echo "Initiating the benchmark process"
 
 declare -a arrayrdsl=(
 	"\rm{core0}{ \tk{ts1}{5,2} }{10,10}"
-	"\rm{core0}{ \tk{ts1}{9,8} \succ \tk{ts2}{9,1} }{20,8}"
-	#"\rm{core0}{ \tk{ts1}{5,3} \succ \tk{ts2}{10,8} \succ \tk{ts3}{5,3} }{20,20}"
+	"\rm{core0}{ \tk{ts1}{9,2} \succ \tk{ts2}{9,1} }{20,8}"
+  #"\rm{core0}{ \tk{ts1}{5,3} \succ \tk{ts2}{10,8} }{20,20}"
+	"\rm{core0}{ \tk{ts1}{5,3} \succ \tk{ts2}{10,8} \succ \tk{ts3}{5,3} }{20,20}"
 	#"\rm{res0}{ \tk{ts1}{10,8} \succ \tk{ts2}{10,4} \bowtie \tk{ts3}{27,7} }{0,0} \parallel \rm{res1}{ \tk{ts4}{33,4} }{10,5}"
 	#"\rm{core0}{ \tk{ts1}{20,9} \succ \tk{ts2}{15,8} }{60,50}"
 	#"\rm{core0}{ \tk{ts1}{20,9} \succ \tk{ts2}{15,8} \succ \tk{ts3}{10,3} }{60,50}"
@@ -26,57 +27,54 @@ declare -a arrayrmtld=(
 
 # Parsing parameters and executing benchmarks
 
-if [ $# -eq 0 ]
-  then
+if [ $# -eq 0 ] ; then
     echo "No arguments supplied"
-elif [ $# -eq 1 ] && [ $1 == "rmtld" ]
-    then
+elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
 
-    #################################
-    # benchamark for rmtld formulas #
-    #################################
+  #################################
+  # benchamark for rmtld formulas #
+  #################################
 
-    echo "Chosen option: $1"
+  echo "Chosen option: $1"
 
-    # get length of an array
-    arrayrmtldlength=${#arrayrmtld[@]}
+  # get length of an array
+  arrayrmtldlength=${#arrayrmtld[@]}
 
-    echo "Number of formulas: $arrayrmtldlength"
-    
-    mkdir t
+  echo "Number of formulas: $arrayrmtldlength"
+  
+  mkdir t
 
-    for (( sample=5; sample<50; sample+=5 ));
+  for (( sample=5; sample<50; sample+=5 ));
+  do
+    echo $sample
+
+    # use for loop to read all values and indexes
+    for (( i=1; i<${arrayrmtldlength}+1; i++ ));
     do
-      echo $sample
+      REP=${arrayrmtld[$i-1]//b1/$sample}
+      REPP=${REP//b2/$sample}
 
-      # use for loop to read all values and indexes
-      for (( i=1; i<${arrayrmtldlength}+1; i++ ));
-      do
-        REP=${arrayrmtld[$i-1]//b1/$sample}
-        REPP=${REP//b2/$sample}
+      echo $i " / " ${arrayrmtldlength} " : " ${arrayrmtld[$i-1]}
+      START=$(date +%s.%N)
+      OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solve-z3 --input-latexeq "$REPP" > "t/testrmtld$i.smt2"
+      END=$(date +%s.%N)
 
-        echo $i " / " ${arrayrmtldlength} " : " ${arrayrmtld[$i-1]}
-        START=$(date +%s.%N)
-        OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solve-z3 --input-latexeq "$REPP" > "t/testrmtld$i.smt2"
-        END=$(date +%s.%N)
+      OUT=$?
+      if [ $OUT -ne 0 ]; then
+        echo "WARNING: THE BENCHMARK HAS NOT BEEN COMPLETED!!!"
+        break
+      fi
 
-        OUT=$?
-        if [ $OUT -ne 0 ]; then
-          echo "WARNING: THE BENCHMARK HAS NOT BEEN COMPLETED!!!"
-          break
-        fi
+      DIFF=$(echo "$END - $START" | bc)
+      echo $DIFF
 
-        DIFF=$(echo "$END - $START" | bc)
-        echo $DIFF
-
-        #z3 "test$i.smt2" > "results$i.txt"
-      done
+      #z3 "test$i.smt2" > "results$i.txt"
     done
+  done
 
 
 
-elif [ $# -eq 1 ] && [ $1 == "rmdsl" ];
-  then
+elif [ $# -eq 1 ] && [ $1 == "rmdsl" ] ; then
   echo "Chosen option: $1"
 
   ###################################
@@ -94,26 +92,25 @@ elif [ $# -eq 1 ] && [ $1 == "rmdsl" ];
   for (( i=1; i<${arrayrdsllength}+1; i++ ));
   do
     echo $i " / " ${arrayrdsllength} " : " ${arrayrdsl[$i-1]}
-    OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solve-z3 --input-rmdsl "${arrayrdsl[$i-1]}" > "trmdsl/testrmdsl$i.smt2"
+    OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solve-z3 --get-schedule --input-rmdsl "${arrayrdsl[$i-1]}" > "trmdsl/testrmdsl$i.smt2" &
     OUT=$?
-    if [ $OUT -ne 0 ];then
+    if [ $OUT -ne 0 ]; then
       echo "WARNING: THE BENCHMARK HAS NOT BEEN COMPLETED!!!"
       break
     fi
     #z3 "test$i.smt2" > "results$i.txt"
   done
 
+  wait
 
   # "\rm{core0}{ \left( \tk{ts1}{20,9} \succ \tk{ts2}{15,8} \right) \ \bowtie \ \tk{ts3}{10,3} }{60,50}"
 
   # "\rm{res0}{ \left( \tk{ts1}{10,8} \succ \tk{ts2}{20,5} \right) \ \bowtie \ \tk{ts3}{27,7} }{0,0} \ \parallel \ \rm{res1}{ \tk{ts4}{4,33} }{0,0}"
 
-  # rm -f test1.smt2 test2.smt2 test3.smt2
-
 
 
 else
 
-  echo "Unsupported arguments. Use rmtld (formulas) or rmdsl (expressions)"
+  echo ""Unsupported arguments. Use rmtld \(formulas\) or rmdsl \(expressions\)""
 
 fi

@@ -267,7 +267,7 @@ let rec rmtld3_fm_of_rmdsl' ex : ((rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm -> (
            let fm_out1,fm_out2,tp = rmtld3_fm_of_rmdsl_tm tk nm (a,c,tp) b
            in let all_prop = prop_list_of_fm fm_out1
            in (mand (dur_res all_prop) (fm_out1), fm_out2, tp)
-        ]
+       ]
 
   | Par(rs1,rs2)     -> (rmtld3_fm_of_rmdsl' rs1)@(rmtld3_fm_of_rmdsl' rs2) (* unreal paralell (split case) *)
   | Seq(rs1,rs2)     -> [fun (a,c,tp) b -> (True(),True(), tp) ] (* TODO *)

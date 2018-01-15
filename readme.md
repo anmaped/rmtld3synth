@@ -2,12 +2,13 @@
 rmtld3synth toolchain: Synthesis from a fragment of MTL with durations
 ===========================================
 
-RMTLD3 synthesis toolchain allows us to automatically generate monitors and STMLibv2 specifications based on the formal language RMTLD3. RMTLD3 is a three-valued restricted metric temporal logic with durations that is able to reason about explicit time and temporal order of durations.
+The rmtld3synth toolchain is able to automatically generate cpp11/ocaml monitors and specifications in SMT-LIB v2 standard language from a fragment of metric temporal logic with durations. This logic is a three-valued extension over a restricted fragment of metric temporal logic with durations that allows us to reason about explicit time and temporal order of durations.
 
-Polynomial inequalities are supported by this formalism as well as the common operators of temporal logics. Existential quantification over formulas is also supported by the cylindrical algebraic decomposition (CAD) abstraction of such formulas into several conditions without these quantifiers.
+Supported by this formalism are polynomial inequalities (using the less relation <) and the common modal operators of temporal logics U (until) and S (since). 
+The existential quantification over these formulas is also possible by adopting the cylindrical algebraic decomposition (CAD) method. This method is suitable to convert quantified formulas into several decomposed conditions without these quantifiers.
 
-Synthesis for Z3 SMT solver is another feature. It can be used to discard before execution several constraints involving duration and temporal order of propositions.
-For instance, schedulability analysis of hard real-time systems can be done by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMTLibv2 and then using Z3 to solve it. The idea is to know if there exists a trace for what the RMTLD3 problem is satisfiable, otherwise, if the SMT gives unsatisfiable then it means that is impossible to schedule such system, which enforces the refinement by drawing a counter-example.
+For formula satisfiability checking, the tool is ready to synthesize the logic fragment into the input language accepted by the z3 SMT solver.It can be used to discard offline and before execution several constraints involving duration and temporal order of propositions.
+For instance, schedulability analysis of hard real-time systems is possible by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMT-LIB and then using Z3 to solve it. The idea is to know if there exists a trace for which the RMTLD3 problem is satisfiable, or whether the SMT gives us an unsatisfiable answer meaning that is impossible to schedule such configuration. The latter enforces the refinement by drawing a counter-example.
 
 # Contents
 
@@ -26,15 +27,14 @@ For instance, schedulability analysis of hard real-time systems can be done by s
 Current version is [0.3-alpha](../../releases/download/v0.3-alpha/release-0.3.zip?raw=true).
 Old version is [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
 
-Let us begin with an overview of a simple monitoring case generation by the `rmtld3synth` tool, using as the basis the [use case one](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html). The config file named [`usecaseone`](/config/usecaseone?raw=true) contains the output formula ready to be supplied to `rmtld3synth`. It can be executed by typing the following command in the windows shell and accordingly supplying the config file in the same path used for the invocation of the tool.
+Let us begin by overviewing a monitor generation using the rmtld3synth tool. For this example, we adopt the use case one [available here](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html) and the configuration file [`usecaseone`](/config/usecaseone?raw=true) containing the input formula and some intructions for the rmtld3synth to process. To generate the monitor(s), we just need to type the following command in the command shell.
 ```
 ./rmtld3synth.exe -n usecaseone
 ```
-Note that `-n` is deprecated. For versions >= 0.3-alpha use `--config-file` instead of `-n`.
+Note that `-n` is deprecated and requires to set the config file in the same directory of the executable. For versions >= 0.3-alpha use `--config-file` argument instead of `-n` in order to set the correct path of the one shot configuration file.
 
-After executing this step, the `monitor_set1` folder contains the generated source files of the monitor for the `usecaseone` file.
-Note that the `rmtld3synth` can execute without any argument only guided by the configuration file. 
-We have the monitor ready to be compiled with gcc or other "compatible" C/C++ compiler and deployed in the chosen target system. For version 0.3-alpha, C++ and Ocaml synthesis are fully supported and Spark2014 is not yet implemented.
+After executing the command, the `monitor_set1` folder is available and contains the generated source files of the monitor(s) specified for the `usecaseone` setup.
+At this point, we have the monitor ready to be supplied for GCC, LLVM or other "compatible" C/C++ compiler and deployed in the chosen target architecture. For the current version, C++ and Ocaml synthesis are fully supported but Spark2014 is not yet available.
 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
@@ -105,10 +105,13 @@ cp z3/build/libz3.dll.a /lib/
 
 
 #### Instructions to compile rtmlib
-rtmlib is a support library for embedding runtime monitors. Current version is `v0.1-alpha`. We can skip this step if we do not need to integrate the monitors in the target system or we just want to synthesize RMTLD3 specifications in SMT-Libv2.
+
+Current version is [0.1-alpha](../../releases/download/v0.3-alpha/rtmlib-0.1.zip?raw=true).
+
+The rtmlib is a support library for embedding runtime monitors written in CPP11. We can skip this compilation step if we do not need to integrate the monitors into the target system or we just want to synthesize RMTLD3 specifications in SMT-Libv2.
 Use the `make` command to perform the compilation of the library as usual. The outcome shall be the library file `librtml.a`. Please ensure that you have the gcc 4.7.0 or greater with c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterward (only for gcc 4.7.0 version).
 
-More details are available in the [rtmlib repository](https://github.com/anmaped/rtmlib/tree/ea11f011861e0a27253f531df043ca8ef41944e3).
+More details are available in the [rtmlib documentation repository](https://anmaped.github.io/rtmlib/doc/).
 
 
 
@@ -117,16 +120,21 @@ More details are available in the [rtmlib repository](https://github.com/anmaped
 
 #### Overview of the command line arguments of the rmtld3synth
 
-The available options at the present time are as follows:
+The available options for the current version are as follows:
 
 Arg                   | Description
 ----------------------|-----------------------------------------------------
- Flags:               |
+ Flags for synthesis: |
   --synth-smtlibv2    |Enables synthesis for SMT-LIBv2 language
   --synth-ocaml       |Enables synthesis for Ocaml language
   --synth-cpp11       |Enables synthesis for C++11 language
-  --synth-spark2014   |Enables synthesis for Spark2014 language (Experimental)
+  --synth-spark2014   |Enables synthesis for Spark2014 language (Unavailable)
+ Flags for solving:   |
   --simpl-cad         |Simplify quantified RMTLD formulas using CAD (Experimental)
+  --solver-z3         |Enables solving smtlibv2 problems using Z3 SMT solver
+  --solver-statistics |Enables printing the solve statistics
+  --get-trace         |Returns the schedule
+  --trace-style       |Sets the trace style
  Input:               |
   --input-sexp        |Inputs sexp expression (RMTLD3 formula)
   --input-latexeq     |Inputs latex equation expressions (RMTLD3 formula) (Experimental)
@@ -142,7 +150,7 @@ Arg                   | Description
 
 
 
-Consider that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --synth-smtlibv2 --input-sexp <this-formula> --out-file <output-file-name>` to generate the Z3 input files. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool to Z3 is not yet implemented.
+Consider that we want to solve the formula `(LessThan (Constant 0) (Duration (Constant 10) (Prop A)))`. Then, we use `rmtld3synth --synth-smtlibv2 --input-sexp <this-formula> --out-file <output-file-name>` to generate the Z3 input file. Run Z3 solver with the generated file to get `sat` or `unsat` result. A direct call from our tool to Z3 is yet implemented and available by using the flag `--solver-z3`. `--get-trace` flag can be used to retrieve a satisfiable trace.
 
 #### Overview of the configuration file
 
@@ -214,7 +222,7 @@ For instance, a trace that satisfies this formula is
 From rmtld3synth tool, we have synthesized the formula's example into the Ocaml language code described in the ![texeq_sample.ml](/examples/texeq_sample.ml?raw=true). For that, we have used the command
 ```
 ./rmtld3synth --synth-ocaml --input-latexeq
-"(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4"
+"(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" > mon_sample.ml
 ```
 We can also generate cpp11 monitors by replacing the argument `--synth-ocaml` with `--synth-cpp11`.
 The outcome is the monitor illustrated in the ![texeq_sample_mon0.h](/examples/texeq_sample_mon0.h?raw=true) and ![texeq_sample_mon0_compute.h](/examples/texeq_sample_mon0_compute.h?raw=true) files.
@@ -222,10 +230,11 @@ Both monitors can now be coupled to the system under observation using rtmlib.
 
 To use those monitors in Ocaml, we need to define a trace for Ocaml reference as follows:
 ```
+open Mon_sample
 module OneTrace : Trace = struct let trc = [("a",(0.,2.));("b",(2.,4.));("a",(4.,5.));("c",(5.,8.));
     ("a",(8.,11.));("c",(11.,21.))] end;;
 
-module MonA = Mon0(OneTrace);;
+module MonA = Mon_sample.Mon0(OneTrace);;
 ```
 
 

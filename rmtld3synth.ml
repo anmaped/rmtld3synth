@@ -68,6 +68,7 @@ let spark14_lang = ref false
 let smt_solver = ref ""
 let solver_statistics_flag = ref false
 let get_schedule_flag = ref false
+let trace_style = ref ""
 let gen_rmtld_formula = ref false
 
 let set_config_file file = config_file := file
@@ -84,6 +85,7 @@ let set_spark14_language f = spark14_lang := true
 let set_solve_z3 f = smt_solver := "z3"
 let set_solve_statistics f = solver_statistics_flag := true
 let set_get_schedule f = get_schedule_flag := true
+let set_trace_style f = trace_style := f
 let set_gen_rmtld_formula f = gen_rmtld_formula := true
 
 let isSolverEnabled () = !smt_solver = ""
@@ -232,7 +234,11 @@ begin
       if !get_schedule_flag then
       begin
         let scheduler_trace = get_scheduler ctx model helper in
-        print_endline (Sexp.to_string (sexp_of_trace_untimed scheduler_trace)) ;
+        if !trace_style = "tinterval" then
+          let _,trc_str = List.fold_left (fun (cnt,a) b -> let cnte = cnt +. 1. in (cnte, a^" (\""^b^"\",("^ string_of_float cnt ^","^ string_of_float cnte ^")); ") ) (0.,"") scheduler_trace
+          in print_endline trc_str
+        else
+          print_endline (Sexp.to_string (sexp_of_trace_untimed scheduler_trace)) ;
         ()
       end;
     end
@@ -288,7 +294,8 @@ let _ =
     ("--solve-z3",  Arg.Unit (set_solve_z3), " Enables solving smtlibv2 problems using Z3 SMT solver");
 
     ("--solve-statistics",  Arg.Unit (set_solve_statistics), " Enables printing the solve statistics") ;
-    ("--get-schedule",  Arg.Unit (set_get_schedule), " Returns the schedule\n\n Input:") ;
+    ("--get-trace",  Arg.Unit (set_get_schedule), " Returns the schedule") ;
+    ("--trace-style", Arg.String (set_trace_style), " Sets the trace style\n\n Input:") ;
     
 
     (* input models *)

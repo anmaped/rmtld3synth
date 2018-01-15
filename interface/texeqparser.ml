@@ -259,6 +259,8 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
           | Always (a,b)     -> Fland(feed @[ Always(a,b)])
           | Eventually (a,b) -> Fland(feed @[ Eventually(a,b)])
           | FVar(a)          -> Fland(feed @[ FVar(a)])
+          | FImplies(a,b)    -> Fland(feed @[ FImplies(a,b)])
+          | FNot(a)          -> Fland(feed @[ FNot(a)])
 
           | Flor(a) -> Flor( (Fland(feed@[List.hd a]) )::(List.tl a))
           | _ -> raise (Failure ("bad expression for and: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (hd prefix) ))))
@@ -288,7 +290,7 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
         in
         ((if feed_to_break <> [] then [FBreak([itt])] else [itt]),rlst)
 
-      | "rightarrow" :: r  ->
+      | ("implies" | "rightarrow") :: r ->
         let feed,feed_to_break = propagate feed
         in let prefix,rlst = parse_latexeq_eq' r feed_to_break in
         ([FImplies(hd feed, hd prefix)],rlst)
@@ -343,7 +345,7 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
         in let prefix,rlst = parse_latexeq_eq' rlst feed_to_break
         in ([FExists(hd tm, hd prefix)],rlst)
 
-      | "neg" :: r         ->
+      | "neg" :: r ->
         let feed,feed_to_break = propagate feed
         in let prefix,rlst = parse_latexeq_eq' r feed_to_break
         in ([FNot(hd prefix)],rlst)
@@ -634,6 +636,9 @@ and rmtld3_fm_of_intermediate_ltx_fm ifm : rmtld3_fm =
 
   | ULess(POp(Less(),[TVal(a)]),fm1,fm2) -> let gamma = float_of_int a in
       Until(gamma, rmtld3_fm_of_intermediate_ltx_fm fm1, rmtld3_fm_of_intermediate_ltx_fm fm2)
+
+  | ULess(POp(Eq(),[TVal(a)]),fm1,fm2) ->let gamma = float_of_int a in
+      Until_eq(gamma, rmtld3_fm_of_intermediate_ltx_fm fm1, rmtld3_fm_of_intermediate_ltx_fm fm2)
 
   | FExists(TVar(a,TEmpty()), fm) -> Exists(a, rmtld3_fm_of_intermediate_ltx_fm fm)
 

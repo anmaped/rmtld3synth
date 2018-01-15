@@ -71,7 +71,7 @@ let rmtld3synthsmt formula helper =
 	(ite (and (= (first x) true) (= (second x) FVSYMBOL )) TVUNKNOWN 
 		(ite (and (= (first x) false) (= (second x) FVSYMBOL )) TVFALSE 
 			(ite (= (second x) FVFALSE ) TVFALSE 
-				TVTRUE
+				(ite (= (second x) FVTRUE ) TVTRUE TVUNKNOWN)
 	 		)
 	 	)
 	 )
@@ -80,7 +80,7 @@ let rmtld3synthsmt formula helper =
 
 	let evali = "
 (define-fun evali ((b1 Threevalue) (b2 Threevalue)) Fourvalue
-	(ite (not (= b2 TVFALSE)) (mapb4 b2) (ite (and (not (= b1 TVTRUE)) (= b2 TVFALSE)) (mapb4 b1) FVSYMBOL ) )
+	(ite (= b2 TVFALSE) (ite (= b1 TVTRUE) FVSYMBOL (mapb4 b1) ) (mapb4 b2) )
 )
 	" in
 
@@ -92,31 +92,41 @@ let rmtld3synthsmt formula helper =
 
 
 	let compute_proposition id = "
-(define-fun computeprop" ^ id ^ " ( (mk Trace) (mt Time) (phi1 Proptype) ) Threevalue
-	(ite (= (select mk mt) phi1) TVTRUE TVFALSE  );
+(define-fun computeprop" ^ id ^ " ( (mk Trace) (mt Time) ) Threevalue
+	(ite (= (select mk mt) "^ id ^") TVTRUE TVFALSE  );
 )
 	" in
 
 
-	let compute_until id t gamma (comp1, comp1_append) (comp2, comp2_append) =
+(*
+  synthesis of until less than
+*)
+	let compute_until_less id t gamma (comp1, comp1_append) (comp2, comp2_append) =
 		let evalb id comp1 comp2 = "
 (define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (v Fourvalue) ) Fourvalue
 	(ite (= v FVSYMBOL) (evali "^ comp1 ^" "^ comp2 ^" ) v )
 )
 		" in
 
-		let evalfold id = "
+		let evalfold id = if gamma > 1 then "
 (declare-fun evalfold" ^ id ^ " ( (Time) (Time)) Fourvalue )
-(assert (forall ((x Time) (i Time)) (=> (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) (ite
-	(and (and (< x "^ (string_of_int (gamma + t)) ^") (>= i 0)) (> x i))
-	(= (evalb" ^ id ^ " trc x (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i )  )
-	(= (evalb" ^ id ^ " trc x FVSYMBOL) (evalfold" ^ id ^ " x i))
-   )))
+(assert (forall ((x Time) (i Time))
+  (ite (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) )
+    (ite (> x i)
+	  (= (evalb" ^ id ^ " trc x (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i ) )
+	  (= (evalb" ^ id ^ " trc x FVSYMBOL) (evalfold" ^ id ^ " x i))
+    )
+    (= FVUNKNOWN (evalfold" ^ id ^ " x i))
+  ))
 )
-		" in 
+		" else if gamma = 1 then "
+(define-fun evalfold" ^ id ^ " ((x Time) (i Time)) Fourvalue
+  (evalb" ^ id ^ " trc x FVSYMBOL)
+)" else raise (Failure ("gamma == 0"))
+	in 
 		let evalc id = "
 (define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
-	(mk-pair (<= trc_size " ^ (string_of_int gamma) ^ ") (evalfold" ^ id ^ " (- mt 1) mtb ))
+	(mk-pair (>= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " (- mt 1) mtb ))
 )
 		" in comp1_append ^ comp2_append ^ (evalb id comp1 comp2) ^ (evalfold id) ^ (evalc id) ^ "
 (define-fun computeUless" ^ id ^ "  ((mt Time) (mtb Time)) Threevalue
@@ -125,12 +135,42 @@ let rmtld3synthsmt formula helper =
 	" in
 
 (*
-  synthesis of until equal [TODO: CONFIRM IF CHANGES ARE OK THEN ACCEPT]
+  synthesis of until less than or equal
+*)
+    let compute_until_lessequal id t gamma (comp1, comp1_append) (comp2, comp2_append) =
+		let evalb id comp1 comp2 = "
+(define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (v Fourvalue) ) Fourvalue
+	(ite (= v FVSYMBOL) (evali "^ comp1 ^" "^ comp2 ^" ) v )
+)
+		" in
+
+		let evalfold id = "
+(declare-fun evalfold" ^ id ^ " ( (Time) (Time)) Fourvalue )
+(assert (forall ((x Time) (i Time)) (=> (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) ) (ite
+	(> x i)
+	(= (evalb" ^ id ^ " trc x (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i )  )
+	(= (evalb" ^ id ^ " trc x FVSYMBOL) (evalfold" ^ id ^ " x i))
+   )))
+)
+		" in 
+		let evalc id = "
+(define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+	(mk-pair (>= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " mt mtb ))
+)
+		" in comp1_append ^ comp2_append ^ (evalb id comp1 comp2) ^ (evalfold id) ^ (evalc id) ^ "
+(define-fun computeUlesseq" ^ id ^ "  ((mt Time) (mtb Time)) Threevalue
+	(mapb3 (evalc" ^ id ^ " mt mtb))
+)
+	" in
+
+
+(*
+  synthesis of until equal
 *)
 	let compute_until_equal id t gamma (comp1, comp1_append) (comp2, comp2_append) =
 		let evaliEq id = "
 (define-fun evaliEq" ^ id ^ " ((b1 Threevalue) (b2 Threevalue) (mt Time) (mtb Time)) Fourvalue
-	(ite (and (not (= b2 TVFALSE)) (> mt (+ mtb "^ string_of_int gamma ^")) ) (mapb4 b2) (ite (and (not (= b1 TVTRUE)) (= b2 TVFALSE)) (mapb4 b1) FVSYMBOL ) )
+	(ite (>= mt (+ mtb "^ string_of_int gamma ^")) (mapb4 b2) (ite (= b1 TVTRUE) FVSYMBOL (mapb4 b1) ) )
 )
 	    " in
 
@@ -142,8 +182,8 @@ let rmtld3synthsmt formula helper =
 
 		let evalfold id = "
 (declare-fun evalfold" ^ id ^ " ( (Time) (Time)) Fourvalue )
-(assert (forall ((x Time) (i Time)) (=> (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) (ite
-	(and (and (< x "^ (string_of_int (gamma + t)) ^") (>= i 0)) (> x i))
+(assert (forall ((x Time) (i Time)) (=> (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) ) (ite
+    (> x i)
 	(= (evalb" ^ id ^ " trc x i (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i )  )
 	(= (evalb" ^ id ^ " trc x i FVSYMBOL) (evalfold" ^ id ^ " x i))
    )))
@@ -151,7 +191,7 @@ let rmtld3synthsmt formula helper =
 		" in 
 		let evalc id = "
 (define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
-	(mk-pair (<= trc_size " ^ (string_of_int gamma) ^ ") (evalfold" ^ id ^ " (- mt 1) mtb ))
+	(mk-pair (>= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " mt mtb ))
 )
 		" in comp1_append ^ comp2_append ^ evaliEq id ^ (evalb id comp1 comp2) ^ (evalfold id) ^ (evalc id) ^ "
 (define-fun computeUequal" ^ id ^ "  ((mt Time) (mtb Time)) Threevalue
@@ -204,7 +244,7 @@ and synth_smtlib_fm t formula helper =
     | Prop p                  -> let tbl = get_proposition_hashtbl helper in
                                  let counter = get_proposition_counter helper in 
                                  let val1,val2 = try (Hashtbl.find tbl p,"") with Not_found -> set_proposition_two_way_map p counter helper; (counter, compute_proposition (string_of_int counter)) in
-                                 ("(computeprop"^ (string_of_int val1) ^" mk mt "^ (string_of_int val1) ^")", val2)
+                                 ("(computeprop"^ (string_of_int val1) ^" mk mt)", val2)
 
     | Not sf                  -> let sf_out1, sf_out2 = synth_smtlib_fm t sf helper in
     							 ("(tvnot "^ sf_out1 ^" )", sf_out2)
@@ -218,9 +258,23 @@ and synth_smtlib_fm t formula helper =
     							 let sf1_out1, sf1_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf1 helper) in
     							 let sf2_out1, sf2_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf2 helper) in
     	 					     (
-    								"(computeUless!" ^ (string_of_int idx) ^" "^ (string_of_int (t + int_of_float gamma)) ^" mt )"
+    								"(computeUless!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt )"
     							  ,
-							    	(compute_until
+							    	(compute_until_less
+							    		("!"^(string_of_int idx))
+							    		t
+							    		(int_of_float gamma)
+							    		(sf1_out1, sf1_out2)
+							    		(sf2_out1, sf2_out2)
+							    	)
+								 )
+	| Until_leq (gamma,sf1,sf2)-> let idx = get_until_counter helper in
+    							 let sf1_out1, sf1_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf1 helper) in
+    							 let sf2_out1, sf2_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf2 helper) in
+    	 					     (
+    								"(computeUlesseq!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt )"
+    							  ,
+							    	(compute_until_lessequal
 							    		("!"^(string_of_int idx))
 							    		t
 							    		(int_of_float gamma)
@@ -233,7 +287,7 @@ and synth_smtlib_fm t formula helper =
 	                             let sf1_out1, sf1_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf1 helper) in
     							 let sf2_out1, sf2_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf2 helper) in
                                  (
-                                   "(computeUequal!" ^ (string_of_int idx) ^" "^ (string_of_int (t + int_of_float gamma)) ^" mt )"
+                                   "(computeUequal!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt )"
                                    ,
                                    (compute_until_equal
 							    		("!"^(string_of_int idx))
