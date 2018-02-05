@@ -7,9 +7,9 @@ endif
 
 
 all: version
-	cp interface/z3solver.ml interface/z3solver_.ml
-	cp interface/mathkernel_call.ml interface/mathkernel_call_.ml
-	echo "(* dummy js interface *)" >> interface/js_helper_.ml
+	cp src/interface/z3solver.ml src/interface/z3solver_.ml
+	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
+	echo "(* dummy js interface *)" >> src/interface/js_helper_.ml
 	ocamlbuild -use-ocamlfind rmtld3synth.byte rmtld3synth.native
 
 version:
@@ -34,4 +34,4 @@ uninstall:
 clean:
 	ocamlbuild -clean
 	rm -f *.byte *.native
-	rm -f interface/z3solver_.ml interface/mathkernel_call_.ml interface/js_helper_.ml
+	rm -f src/interface/z3solver_.ml src/interface/mathkernel_call_.ml src/interface/js_helper_.ml version.ml

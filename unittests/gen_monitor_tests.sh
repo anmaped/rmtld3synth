@@ -95,7 +95,7 @@ print_endline (Rmtld3.b3_to_string Mon3.mon);
 
 " > unittests.ml
 
-cp ../rmtld3.ml rmtld3.ml
+cp ../src/rmtld3.ml rmtld3.ml
 
 make
 
@@ -103,25 +103,31 @@ make
 ./unittests.native
 
 # read -p "Press enter to continue or wait 90s" -t 90
+if read -r -s -n 1 -t 90 -p "Press enter to abort" key #key in a sense has no use at all
+then
+    echo "aborted"
+else
+    echo "continued"
+	
+	make clean
 
-# make clean
+	# # remove files
+	rm Makefile
+	rm rmtld3.ml
+	rm mon1.ml
+	rm mon2.ml
+	rm mon3.ml
+	rm mon_sat1.ml
+	rm mon_sat2.ml
+	rm mon_sat3.ml
+	rm mon_sat1.trace
+	rm mon_sat2.trace
+	rm mon_sat3.trace
+	rm mon_sat4.trace
 
-# # remove files
-# rm Makefile
-# rm rmtld3.ml
-# rm mon1.ml
-# rm mon2.ml
-# rm mon3.ml
-# rm mon_sat1.ml
-# rm mon_sat2.ml
-# rm mon_sat3.ml
-# rm mon_sat1.trace
-# rm mon_sat2.trace
-# rm mon_sat3.trace
-# rm mon_sat4.trace
+	# #remove cpp11 files
+	rm -r -f mon1/
+	rm -r -f mon2/
+	rm -r -f mon3/
 
-# #remove cpp11 files
-# rm -r -f mon1/
-# rm -r -f mon2/
-# rm -r -f mon3/
-
+fi

@@ -19,8 +19,10 @@ let () =
   dispatch begin function
     (* Add our rules after the standard ones. *)
   | After_rules ->
+    Pathname.define_context "." ["."; "src"];
+    Pathname.define_context "src" ["."; "src/interface"];
+    Pathname.define_context "src/interface" ["."; "src" ];
 
-                  Pathname.define_context "." ["."; "interface"];
 
   let sexplib_dir = ocamlfind_query "sexplib" in
   let pa_sexp_conv_dir = ocamlfind_query "pa_sexp_conv" in
