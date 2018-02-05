@@ -24,7 +24,7 @@ clean-tests:
 install:
 	@echo "OS: ${OS}"
 	@echo "Installing rmtld3synth.native to ${PREFIX}/bin"
-	mkdir --parents ${PREFIX}/bin; cp _build/rmtld3synth.native ${PREFIX}/bin/rmtld3synth$(EXT)
+	mkdir --parents ${PREFIX}/bin; cp _build/src/rmtld3synth.native ${PREFIX}/bin/rmtld3synth$(EXT)
 	@echo "Please install Z3 libs"
 
 uninstall:
