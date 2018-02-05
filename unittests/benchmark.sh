@@ -27,6 +27,8 @@ declare -a arrayrmtld=(
 
 # Parsing parameters and executing benchmarks
 
+SOLVEFLAG=--solve-z3
+
 if [ $# -eq 0 ] ; then
     echo "No arguments supplied"
 elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
@@ -56,7 +58,7 @@ elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
 
       echo $i " / " ${arrayrmtldlength} " : " ${arrayrmtld[$i-1]}
       START=$(date +%s.%N)
-      OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solve-z3 --input-latexeq "$REPP" > "t/testrmtld$i.smt2"
+      OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 $SOLVEFLAG --input-latexeq "$REPP" > "t/testrmtld$i.$sample.smt2"
       END=$(date +%s.%N)
 
       OUT=$?

@@ -34,8 +34,8 @@ let rmtld3synthsmt formula helper =
 
 (define-sort Trace () (Array Time Proptype) )
 
-(declare-datatypes () ((Fourvalue FVTRUE FVFALSE FVUNKNOWN FVSYMBOL)))
-(declare-datatypes () ((Threevalue TVTRUE TVFALSE TVUNKNOWN)))
+(declare-datatypes () ((Fourvalue (FVTRUE) (FVFALSE) (FVUNKNOWN) (FVSYMBOL) )))
+(declare-datatypes () ((Threevalue (TVTRUE) (TVFALSE) (TVUNKNOWN) )))
 
 (define-fun tvnot ((phi Threevalue)) Threevalue
 	(ite (= phi TVTRUE) TVFALSE (ite (= phi TVFALSE) TVTRUE TVUNKNOWN) )
@@ -110,7 +110,7 @@ let rmtld3synthsmt formula helper =
 		" in
 
 		let evalfold id = if gamma > 1 then "
-(declare-fun evalfold" ^ id ^ " ( (Time) (Time)) Fourvalue )
+(declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue )
 (assert (forall ((x Time) (i Time))
   (ite (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) )
     (ite (> x i)
@@ -146,7 +146,7 @@ let rmtld3synthsmt formula helper =
 		" in
 
 		let evalfold id = "
-(declare-fun evalfold" ^ id ^ " ( (Time) (Time)) Fourvalue )
+(declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue )
 (assert (forall ((x Time) (i Time)) (=> (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) ) (ite
 	(> x i)
 	(= (evalb" ^ id ^ " trc x (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i )  )
@@ -182,7 +182,7 @@ let rmtld3synthsmt formula helper =
 		" in
 
 		let evalfold id = "
-(declare-fun evalfold" ^ id ^ " ( (Time) (Time)) Fourvalue )
+(declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue )
 (assert (forall ((x Time) (i Time)) (=> (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) ) (ite
     (> x i)
 	(= (evalb" ^ id ^ " trc x i (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i )  )
