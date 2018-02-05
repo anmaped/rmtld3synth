@@ -10,6 +10,7 @@ open Rmtld3synth_helper
 let rmtld3synthsmt formula helper = 
 
 	let common_types = "
+;(set-logic AUFNIRA)
 (set-option :auto_config false) ; Usually a good idea
 (set-option :model.v2 true)
 (set-option :smt.phase_selection 0)
@@ -66,7 +67,7 @@ let rmtld3synthsmt formula helper =
 	 )
 )
 
-(define-fun mapb3 ( (x (Pair bool Fourvalue)) ) Threevalue
+(define-fun mapb3 ( (x (Pair Bool Fourvalue)) ) Threevalue
 
 	(ite (and (= (first x) true) (= (second x) FVSYMBOL )) TVUNKNOWN 
 		(ite (and (= (first x) false) (= (second x) FVSYMBOL )) TVFALSE 
