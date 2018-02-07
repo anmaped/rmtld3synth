@@ -26,4 +26,4 @@ build: [
 install: [make "install"]
 remove: ["ocamlfind" "remove" "rmtld3synth"]
 
-build-test: [make "tests"]
+run-test: [make "tests"]

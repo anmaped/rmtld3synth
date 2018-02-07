@@ -27,7 +27,7 @@ declare -a arrayrmtld=(
 
 # Parsing parameters and executing benchmarks
 
-SOLVEFLAG=--solve-z3
+SOLVEFLAG="--solver-z3 --recurvive-unrolling"
 
 if [ $# -eq 0 ] ; then
     echo "No arguments supplied"

@@ -20,7 +20,7 @@ let () =
     (* Add our rules after the standard ones. *)
   | After_rules ->
 
-                  Pathname.define_context "." ["."; "interface"];
+                  Pathname.define_context "." ["."; "gtests"];
 
   let sexplib_dir = ocamlfind_query "sexplib" in
   let pa_sexp_conv_dir = ocamlfind_query "pa_sexp_conv" in

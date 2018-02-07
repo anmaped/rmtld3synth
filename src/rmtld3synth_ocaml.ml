@@ -114,13 +114,13 @@ let compute_uless gamma f1 f2 k u t =
   end
 "
 
-(* differs from uless on "eval_i" and "sub_k m (gamma +. Float.epsilon)" *)
+(* differs from uless on "eval_i" and "sub_k m (gamma +. (epsilon_float *. 100.) )" *)
 let compute_fm_ueq_body = "
 let compute_ueq gamma f1 f2 k u t =
   let t_i = t in
   let m = (k,u,t) in
-  let eval_i b1 b2 =
-    if t_i +. gamma >=t then
+  let eval_i t b1 b2 =
+    if t -. t_i = gamma then
       b3_to_b4 b2
     else if b1 <> True then
       b3_to_b4 b1
@@ -132,7 +132,7 @@ let compute_ueq gamma f1 f2 k u t =
     if v <> Symbol then
       v
     else
-      eval_i (f1 k u t) (f2 k u t)
+      eval_i t (f1 k u t) (f2 k u t)
   in
 
   let eval_fold (k,u,t) f1 f2 x =
@@ -144,7 +144,7 @@ let compute_ueq gamma f1 f2 k u t =
   else
   begin
     let k,_,t = m in
-    let subk = sub_k m (gamma +. epsilon_float) in
+    let subk = sub_k m (gamma +. (epsilon_float *. 100.) ) in
     let eval_c = eval_fold m f1 f2 subk in
     if eval_c = Symbol then
       if k.duration_of_trace <= (t +. gamma) then
@@ -157,7 +157,7 @@ let compute_ueq gamma f1 f2 k u t =
   end
 "
 
-(* differs from uless on "sub_k m (gamma +. epsilon_float)" *)
+(* differs from uless on "sub_k m (gamma +. (epsilon_float *. 100.) )" *)
 let compute_fm_ulesseq_body = "
 let compute_uless gamma f1 f2 k u t =
   let m = (k,u,t) in
@@ -186,7 +186,7 @@ let compute_uless gamma f1 f2 k u t =
   else
   begin
     let k,_,t = m in
-    let subk = sub_k m (gamma +. epsilon_float) in
+    let subk = sub_k m (gamma +. (epsilon_float *. 100.) ) in
     let eval_c = eval_fold m f1 f2 subk in
     if eval_c = Symbol then
       if k.duration_of_trace <= (t +. gamma) then

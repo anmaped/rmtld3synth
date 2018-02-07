@@ -334,11 +334,11 @@ let synth_cpp11_compute (out_file,out_dir) cluster_name monitor_name monitor_per
 
   if out_file <> "" || out_dir <> "" then
     begin
-    let stream = open_out (cluster_name^"/"^monitor_name^"_compute.h") in
+    let stream = open_out (out_dir^"/"^monitor_name^"_compute.h") in
       Printf.fprintf stream "%s\n" code1;
     close_out stream;
 
-    let stream = open_out (cluster_name^"/"^String.capitalize_ascii monitor_name^".h") in
+    let stream = open_out (out_dir^"/"^String.capitalize_ascii monitor_name^".h") in
       Printf.fprintf stream "%s\n" code2;
     close_out stream;
     end
@@ -350,11 +350,11 @@ let synth_cpp11_compute (out_file,out_dir) cluster_name monitor_name monitor_per
   (* monitor dependent functions ends here *)
 ;;
 
-let synth_cpp1_external_dep cluster_name helper =
+let synth_cpp1_external_dep src_dir cluster_name helper =
 
 (* the next functions will be used to manage the buffers assigned to each formula *)
 
-  let stream = open_out (cluster_name^"/Rmtld3_reader.h") in
+  let stream = open_out (src_dir^"/Rmtld3_reader.h") in
   let code = "
   #ifndef _RMTLD3_READER_H_
   #define _RMTLD3_READER_H_
@@ -519,7 +519,7 @@ let synth_cpp1_external_dep cluster_name helper =
   close_out stream;
 
 
-  let stream = open_out (cluster_name^"/Rmtld3_reader_it.h") in
+  let stream = open_out (src_dir^"/Rmtld3_reader_it.h") in
   let code = "
 
   #include \"RTML_reader.h\"
@@ -639,7 +639,7 @@ let synth_cpp1_external_dep cluster_name helper =
   close_out stream;
 
 
-  let stream = open_out (cluster_name^"/rmtld3.h") in
+  let stream = open_out (src_dir^"/rmtld3.h") in
   let code = "
   #ifndef _RMTLD3_H_
   #define _RMTLD3_H_
@@ -712,9 +712,9 @@ let synth_cpp1_external_dep cluster_name helper =
 ;;
 
 
-let synth_cpp11_env cluster_name evt_subtype event_queue_size helper =
+let synth_cpp11_env src_dir cluster_name evt_subtype event_queue_size helper =
 (* this standalone cpp file instantiates the monitors that have been synthesized *)
-  let stream = open_out (cluster_name^"/"^ cluster_name ^".cpp") in
+  let stream = open_out (src_dir^"/"^ cluster_name ^".cpp") in
   let headers = List.fold_left (fun h (monitor_name,_,_) -> h^"#include \""^String.capitalize_ascii monitor_name^".h\"\n" ) "" (get_settings_monitor helper) in
   let functions = List.fold_left (fun f (monitor_name,monitor_period,_) -> f^String.capitalize_ascii monitor_name^" mon_"^monitor_name^"("^string_of_int monitor_period^");\n" ) "" (get_settings_monitor helper) in
   let code = headers ^"#include \"RTML_buffer.h\"
@@ -738,7 +738,7 @@ in
   Printf.fprintf stream "%s\n" code;
   close_out stream;
 
-let stream = open_out (cluster_name^"/"^ cluster_name ^".h") in
+let stream = open_out (src_dir^"/"^ cluster_name ^".h") in
 let propositions = 
   let tbl = get_proposition_hashtbl helper in
   Hashtbl.fold (fun a_string b_int prop_list -> prop_list^ "#define P_"^a_string^" "^(string_of_int b_int)^"\n" ) tbl ""
@@ -761,7 +761,7 @@ Printf.fprintf stream "%s\n" code;
 close_out stream;
 
 
-let stream = open_out (cluster_name^"/Makefile") in
+let stream = open_out (src_dir^"/Makefile") in
 let code =
 "
 .DEFAULT_GOAL := all
@@ -778,7 +778,7 @@ arm-monitor:
 \t arm-none-eabi-g++ -std=c++0x -march=armv7-m -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
 
 x86-monitor:
-\t$(GXX) -Wall -g -O0 -std=c++11 -I../../rtmlib -D__x86__ --verbose -c "^cluster_name^".cpp
+\t$(GXX) -Wall -g -O0 -std=c++11 -I../../../rtmlib -D__x86__ --verbose -c "^cluster_name^".cpp
 
 .PHONY: tests
 tests:

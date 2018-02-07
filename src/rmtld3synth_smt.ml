@@ -7,6 +7,8 @@ open Sexplib.Conv
 
 open Rmtld3synth_helper
 
+let unroll_until = ref true
+
 let rmtld3synthsmt formula helper = 
 
 	let common_types = "
@@ -49,13 +51,6 @@ let rmtld3synthsmt formula helper =
 	(ite (< eta1 eta2) TVTRUE TVFALSE )
 )
 	" in
-
-	(*  ( b31 == T_TRUE || b32 == T_TRUE ) ? T_TRUE : \\
-      (( b31 == T_FALSE && b32 == T_FALSE ) ? T_FALSE : T_UNKNOWN) *)
-
-      (* #define b3_lessthan(n1,n2) \\
-    ( (std::get<1>(n1) || std::get<1>(n2))? T_UNKNOWN : ( ( std::get<0>(n1) < std::get<0>(n2) )? T_TRUE : T_FALSE ) )*)
-
 
 	let map_macros = "
 (define-fun mapb4 ( (phi Threevalue) ) Fourvalue
@@ -109,7 +104,21 @@ let rmtld3synthsmt formula helper =
 )
 		" in
 
-		let evalfold id = if gamma > 1 then "
+		let evalfold id = if !unroll_until then
+		(
+			let cartesian l l' = List.concat (List.map (fun e -> List.map (fun e' -> (e,e')) l') l) in
+			(* unrooling the recursion just in case (speedup) *)
+			let lst_all_comb = cartesian (List.of_enum (0--(gamma + t))) (List.of_enum (0--(gamma + t)))
+			in List.fold_left (fun a (x,i) -> a^"\n"^(
+				if x > i then
+					"(assert (= (evalb" ^ id ^ " trc "^ string_of_int x ^" (evalfold" ^ id ^ " (- "^ string_of_int x ^" 1) "^ string_of_int i ^" )) (evalfold" ^ id ^ " "^ string_of_int x ^" "^ string_of_int i ^" ) ) )"
+				else
+					"(assert (= (evalb" ^ id ^ " trc "^ string_of_int x ^" FVSYMBOL) (evalfold" ^ id ^ " "^ string_of_int x ^" "^ string_of_int i ^")) )"
+    
+			) ) ("(declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue )") lst_all_comb
+		)
+		else
+		( if gamma > 1 then "
 (declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue )
 (assert (forall ((x Time) (i Time))
   (ite (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) )
@@ -120,11 +129,13 @@ let rmtld3synthsmt formula helper =
     (= FVUNKNOWN (evalfold" ^ id ^ " x i))
   ))
 )
-		" else if gamma = 1 then "
+		"
+		  else if gamma = 1 then "
 (define-fun evalfold" ^ id ^ " ((x Time) (i Time)) Fourvalue
   (evalb" ^ id ^ " trc x FVSYMBOL)
-)" else raise (Failure ("gamma == 0"))
-	in 
+)"
+		  else raise (Failure ("gamma == 0"))
+		) in
 		let evalc id = "
 (define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
 	(mk-pair (>= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " (- mt 1) mtb ))
@@ -171,7 +182,7 @@ let rmtld3synthsmt formula helper =
 	let compute_until_equal id t gamma (comp1, comp1_append) (comp2, comp2_append) =
 		let evaliEq id = "
 (define-fun evaliEq" ^ id ^ " ((b1 Threevalue) (b2 Threevalue) (mt Time) (mtb Time)) Fourvalue
-	(ite (>= mt (+ mtb "^ string_of_int gamma ^")) (mapb4 b2) (ite (= b1 TVTRUE) FVSYMBOL (mapb4 b1) ) )
+	(ite (= mt (+ mtb "^ string_of_int gamma ^")) (mapb4 b2) (ite (= b1 TVTRUE) FVSYMBOL (mapb4 b1) ) )
 )
 	    " in
 

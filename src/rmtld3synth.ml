@@ -104,6 +104,8 @@ open Rmtld3synth_ocaml
 open Z3solver_
 open Rmtld3synth_helper
 
+let set_recursive_unrolling f = Rmtld3synth_smt.unroll_until := true
+
 
 let chose_synthesis a b c =
   if !cpp11_lang then a () else if !ocaml_lang then b () else if !spark14_lang then c ()
@@ -169,8 +171,8 @@ let mon_gen fm =
     if !out_dir <> "" then
     begin
     (* External dependencies and environment for cpp11 *)
-    synth_cpp1_external_dep cluster_name helper;
-    synth_cpp11_env cluster_name evt_subtype event_queue_size helper;
+    synth_cpp1_external_dep (if !out_dir <> "" then !out_dir else "") cluster_name helper;
+    synth_cpp11_env (if !out_dir <> "" then !out_dir else "") cluster_name evt_subtype event_queue_size helper;
     end
     
     end
@@ -291,7 +293,8 @@ let _ =
     ("--synth-spark2014", Arg.Unit (set_spark14_language), " Enables synthesis for Spark2014 language (unsupported)\n\n Flags for solving: ");
 
     ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD (Experimental)");
-    ("--solve-z3",  Arg.Unit (set_solve_z3), " Enables solving smtlibv2 problems using Z3 SMT solver");
+    ("--solver-z3",  Arg.Unit (set_solve_z3), " Enables solving smtlibv2 problems using Z3 SMT solver");
+    ("--recurvive-unrolling", Arg.Unit (set_recursive_unrolling), " Enables recursive unrolling");
 
     ("--solve-statistics",  Arg.Unit (set_solve_statistics), " Enables printing the solve statistics") ;
     ("--get-trace",  Arg.Unit (set_get_schedule), " Returns the schedule") ;
