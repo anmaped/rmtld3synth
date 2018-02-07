@@ -23,6 +23,10 @@ opam depext -y conf-m4
 opam pin add travis-opam https://github.com/${fork_user}/ocaml-ci-scripts.git#${fork_branch}
 
 # MODIFIED HERE !
+
+# This is a workaround for https://github.com/ocaml/opam-repository/issues/11374.
+opam pin add -y --no-action jbuilder 1.0+beta16
+
 OLD_DIR=$(pwd)
 cd ..
 
@@ -56,6 +60,7 @@ sudo PATH=$PATH make install
 export OPAMBUILDTEST=0
 
 cd ${OLD_DIR}
+
 # UNTIL HERE !
 
 echo -en "travis_fold:end:prepare.ci\r"

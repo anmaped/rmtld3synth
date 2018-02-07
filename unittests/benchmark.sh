@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # bechmark file
 echo "Initiating the benchmark process"
 
@@ -44,9 +46,11 @@ elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
 
   echo "Number of formulas: $arrayrmtldlength"
   
+  declare -A arr
+
   mkdir t
 
-  for (( sample=5; sample<50; sample+=5 ));
+  for (( sample=5, j=1; sample<50; sample+=5, j++ ));
   do
     echo $sample
 
@@ -69,12 +73,22 @@ elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
 
       DIFF=$(echo "$END - $START" | bc)
       echo $DIFF
+      arr[$j,$i]=$DIFF
 
       #z3 "test$i.smt2" > "results$i.txt"
     done
   done
 
-
+  line=""
+  for (( i=1; i<${arrayrmtldlength}+1; i++ ));
+  do
+    line=""
+    for (( sample=5, j=1; sample<50; sample+=5, j++ ));
+    do
+        line+="${arr[$j,$i]}, "
+    done
+    echo $line
+  done
 
 elif [ $# -eq 1 ] && [ $1 == "rmdsl" ] ; then
   echo "Chosen option: $1"
