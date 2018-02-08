@@ -104,11 +104,13 @@ elif [ $# -eq 1 ] && [ $1 == "rmdsl" ] ; then
 
   mkdir trmdsl
 
+  VERBOSE="--verbose 2"
+
   # use for loop to read all values and indexes
   for (( i=1; i<${arrayrdsllength}+1; i++ ));
   do
     echo $i " / " ${arrayrdsllength} " : " ${arrayrdsl[$i-1]}
-    OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solve-z3 --get-schedule --input-rmdsl "${arrayrdsl[$i-1]}" > "trmdsl/testrmdsl$i.smt2" &
+    OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solver-z3 --get-trace --input-rmdsl "${arrayrdsl[$i-1]}" $VERBOSE > "trmdsl/testrmdsl$i.smt2" &
     OUT=$?
     if [ $OUT -ne 0 ]; then
       echo "WARNING: THE BENCHMARK HAS NOT BEEN COMPLETED!!!"

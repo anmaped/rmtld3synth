@@ -284,6 +284,7 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
           | Fland(a)         -> Flor(feed@[ Fland(a)])
           | FIsol(a)         -> Flor(feed@[ FIsol(a)])
           | FVar(a)          -> Flor(feed@[ FVar(a)])
+          | FNot(a)          -> Flor(feed@[ FNot(a)])
           | FBreak(a)        -> Flor(feed@a)
 
           | _ -> raise (Failure ("bad expression for or: " ^ ( Sexp.to_string_hum (sexp_of_intermediate_ltx_fm (hd prefix) ))))

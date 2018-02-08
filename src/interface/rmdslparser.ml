@@ -284,25 +284,38 @@ let rec rmtld3_fm_of_rmdsl' ex : ((rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm -> (
   | a                -> raise (Failure ("Unsupported expression rmdsl_rs "^ Sexp.to_string_hum (sexp_of_rmdsl_rs a) ))
 
 
-let rmtld3_fm_lst_of_rmdsl_lst expression = let rmdsl_lst = rmtld3_fm_of_rmdsl' expression in
-  fold_left (fun a b ->
-    let ex,ex2,tp = b (mtrue,mtrue,mk_empty_tuple) mtrue in
-    let hy = lcm_list (List.map (fun a -> int_of_float a) (fst tp)) in
-    let fm = malways (float_of_int hy) (mand ex ex2) in
-    let fm = mand (meventually 1. (mand (Prop("RN#core0")) (meventually 1. (Prop("RE#core0ts1")) )) ) (*) (Until(1.,(Prop("RN#core0")),(Prop("RE#core0ts1"))))*) fm in
+let rmtld3_fm_lst_of_rmdsl_lst expression =
+  let rmdsl_lst = rmtld3_fm_of_rmdsl' expression
+  in fold_left (fun a f ->
+    let ex,ex2,tp = f (mtrue,mtrue,mk_empty_tuple) mtrue in
+    let lcm_bound = lcm_list (List.map (fun a -> int_of_float a) (fst tp)) in
+    let fm = malways (float_of_int lcm_bound) (mand ex ex2) in
+    let fm = mand (meventually_eq 1. (mand (Prop("RN#core0")) (meventually_eq 1. (Prop("RE#core0ts1")) )) )
+    (*) (Until(1.,(Prop("RN#core0")),(Prop("RE#core0ts1"))))*) fm in
+
     (*let fm = (mand (fold_left (fun a b -> Until(1., a, b) ) mtrue (snd tp) ) (mimplies (Prop "RE#core0ts1") (Until(3., Prop "RE#core0ts1", Prop "RX#core0ts1")))) in*)
     (* constructs sequence of operation *)
 
-    verb (fun _ ->
-           print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex)) ;
-           print_endline "##*##" ;
-           print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex2)) ;
-           print_endline "##*##" ;
-           print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm fm)) ;
-           print_endline "##*##\ntp:\n" ;
-           print_endline ( Sexp.to_string_hum (sexp_of_tp_tuple tp)) ;
-           print_endline "--------------------------------------------------------------------------------\n" ;
-         ) ;
+    verb
+    ( fun _ ->
+      print_endline "Symbols ((list for LCM), propositions):" ;
+      print_endline ( Sexp.to_string_hum (sexp_of_tp_tuple tp)) ;
+
+      print_endline ("\nLCM bound: "^(string_of_int lcm_bound) ) ;
+
+      print_endline "\nTiming order of symbols: " ;
+      print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex)) ;
+
+      print_endline "\nDuaration of symbols: " ;
+      print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm ex2)) ;
+
+      print_endline "\nMerged rmtld3 formula: " ;
+      print_endline ( Sexp.to_string_hum (sexp_of_rmtld3_fm fm)) ;
+
+      print_endline "--------------------------------------------------------------------------------\n" ;
+    ) ;
+
     fm::a
+
   ) [] rmdsl_lst
 

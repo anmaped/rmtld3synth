@@ -64,13 +64,14 @@ let rmtld3synthsmt formula helper =
 
 (define-fun mapb3 ( (x (Pair Bool Fourvalue)) ) Threevalue
 
-	(ite (and (= (first x) true) (= (second x) FVSYMBOL )) TVUNKNOWN 
-		(ite (and (= (first x) false) (= (second x) FVSYMBOL )) TVFALSE 
+	(ite (= (second x) FVTRUE) TVTRUE
+		(ite (= (second x) FVSYMBOL )
+			(ite (first x) TVUNKNOWN TVFALSE) 
 			(ite (= (second x) FVFALSE ) TVFALSE 
-				(ite (= (second x) FVTRUE ) TVTRUE TVUNKNOWN)
-	 		)
+				 TVUNKNOWN
+			)
 	 	)
-	 )
+	)
 )
 	" in
 
@@ -89,31 +90,23 @@ let rmtld3synthsmt formula helper =
 
 	let compute_proposition id = "
 (define-fun computeprop" ^ id ^ " ( (mk Trace) (mt Time) ) Threevalue
-	(ite (= (select mk mt) "^ id ^") TVTRUE TVFALSE  );
+	(ite (>= trc_size mt) (ite (= (select mk mt) "^ id ^") TVTRUE TVFALSE ) TVUNKNOWN )
 )
 	" in
 
 
-(*
-  synthesis of until less than
-*)
-	let compute_until_less id t gamma (comp1, comp1_append) (comp2, comp2_append) =
-		let evalb id comp1 comp2 = "
-(define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (v Fourvalue) ) Fourvalue
-	(ite (= v FVSYMBOL) (evali "^ comp1 ^" "^ comp2 ^" ) v )
-)
-		" in
-
-		let evalfold id = if !unroll_until then
+(* parameterized synthesis functions for until operator *)
+let evalfold_param t gamma id =
+	let evalfold id = if !unroll_until then
 		(
 			let cartesian l l' = List.concat (List.map (fun e -> List.map (fun e' -> (e,e')) l') l) in
 			(* unrooling the recursion just in case (speedup) *)
 			let lst_all_comb = cartesian (List.of_enum (0--(gamma + t))) (List.of_enum (0--(gamma + t)))
 			in List.fold_left (fun a (x,i) -> a^"\n"^(
 				if x > i then
-					"(assert (= (evalb" ^ id ^ " trc "^ string_of_int x ^" (evalfold" ^ id ^ " (- "^ string_of_int x ^" 1) "^ string_of_int i ^" )) (evalfold" ^ id ^ " "^ string_of_int x ^" "^ string_of_int i ^" ) ) )"
+					"(assert (= (evalb" ^ id ^ " trc "^ string_of_int x ^" "^ string_of_int i ^" (evalfold" ^ id ^ " (- "^ string_of_int x ^" 1) "^ string_of_int i ^" )) (evalfold" ^ id ^ " "^ string_of_int x ^" "^ string_of_int i ^" ) ) )"
 				else
-					"(assert (= (evalb" ^ id ^ " trc "^ string_of_int x ^" FVSYMBOL) (evalfold" ^ id ^ " "^ string_of_int x ^" "^ string_of_int i ^")) )"
+					"(assert (= (evalb" ^ id ^ " trc "^ string_of_int x ^" "^ string_of_int i ^" FVSYMBOL) (evalfold" ^ id ^ " "^ string_of_int x ^" "^ string_of_int i ^")) )"
     
 			) ) ("(declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue )") lst_all_comb
 		)
@@ -123,8 +116,8 @@ let rmtld3synthsmt formula helper =
 (assert (forall ((x Time) (i Time))
   (ite (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) )
     (ite (> x i)
-	  (= (evalb" ^ id ^ " trc x (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i ) )
-	  (= (evalb" ^ id ^ " trc x FVSYMBOL) (evalfold" ^ id ^ " x i))
+	  (= (evalb" ^ id ^ " trc x i (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i ) )
+	  (= (evalb" ^ id ^ " trc x i FVSYMBOL) (evalfold" ^ id ^ " x i))
     )
     (= FVUNKNOWN (evalfold" ^ id ^ " x i))
   ))
@@ -132,13 +125,28 @@ let rmtld3synthsmt formula helper =
 		"
 		  else if gamma = 1 then "
 (define-fun evalfold" ^ id ^ " ((x Time) (i Time)) Fourvalue
-  (evalb" ^ id ^ " trc x FVSYMBOL)
+  (evalb" ^ id ^ " trc x i FVSYMBOL)
 )"
 		  else raise (Failure ("gamma == 0"))
-		) in
+		)
+	in evalfold id
+	in
+
+(*
+  synthesis of until less than
+*)
+	let compute_until_less id t gamma (comp1, comp1_append) (comp2, comp2_append) =
+		let evalb id comp1 comp2 = "
+(define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (mtb Time) (v Fourvalue) ) Fourvalue
+	(ite (= v FVSYMBOL) (evali "^ comp1 ^" "^ comp2 ^" ) v )
+)
+		" in
+
+		let evalfold id = evalfold_param t gamma id in
+
 		let evalc id = "
 (define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
-	(mk-pair (>= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " (- mt 1) mtb ))
+	(mk-pair (<= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " (- mt 1) mtb ))
 )
 		" in comp1_append ^ comp2_append ^ (evalb id comp1 comp2) ^ (evalfold id) ^ (evalc id) ^ "
 (define-fun computeUless" ^ id ^ "  ((mt Time) (mtb Time)) Threevalue
@@ -151,23 +159,16 @@ let rmtld3synthsmt formula helper =
 *)
     let compute_until_lessequal id t gamma (comp1, comp1_append) (comp2, comp2_append) =
 		let evalb id comp1 comp2 = "
-(define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (v Fourvalue) ) Fourvalue
+(define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (mtb Time) (v Fourvalue) ) Fourvalue
 	(ite (= v FVSYMBOL) (evali "^ comp1 ^" "^ comp2 ^" ) v )
 )
 		" in
 
-		let evalfold id = "
-(declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue )
-(assert (forall ((x Time) (i Time)) (=> (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) ) (ite
-	(> x i)
-	(= (evalb" ^ id ^ " trc x (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i )  )
-	(= (evalb" ^ id ^ " trc x FVSYMBOL) (evalfold" ^ id ^ " x i))
-   )))
-)
-		" in 
+		let evalfold id = evalfold_param t gamma id in
+
 		let evalc id = "
 (define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
-	(mk-pair (>= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " mt mtb ))
+	(mk-pair (<= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " mt mtb ))
 )
 		" in comp1_append ^ comp2_append ^ (evalb id comp1 comp2) ^ (evalfold id) ^ (evalc id) ^ "
 (define-fun computeUlesseq" ^ id ^ "  ((mt Time) (mtb Time)) Threevalue
@@ -192,18 +193,11 @@ let rmtld3synthsmt formula helper =
 )
 		" in
 
-		let evalfold id = "
-(declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue )
-(assert (forall ((x Time) (i Time)) (=> (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) ) (ite
-    (> x i)
-	(= (evalb" ^ id ^ " trc x i (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i )  )
-	(= (evalb" ^ id ^ " trc x i FVSYMBOL) (evalfold" ^ id ^ " x i))
-   )))
-)
-		" in 
+		let evalfold id = evalfold_param t gamma id in
+
 		let evalc id = "
 (define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
-	(mk-pair (>= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " mt mtb ))
+	(mk-pair (<= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " mt mtb ))
 )
 		" in comp1_append ^ comp2_append ^ evaliEq id ^ (evalb id comp1 comp2) ^ (evalfold id) ^ (evalc id) ^ "
 (define-fun computeUequal" ^ id ^ "  ((mt Time) (mtb Time)) Threevalue
@@ -214,7 +208,7 @@ let rmtld3synthsmt formula helper =
   END synthesis of until equal
 *)
 
-	let duration id t dt formula =
+	let duration id t dt formula = (* trc_size >= t + dt is the worst case! (more improvments in the future are possible) *)
 		let indicator id = "
 (define-fun indicator"^ id ^" ((mk Trace) (mt Time)) Int
 	(ite (= "^ formula ^" TVTRUE) 1 0)
@@ -231,6 +225,7 @@ let rmtld3synthsmt formula helper =
 )
 		" in
 	("(computeduration"^ id ^" (+ mt "^ dt ^") mt)", (indicator id) ^ (evaleta id) ^"
+(assert (>= trc_size (+ "^ string_of_int t ^" "^ dt ^") ))
 (define-fun computeduration"^ id ^" ((mt Time) (mtb Time)) Duration
 	(evaleta"^ id ^" (- mt 1) mtb)
 )

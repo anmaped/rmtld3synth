@@ -55,10 +55,22 @@ let get_scheduler ctx model helper =
   verb (fun _ -> List.iter (fun el -> print_endline ( "kind: "^(string_of_int (int_of_decl_kind (get_decl_kind el) ) )^ " Name: " ^ ( get_string (get_name el) ) ) )  (get_decls model) ) ;
   
   let xx = List.find (fun el -> get_string (get_name el) = "trc") (get_decls model) in
+  let size_fun_ = List.find (fun el -> get_string (get_name el) = "trc_size") (get_decls model) in
 
   let interp = (match get_func_interp model xx with Some x -> x | None -> raise (Failure ("Function interpret is not possible."))) in
   verb (fun _ -> print_endline ("N interp: "^(string_of_int (get_num_entries interp)) ) ) ;
   verb (fun _ -> print_endline (Z3.Model.FuncInterp.to_string interp) ) ;
+
+  let size_fun_interp =
+  (
+    match get_const_interp model size_fun_ with
+    | Some x -> x
+    | None -> raise (Failure ("Interpreting the function (size_fun_interp) is not possible."))
+  ) in
+
+  verb (fun _ -> print_endline ("\nTrace size: "^(Z3.Expr.to_string size_fun_interp)^"\n") ) ;
+
+  let size = int_of_string (Z3.Expr.to_string size_fun_interp) + 2 in (* with interpretation of two more elements *)
 
   let exp2 = get_else interp in
 
@@ -71,5 +83,5 @@ let get_scheduler ctx model helper =
     verb (fun _ -> print_endline (string_of_int a^" -> "^ (find_proposition_rev_hashtbl (int_of_string name)  helper)) ) ;
     (find_proposition_rev_hashtbl (int_of_string name)  helper)::b
     (* print_endline (Z3.AST.to_string (ast_of_expr rpl_exp)) ; *)
-  ) (List.of_enum (0--20)) []
+  ) (List.of_enum (0--size)) []
   
