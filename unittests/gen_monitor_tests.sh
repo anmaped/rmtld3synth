@@ -64,7 +64,7 @@ $CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --o
 echo "Generating Unit tests for smtlibv2"
 
 # more interesting formulas
-CMDSAT="../rmtld3synth.native --synth-smtlibv2 --solver-z3 --recurvive-unrolling --get-trace --trace-style "tinterval" --input-latexeq"
+CMDSAT="../rmtld3synth.native --synth-smtlibv2 --solver-z3 --recursive-unrolling --get-trace --trace-style "tinterval" --input-latexeq"
 
 sample=10 # sample can be changed
 for (( i=1; i<${arrayrmtldlength}+1; i++ ));

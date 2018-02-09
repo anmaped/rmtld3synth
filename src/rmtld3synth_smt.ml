@@ -7,12 +7,30 @@ open Sexplib.Conv
 
 open Rmtld3synth_helper
 
-let unroll_until = ref true
+let unroll_until = ref false
+let solver = ref ""
+
+
+let isZ3SolverEnabled () = !solver = "z3"
+let isCvc4SolverEnabled () = !solver = "cvc4"
 
 let rmtld3synthsmt formula helper = 
 
-	let common_types = "
-;(set-logic AUFNIRA)
+	let common_header = "
+(set-info :smt-lib-version 2.5)
+	" in
+
+	let common_header_cvc4 = "
+"
+^ (if !unroll_until then "(set-logic QF_AUFDTNIRA)" else "(set-logic AUFDTNIRA)")
+^"
+(set-info :source |https://github.com/anmaped/rmtld3synth|)
+(set-info :license \"https://creativecommons.org/licenses/by/4.0/\")
+;(set-info :category <category>)
+;(set-info :status <status>)
+	" in
+
+	let common_header_z3 = "
 (set-option :auto_config false) ; Usually a good idea
 (set-option :model.v2 true)
 (set-option :smt.phase_selection 0)
@@ -27,8 +45,9 @@ let rmtld3synthsmt formula helper =
 (set-option :smt.delay_units_threshold 300)
 
 (set-option :smt.qi.eager_threshold 400)
+	" in
 
-
+	let common_types = "
 (define-sort Proptype () Int)
 (define-sort Time () Int)
 (define-sort Duration () Time)
@@ -52,7 +71,7 @@ let rmtld3synthsmt formula helper =
 )
 	" in
 
-	let map_macros = "
+	let common_macros = "
 (define-fun mapb4 ( (phi Threevalue) ) Fourvalue
 
 	(ite (= phi TVTRUE ) FVTRUE 
@@ -75,14 +94,14 @@ let rmtld3synthsmt formula helper =
 )
 	" in
 
-	let evali = "
+	let common_evali = "
 (define-fun evali ((b1 Threevalue) (b2 Threevalue)) Fourvalue
 	(ite (= b2 TVFALSE) (ite (= b1 TVTRUE) FVSYMBOL (mapb4 b1) ) (mapb4 b2) )
 )
 	" in
 
 
-	let new_trace = "
+	let common_trace_definition = "
 (declare-const trc Trace )
 (declare-const trc_size Time)
 	" in
@@ -132,8 +151,9 @@ let evalfold_param t gamma id =
 	in evalfold id
 	in
 
+
 (*
-  synthesis of until less than
+  synthesis of U<
 *)
 	let compute_until_less id t gamma (comp1, comp1_append) (comp2, comp2_append) =
 		let evalb id comp1 comp2 = "
@@ -155,7 +175,7 @@ let evalfold_param t gamma id =
 	" in
 
 (*
-  synthesis of until less than or equal
+  synthesis of U<=
 *)
     let compute_until_lessequal id t gamma (comp1, comp1_append) (comp2, comp2_append) =
 		let evalb id comp1 comp2 = "
@@ -178,7 +198,7 @@ let evalfold_param t gamma id =
 
 
 (*
-  synthesis of until equal
+  synthesis of U=
 *)
 	let compute_until_equal id t gamma (comp1, comp1_append) (comp2, comp2_append) =
 		let evaliEq id = "
@@ -204,9 +224,7 @@ let evalfold_param t gamma id =
 	(mapb3 (evalc" ^ id ^ " mt mtb))
 )
 	" in
-(*
-  END synthesis of until equal
-*)
+
 
 	let duration id t dt formula = (* trc_size >= t + dt is the worst case! (more improvments in the future are possible) *)
 		let indicator id = "
@@ -233,7 +251,7 @@ let evalfold_param t gamma id =
 	in
 
 
-(* unfold formula *)
+(* unfold the struture of the formula *)
 let rec synth_smtlib_tm t term helper =
   match term with
     | Constant value       -> (string_of_int(int_of_float value), "")
@@ -311,15 +329,21 @@ and synth_smtlib_fm t formula helper =
     | _ -> raise (Failure ("synth_smtlib_fm: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula)))) in
 
 
-(* call the unfold function *)
-(*let formula2 = Until(10., Prop("A"), Prop("B")) in
-let formula = Until(10., Until(10., Prop("A"), Prop("B")), Prop("B")) in*)
+(* call the formula unfolding function *)
+let toassert,smtlib_synthv25 = synth_smtlib_fm 0 formula helper in
 
-let toassert,x = synth_smtlib_fm 0 formula helper in
-
-common_types ^ map_macros ^ evali ^ new_trace ^ x ^ "
+common_header
+^ ( if isZ3SolverEnabled () then common_header_z3 else common_header_cvc4 )
+^ common_types
+^ common_macros
+^ common_evali
+^ common_trace_definition
+^ smtlib_synthv25
+^ "
 (define-fun allcheck  ((mk Trace) (mt Time)) Bool (= "^ toassert ^" TVTRUE) )
 
-(assert (forall ((t Time)) (>= (select trc t) 0)  ))
+"
+^ ( if isZ3SolverEnabled () then "(assert (forall ((t Time)) (>= (select trc t) 0)  ))" else "" )
+^"
 (assert (allcheck trc 0) )
 "

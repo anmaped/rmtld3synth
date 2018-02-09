@@ -82,13 +82,11 @@ let set_out_dir f = out_dir := f
 let set_ocaml_language f = ocaml_lang := true
 let set_cpp_language f = cpp11_lang := true
 let set_spark14_language f = spark14_lang := true
-let set_solve_z3 f = smt_solver := "z3"
 let set_solve_statistics f = solver_statistics_flag := true
 let set_get_schedule f = get_schedule_flag := true
 let set_trace_style f = trace_style := f
 let set_gen_rmtld_formula f = gen_rmtld_formula := true
 
-let isSolverEnabled () = !smt_solver = ""
 
 open Batteries
 open Unix
@@ -105,6 +103,8 @@ open Z3solver_
 open Rmtld3synth_helper
 
 let set_recursive_unrolling f = Rmtld3synth_smt.unroll_until := true
+let set_solve_z3 f = Rmtld3synth_smt.solver := "z3"
+let set_solve_cvc4 f = Rmtld3synth_smt.solver := "cvc4"
 
 
 let chose_synthesis a b c =
@@ -220,7 +220,7 @@ begin
   let helper = mk_helper in
   let stmlibv2_str = rmtld3synthsmt formula helper in
 
-  if !smt_solver = "z3" then
+  if isZ3SolverEnabled () then
   begin
     verb (fun _ -> print_endline "Z3 solver enabled."; ) ;
     let ctx,exp = parse_smtlibv2 stmlibv2_str in
@@ -244,14 +244,12 @@ begin
         ()
       end;
     end
-
-
   end;
 
-  let stmlibv2_str = stmlibv2_str^"(check-sat-using (then qe smt))
 
+  let sv_str = if isCvc4SolverEnabled () then "(check-sat)" else if isZ3SolverEnabled () then "(check-sat-using (then qe smt))" else "(check-sat)"
+  in let stmlibv2_str = stmlibv2_str^sv_str^"
 (get-model)
-
 (get-info :all-statistics)
 " in
 
@@ -262,8 +260,8 @@ begin
     verb (fun _ -> print_endline ("SMTLIBv2 file "^(!out_file)^" saved.")) ;
   else
   begin
-    (* do not print if solver is enabled *)
-    if isSolverEnabled () then
+    (* it does not print if z3 solver is enabled *)
+    if not (isZ3SolverEnabled ()) then
     begin
       verb (fun _ ->
         print_endline "Synthesis for SMTLIBv2 \n" ;
@@ -294,7 +292,8 @@ let _ =
 
     ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD (Experimental)");
     ("--solver-z3",  Arg.Unit (set_solve_z3), " Enables solving smtlibv2 problems using Z3 SMT solver");
-    ("--recurvive-unrolling", Arg.Unit (set_recursive_unrolling), " Enables recursive unrolling");
+    ("--solver-cvc4",  Arg.Unit (set_solve_cvc4), " Enables solving smtlibv2 problems using cvc4 SMT solver");
+    ("--recursive-unrolling", Arg.Unit (set_recursive_unrolling), " Enables recursive unrolling");
 
     ("--solve-statistics",  Arg.Unit (set_solve_statistics), " Enables printing the solve statistics") ;
     ("--get-trace",  Arg.Unit (set_get_schedule), " Returns the schedule") ;
