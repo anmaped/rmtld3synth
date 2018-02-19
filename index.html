@@ -122,7 +122,7 @@ var menuData = [{
         {
             id: "1_1_3",
             name: "Bounded Invariant",
-            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\always_{< 4} \\ a \\rightarrow \\eventually_{= 2} \\ b\" --verbose 2"
+            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
         }]
     }, {
         id: "1_2",
@@ -167,11 +167,11 @@ var menuData = [{
               (LessThan (Duration (Constant 1000000) (Prop B)) \n\
                 (Constant 5000000)))))))) \n\
   (Or (Prop A) (Not (Or (Prop NOSYMBOL) (Not (Prop NOSYMBOL))))))\" --verbose 2'
-        }, {
+        }/*, {
             id: "1_3_2",
             name: "Use Case 2",
             cmd: "./rmtld3synth "
-        }]
+        }*/]
     }]
 }, {
     id: "2",
@@ -180,24 +180,29 @@ var menuData = [{
         id: "2_1",
         name: "Empirical",
         items: [{
-            id: "3_1_1",
+            id: "2_1_1",
             name: "Simple Temporal",
             cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
         },
         {
-            id: "3_1_2",
+            id: "2_1_2",
+            name: "Simple Temporal (recursively unrolled)",
+            cmd: "./rmtld3synth --synth-smtlibv2 --recursive-unrolling --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
+        },
+        {
+            id: "2_1_3",
             name: "Bounded Duration",
             cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
         },
         {
-            id: "3_1_3",
+            id: "2_1_4",
             name: "Bounded Invariant",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\always_{< 4} \\ a \\rightarrow \\eventually_{= 2} \\ b\" --verbose 2"
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
         },
         {
-            id: "3_1_4",
+            id: "2_1_5",
             name: "Simple Temporal with Bounded Duration",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\left( (a \\lor b) \\ \\until_{<10} \\ c \\right) \\land \\int^{9} c < 2\" --verbose 2"
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2\" --verbose 2"
         }]
     }, {
         id: "2_2",
@@ -211,11 +216,11 @@ var menuData = [{
             id: "2_2_2",
             name: "Advanced Single processor",
             cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}\" --verbose 2"
-        }, {
+        }/*, {
             id: "2_2_3",
             name: "Simple multi-processor",
             cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1\" --verbose 2"
-        }]
+        }*/]
     }]
 }];
 
