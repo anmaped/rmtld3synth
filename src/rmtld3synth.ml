@@ -8,7 +8,7 @@ open Rmtld3synth_helper
 
 
 type call_body = string * string
-module type Conversion =
+module type Translate_sig =
 sig
   val compute_tm_constant : value -> helper -> call_body
   val compute_tm_duration : call_body -> call_body -> helper -> call_body
@@ -24,46 +24,49 @@ sig
   val compute_fm_ulesseq : value -> call_body -> call_body -> helper -> call_body
 end;;
 
-module Conversion_cpp (Conv : Conversion) = struct
+module Translation (T : Translate_sig) = struct
   (* Synthesis of the rmtld3 term *)
   let rec compute_term term helper =
     match term with
-      | Constant value       -> Conv.compute_tm_constant value helper
-      | Duration (di,phi)    -> Conv.compute_tm_duration (compute_term di helper) (compute phi helper) helper
-      | FPlus (tr1,tr2)      -> Conv.compute_tm_plus (compute_term tr1 helper) (compute_term tr2 helper) helper
-      | FTimes (tr1,tr2)     -> Conv.compute_tm_times (compute_term tr1 helper) (compute_term tr2 helper) helper
+      | Constant value       -> T.compute_tm_constant value helper
+      | Duration (di,phi)    -> T.compute_tm_duration (compute_term di helper) (compute phi helper) helper
+      | FPlus (tr1,tr2)      -> T.compute_tm_plus (compute_term tr1 helper) (compute_term tr2 helper) helper
+      | FTimes (tr1,tr2)     -> T.compute_tm_times (compute_term tr1 helper) (compute_term tr2 helper) helper
       | _                    -> raise (Failure "compute_terms: missing term")
 
   (* Synthesis of the rmtld3 formula *)
   and compute formula helper =
     match formula with
-      | True()                  -> Conv.compute_fm_true helper
-      | Prop p                  -> Conv.compute_fm_p p helper
-      | Not sf                  -> Conv.compute_fm_not (compute sf helper) helper
-      | Or (sf1, sf2)           -> Conv.compute_fm_or (compute sf1 helper) (compute sf2 helper) helper
-      | Until (gamma, sf1, sf2)     -> if gamma > 0. then Conv.compute_fm_uless gamma (compute sf1 helper) (compute sf2 helper) helper
+      | True()                  -> T.compute_fm_true helper
+      | Prop p                  -> T.compute_fm_p p helper
+      | Not sf                  -> T.compute_fm_not (compute sf helper) helper
+      | Or (sf1, sf2)           -> T.compute_fm_or (compute sf1 helper) (compute sf2 helper) helper
+      | Until (gamma, sf1, sf2)     -> if gamma > 0. then T.compute_fm_uless gamma (compute sf1 helper) (compute sf2 helper) helper
                                        else raise  (Failure "Gamma of U< operator is negative")
-      | Until_eq (gamma, sf1, sf2)  -> if gamma > 0. then Conv.compute_fm_ueq gamma (compute sf1 helper) (compute sf2 helper) helper
+      | Until_eq (gamma, sf1, sf2)  -> if gamma > 0. then T.compute_fm_ueq gamma (compute sf1 helper) (compute sf2 helper) helper
                                        else raise  (Failure "Gamma of U= operator is negative")
-      | Until_leq (gamma, sf1, sf2) -> if gamma > 0. then Conv.compute_fm_ulesseq gamma (compute sf1 helper) (compute sf2 helper) helper
+      | Until_leq (gamma, sf1, sf2) -> if gamma > 0. then T.compute_fm_ulesseq gamma (compute sf1 helper) (compute sf2 helper) helper
                                        else raise  (Failure "Gamma of U<= operator is negative")
-      | LessThan (tr1,tr2)      -> Conv.compute_fm_less (compute_term tr1 helper) (compute_term tr2 helper) helper
+      | LessThan (tr1,tr2)      -> T.compute_fm_less (compute_term tr1 helper) (compute_term tr2 helper) helper
       | _                       -> raise (Failure ("synth_mon: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
 
 end;;
 
-(* rmtld3 synthesis interface *)
+(*
+   CLI for rmtld3synth tool
+ *)
 
 let config_file = ref ""
 let rmtld_formula = ref ""
 let rmtld_formula_ltxeq = ref ""
 let expression_rmdsl = ref ""
-let smtlibv2_formula = ref false
+let smtlibv2_lang = ref false
 let simplify_formula = ref false
 let out_file = ref ""
 let out_dir = ref ""
 let cpp11_lang = ref false
 let ocaml_lang = ref false
+let tessla_lang = ref false
 let spark14_lang = ref false
 let smt_solver = ref ""
 let solver_statistics_flag = ref false
@@ -75,12 +78,13 @@ let set_config_file file = config_file := file
 let set_formulas f = rmtld_formula := f
 let set_formulas_ltxeq f = rmtld_formula_ltxeq := f
 let set_exp_rmdsl f = expression_rmdsl := f
-let set_smt_formula f = smtlibv2_formula := true
+let set_smt_formula f = smtlibv2_lang := true
 let set_simplify_formula f = simplify_formula := true
 let set_out_file f = out_file := f
 let set_out_dir f = out_dir := f
 let set_ocaml_language f = ocaml_lang := true
 let set_cpp_language f = cpp11_lang := true
+let set_tessla_language f = tessla_lang := true
 let set_spark14_language f = spark14_lang := true
 let set_solve_statistics f = solver_statistics_flag := true
 let set_get_schedule f = get_schedule_flag := true
@@ -95,10 +99,10 @@ open Sexplib.Conv
 
 
 open Rmtld3synth_simplify
-open Rmtld3synth_unittest
 open Rmtld3synth_smt
 open Rmtld3synth_cpp11
 open Rmtld3synth_ocaml
+(*open Rmtld3synth_tessla*)
 open Z3solver_
 open Rmtld3synth_helper
 
@@ -107,11 +111,14 @@ let set_solve_z3 f = Rmtld3synth_smt.solver := "z3"
 let set_solve_cvc4 f = Rmtld3synth_smt.solver := "cvc4"
 
 
-let chose_synthesis a b c =
-  if !cpp11_lang then a () else if !ocaml_lang then b () else if !spark14_lang then c ()
+let chose_synthesis a b c d =
+  if !cpp11_lang then a () else if !ocaml_lang then b () else if !tessla_lang then c () else if !spark14_lang then d ()
 
-let mon_gen fm =
-  (* helper to support query's settings along execution *)
+(*
+   Generation of monitors
+ *)
+let synth_monitor fm =
+  (* helper to support query's settings along the tool's execution *)
   let a,b,c = settings config_file in
   let c = if c <> [] then c else
     if fm <> mfalse then [("mon0",0,fm)]
@@ -150,12 +157,15 @@ let mon_gen fm =
   if !out_dir <> "" then create_dir (!out_dir^"/smt/") ;
 
 
-  (* for cpp11 and ocaml synthesis *)
-  let module Conv_cpp11 = Conversion_cpp(Rmtld3synth_cpp11) in
-  let module Conv_ocaml = Conversion_cpp(Rmtld3synth_ocaml) in
+  (*
+     Functors for synthesis
+   *)
+  let module Conv_cpp11 = Translation(Rmtld3synth_cpp11) in
+  let module Conv_ocaml = Translation(Rmtld3synth_ocaml) in
+  (*let module Conv_tessla = Translation(Rmtld3synth_tessla) in*)
 
   (*
-   * External and other dependencies for monitors (may include the RV model)
+   * External dependencies for monitors; it may include the RV model.
    *)
   
   chose_synthesis (fun a ->
@@ -179,9 +189,12 @@ let mon_gen fm =
   )
   (fun _ -> ())
   (fun _ -> ())
+  (fun _ -> ())
   ;
 
-  (* generate monitors *)
+  (*
+     Iteration for constructing monitors with certain name and period
+   *)
   List.fold_left (fun _ (monitor_name,monitor_period,formula) ->
 
     (*create_dir (cluster_name^"/"^monitor_name);*)
@@ -197,25 +210,22 @@ let mon_gen fm =
       synth_ocaml_compute (!out_file,!out_dir) cluster_name monitor_name monitor_period formula (Conv_ocaml.compute) helper
     )
     ( fun _ ->
+      (* monitor synthesis for tessla *)
+      (*synth_tessla_compute (!out_file,!out_dir) cluster_name monitor_name monitor_period formula (Conv_tessla.compute) helper*)()
+    )
+    ( fun _ ->
       (* monitor synthesis for spark14 *)
       ()
     )
     ;
 
-  ) () (get_settings_monitor helper);
-
-  
-  (* lets generate the tests *)
-  if !out_dir <> "" && (search_settings_string "gen_tests" helper) = "true" then
-  begin
-    create_dir (!out_dir^"/tests");
-    Rmtld3synth_unittest.test () cluster_name helper;
-
-    Rmtld3synth_unittest.rmtld3_unit_test_generation () (fun a b -> let x,_ = Conv_cpp11.compute a b in x) helper cluster_name helper;
-  end
+  ) () (get_settings_monitor helper)
 
 
-let sat_gen formula =
+(*
+   Synthesis of the satisfiability problem
+ *)
+let synth_sat_problem formula =
 begin
   let helper = mk_helper in
   let stmlibv2_str = rmtld3synthsmt formula helper in
@@ -287,18 +297,19 @@ let _ =
     ("--gen-rmtld-formula", Arg.Unit (set_gen_rmtld_formula), " Call `gen_formula_default` function" );
     ("--synth-smtlibv2", Arg.Unit (set_smt_formula), " Enables synthesis for SMT-LIBv2 language");
     ("--synth-ocaml", Arg.Unit (set_ocaml_language), " Enables synthesis for Ocaml language");
-    ("--synth-cpp11", Arg.Unit (set_cpp_language), " Enables synthesis for C++11 language");
-    ("--synth-spark2014", Arg.Unit (set_spark14_language), " Enables synthesis for Spark2014 language (unsupported)\n\n Flags for solving: ");
+    ("--synth-cpp11", Arg.Unit (set_cpp_language), " Enables synthesis for C++11 language\n\n Flags for solving: ");
+    (*("--synth-tessla", Arg.Unit (set_tessla_language), " Enables synthesis for TeSSLa (Experimental)");*)
+    (*("--synth-spark2014", Arg.Unit (set_spark14_language), " Enables synthesis for Spark2014 language (unsupported)");*)
 
     ("--simpl-cad", Arg.Unit (set_simplify_formula), " Simplify quantified RMTLD formulas using CAD (Experimental)");
     ("--solver-z3",  Arg.Unit (set_solve_z3), " Enables solving smtlibv2 problems using Z3 SMT solver");
     ("--solver-cvc4",  Arg.Unit (set_solve_cvc4), " Enables solving smtlibv2 problems using cvc4 SMT solver");
     ("--recursive-unrolling", Arg.Unit (set_recursive_unrolling), " Enables recursive unrolling");
 
-    ("--solve-statistics",  Arg.Unit (set_solve_statistics), " Enables printing the solve statistics") ;
+    ("--solver-statistics",  Arg.Unit (set_solve_statistics), " Enables printing the solver statistics") ;
     ("--get-trace",  Arg.Unit (set_get_schedule), " Returns the schedule") ;
     ("--trace-style", Arg.String (set_trace_style), " Sets the trace style\n\n Input:") ;
-    
+
 
     (* input models *)
     ("--input-sexp", Arg.String (set_formulas), " Inputs sexp expression (RMTLD3 formula)");
@@ -310,7 +321,7 @@ let _ =
     (*output models *)
     ("--out-file", Arg.String (set_out_file), " Set the output filename for synthesis");
     ("--out-src", Arg.String (set_out_dir), " Set the output directory for synthesis\n\n Options:");
-    
+
     ("--verbose", Arg.Set_int verb_mode, " Enables verbose mode");
     ("--version", Arg.Unit (fun () -> print_endline ("Git version "^(Version.git)); exit 0), " Version and SW information\n");
   ]
@@ -349,12 +360,12 @@ let _ =
     else fm
     in
 
-  (* for sat case *)
-  if !smtlibv2_formula <> false then
+  (* For synthesis with smtlibv2 *)
+  if !smtlibv2_lang <> false then
     begin
       if input_fm <> mfalse then
       begin
-        sat_gen (to_simplify (input_fm));
+        synth_sat_problem (to_simplify (input_fm));
       end
       else
         begin
@@ -368,7 +379,7 @@ let _ =
           );
 
           let _ = List.fold_left (fun a fm_goal ->
-            sat_gen (to_simplify fm_goal) ;
+            synth_sat_problem (to_simplify fm_goal) ;
             a + 1
           ) 1 fm_lst in
 
@@ -377,19 +388,13 @@ let _ =
         end
     end
 
-  (*else if !config_file <> "" then
-    begin
-      print_endline ("Default synthesis filename: " ^ !config_file);
-      mon_gen input_fm;
-    end*)
-
   else if !ocaml_lang then
     begin
       verb_m 1 (fun _ ->
         print_endline "Synthesis for Ocaml language" ;
         print_endline ("--------------------------------------------------------------------------------\n") ;
       ) ;
-      mon_gen input_fm;
+      synth_monitor input_fm;
     end
 
   else if !cpp11_lang then
@@ -398,7 +403,16 @@ let _ =
         print_endline "Synthesis for C++11 language" ;
         print_endline ("--------------------------------------------------------------------------------\n") ;
       ) ;
-      mon_gen input_fm;
+      synth_monitor input_fm;
+    end
+
+  else if !tessla_lang then
+    begin
+      verb_m 1 (fun _ ->
+        print_endline "Synthesis for TeSSLa language" ;
+        print_endline ("--------------------------------------------------------------------------------\n") ;
+      ) ;
+      synth_monitor input_fm;
     end
 
    else if !simplify_formula then
@@ -422,7 +436,7 @@ let _ =
       if inn <> mfalse then
         let smp = to_simplify inn in
         print_latex_formula smp
-      else raise (Failure ("cannot simplify the specified input."))
+      else raise (Failure ("Cannot simplify the specified input."))
       
     end
 

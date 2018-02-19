@@ -7,6 +7,14 @@ open Rmtld3synth_smt
 open Sexplib
 open Sexplib.Conv
 
+let _ out_dir cluster_name = 
+  (*
+     let's generate the tests
+   *)
+    create_dir (!out_dir^"/tests");
+    test () cluster_name helper;
+    rmtld3_unit_test_generation () (fun a b -> let x,_ = Conv_cpp11.compute a b in x) helper cluster_name helper;
+
 let rmtld3_unit_test_case_generation trace formula computed_value computef helper filename cluster_name n =
 	let id = if n > 1 then get_counter_test_cases helper else get_inc_counter_test_cases helper in
 	let string_of_three_valued v = if v = Unknown then "T_UNKNOWN" else if v = True then "T_TRUE" else "T_FALSE" in
