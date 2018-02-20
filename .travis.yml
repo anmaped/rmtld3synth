@@ -1,7 +1,8 @@
 language: c
 sudo: required
 install:
-  - wget https://raw.githubusercontent.com/anmaped/rmtld3synth/dev/.travis-opam.sh
+  - rm .travis-opam.sh
+  - wget https://raw.githubusercontent.com/anmaped/rmtld3synth/master/.travis-opam.sh
 
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc ; fi

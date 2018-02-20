@@ -24,7 +24,7 @@ For instance, schedulability analysis of hard real-time systems is possible by s
 
 ### Tarball binaries for Windows
 
-Current version is [0.3-alpha1](../../releases/download/v0.3-alpha1/release-0.3.zip?raw=true).
+Current version is [0.3-alpha2](../../releases/download/v0.3-alpha2/release-v0.3-alpha2-windows64.zip?raw=true).
 Old version is [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
 
 Let us begin by overviewing a monitor generation using the rmtld3synth tool. For this example, we adopt the use case one [available here](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html) and the configuration file [`usecaseone`](/config/usecaseone?raw=true) containing the input formula and some intructions for the rmtld3synth to process. To generate the monitor(s), we just need to type the following command in the command shell.
