@@ -7,7 +7,7 @@ open Sexplib.Conv
 
 open Rmtld3synth_helper
 
-let unroll_until = ref false
+let recursive_unrolling = ref false
 let solver = ref ""
 
 
@@ -22,7 +22,7 @@ let rmtld3synthsmt formula helper =
 
 	let common_header_cvc4 = "
 "
-^ (if !unroll_until then "(set-logic QF_AUFDTNIRA)" else "(set-logic AUFDTNIRA)")
+^ (if !recursive_unrolling then "(set-logic QF_AUFDTNIRA)" else "(set-logic AUFDTNIRA)")
 ^"
 (set-info :source |https://github.com/anmaped/rmtld3synth|)
 (set-info :license \"https://creativecommons.org/licenses/by/4.0/\")
@@ -116,7 +116,7 @@ let rmtld3synthsmt formula helper =
 
 (* parameterized synthesis functions for until operator *)
 let evalfold_param t gamma id =
-	let evalfold id = if !unroll_until then
+	let evalfold id = if !recursive_unrolling then
 		(
 			let cartesian l l' = List.concat (List.map (fun e -> List.map (fun e' -> (e,e')) l') l) in
 			(* unrooling the recursion just in case (speedup) *)
@@ -232,7 +232,21 @@ let evalfold_param t gamma id =
 	(ite (= "^ formula ^" TVTRUE) 1 0)
 )
 		" in
-		let evaleta id =
+		let evaleta id = if !recursive_unrolling then
+		(
+			let cartesian l l' = List.concat (List.map (fun e -> List.map (fun e' -> (e,e')) l') l) in
+			(* unrooling the recursion just in case (speedup) *)
+			let lst_all_comb = cartesian (List.of_enum (0--((int_of_string dt) + t))) (List.of_enum (0--((int_of_string dt) + t)))
+			in List.fold_left (fun a (x,i) -> a^"\n"^(
+				if x > i then
+					"(assert (= (evaleta"^ id ^" "^ string_of_int x ^" "^ string_of_int i ^") (+ (evaleta"^ id ^" (- "^ string_of_int x ^" 1) "^ string_of_int i ^") (indicator"^ id ^" trc "^ string_of_int x ^") )) ) "
+				else
+					"(assert (= (evaleta"^ id ^" "^ string_of_int x ^" "^ string_of_int i ^") (indicator"^ id ^" trc "^ string_of_int x ^") ) ) "
+    
+			) ) ("(declare-fun evaleta"^ id ^" ((Time) (Time)) Int)") lst_all_comb
+		)
+		else
+		(
 "
 (declare-fun evaleta"^ id ^" ((Time) (Time)) Int)
 (assert (forall ((x Time) (i Time)) (=> (and (>= x 0) (<= x (+ "^ (string_of_int t) ^" "^ dt ^") )) (ite
@@ -241,7 +255,8 @@ let evalfold_param t gamma id =
 	(= (evaleta"^ id ^" x i) (indicator"^ id ^" trc x) )
 	)))
 )
-		" in
+		"
+        ) in
 	("(computeduration"^ id ^" (+ mt "^ dt ^") mt)", (indicator id) ^ (evaleta id) ^"
 (assert (>= trc_size (+ "^ string_of_int t ^" "^ dt ^") ))
 (define-fun computeduration"^ id ^" ((mt Time) (mtb Time)) Duration

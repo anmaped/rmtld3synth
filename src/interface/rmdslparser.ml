@@ -75,6 +75,10 @@ let rec rmdsl_rs_parser_tk l (feed: rmdsl_tk) : rmdsl_tk * tokens =
 
   | "\\\\" :: ("bowtie" :: r) -> let tk,rlst = rmdsl_rs_parser_tk r (TkEmp()) in (Arb(feed, tk),rlst)
 
+  (* skip keywords *)
+  | "\\\\" :: ("left" :: r) -> rmdsl_rs_parser_tk r feed
+  | "\\\\" :: ("right" :: r) -> rmdsl_rs_parser_tk r feed
+
   | _ -> raise (Failure ("bad expression rs tk: "^ ( Sexp.to_string_hum (sexp_of_tokens l))))
 
 let rec rmdsl_rs_parser' (l: tokens) (feed: rmdsl_rs) : rmdsl_rs * tokens =
@@ -88,6 +92,8 @@ let rec rmdsl_rs_parser' (l: tokens) (feed: rmdsl_rs) : rmdsl_rs * tokens =
       let param,rlst = rmdsl_rs_parser_param rlst []
       in
       rmdsl_rs_parser' rlst (Res(name, exp_tk, param))
+
+    | "mapsto" :: (name :: r)   -> rmdsl_rs_parser' r feed
 
     | _               -> raise (Failure ("bad expression rs var: "^ ( Sexp.to_string_hum (sexp_of_tokens l))))
   in
@@ -165,38 +171,10 @@ let prop_list_of_fm fm : rmtld3_fm = fold_left (fun a b -> Or(a,b)) (Not(mtrue))
 type tp_tuple = float list * rmtld3_fm list with sexp
 let mk_empty_tuple = ([],[])
 
+(* Let's define a meta next *)
+let next phi = meventually_eq 1. phi
+
 let rec rmtld3_fm_of_rmdsl_tm tm st : (rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm -> (rmtld3_fm * rmtld3_fm * 'a) =
-
-  (* these are old definitions; huge overhead; let's simplify *)
-  (*let dur nm t d = equal
-  (
-    Duration(
-      Constant(t),
-      Or(
-        Prop("B#"^nm),
-        Or(
-          Prop("R#"^nm),
-          Or(
-            Prop("S#"^nm),
-            Prop("E#"^nm)
-          )
-        )
-      )
-    )
-  ) (
-    Constant(d)
-  ) in
-  let subb nm t filter = mand_list
-  [
-    ( malways 20. ( mimplies (Prop("S#"^nm)) (Until (t, Or( Prop("S#"^nm), filter), Prop("R#"^nm))) ) ) ; (* [TODO] HARDCODED BOUND *)
-    ( malways 20. ( mimplies (Prop("R#"^nm)) (Until (t, Or( Prop("R#"^nm), filter), Or( Prop("S#"^nm), Prop("E#"^nm) ) )) ) ) ;
-    ( malways 20. ( mimplies (Prop("E#"^nm)) (Until (t, Or( Prop("E#"^nm), filter), Prop("B#"^nm))) ) ) ;
-  ]
-  in
-  let tsk_prop nm t d (phi1, phi2) filter =
-    (mand phi1 (mand (Until (t, Or(Prop("B#"^nm),Or(Prop("R#"^nm),Or(Prop("S#"^nm),filter))), Prop("E#"^nm) )) (subb nm t filter) ), mand phi2 (dur nm t d) )
-  in*)
-
   let dur nm t d =
   mimplies
     (Prop("RE#"^nm))
@@ -216,8 +194,8 @@ let rec rmtld3_fm_of_rmdsl_tm tm st : (rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm 
       mand phi1 (
         mimplies (Prop("RE#"^nm))
         (mand 
-          (meventually_eq t (Prop("RE#"^nm)) )
-          (Until(2., Prop("RE#"^nm), (Until (t, Or(Prop("RU#"^nm),mfalse), Prop("SO#"^nm) )) ))
+          ( next ( Until_eq (t, Not(Prop("RE#"^nm)), Prop("RE#"^nm) ) ) )
+          ( next ( Until (t, Or(Prop("RU#"^nm), prop_list_of_fm filter ), mand ( Prop("SO#"^nm) ) (next (Until(t,Not(Or(Prop("SO#"^nm), Prop("RU#"^nm))),Prop("RE#"^nm) )))  ) ) )
         )
       ),
       mand phi2 (dur nm t d),
@@ -228,15 +206,14 @@ let rec rmtld3_fm_of_rmdsl_tm tm st : (rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm 
     )
   in
 
-
-
   match tm with
   | Tsk(str,plst) when length plst = 2 -> tsk_prop (st^str) (get_float (hd plst)) (get_float (hd (tl plst)))
 
   | Pri(tk1,tk2)  -> let f1 = rmtld3_fm_of_rmdsl_tm tk1 st
                      in let f2 = rmtld3_fm_of_rmdsl_tm tk2 st
-                     in (fun (phi1,phi2,tp) filter -> let fm1fst,fm1snd,fm1tp = f1 (phi1,phi2,tp) (prop_list_of_fm filter)
-                           in let fm2 = f2 (fm1fst,fm1snd,fm1tp) (prop_list_of_fm fm1fst )
+                     in (fun (phi1,phi2,tp) filter ->
+                           let fm1fst,fm1snd,fm1tp = f1 (phi1,phi2,tp) (prop_list_of_fm filter)
+                           in let fm2 = f2 (fm1fst,fm1snd,fm1tp) (prop_list_of_fm fm1fst)
                            in fm2
                         )
 
@@ -260,13 +237,25 @@ let rec rmtld3_fm_of_rmdsl' ex : ((rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm -> (
     Emp ()           -> []
 
   | Res(nm,tk,plst) when length plst = 2 ->
-    let p = (get_float (hd plst))
-    in let b = (get_float (hd (tl plst)))
-    in let dur_res filter = (mimplies (Prop("RN#"^nm)) (mand (meventually_eq p (Prop("RN#"^nm))) ( LessThan(Duration(Constant(p), filter), Constant(b)) )) )
+    
+    let pi = get_float (hd plst)
+    in let budget = get_float (hd (tl plst))
+    in
+    (* if \pi = \theta then we could simplify it since we have no constraints *)
+    let dur_res filter = if pi = budget then mtrue else (
+      mimplies
+      (Prop("RN#"^nm))
+      (
+        mand
+        ( next (Until_eq (pi, Not(Prop("RN#"^nm)), Prop("RN#"^nm) ) ) )
+        ( less_or_equal (Duration(Constant(pi), filter)) (Constant(budget)) )
+      )
+    )
     in [ fun (a,c,tp) b ->
-           let fm_out1,fm_out2,tp = rmtld3_fm_of_rmdsl_tm tk nm (a,c,tp) b
+           let ghost_prop = if pi = budget then mtrue else (Prop("RN#"^nm)) in (* this is for a unconstrained resource *)
+           let fm_out1,fm_out2,tp = rmtld3_fm_of_rmdsl_tm tk nm (a,c,tp) (mand b ghost_prop)
            in let all_prop = prop_list_of_fm fm_out1
-           in (mand (dur_res all_prop) (fm_out1), fm_out2, tp)
+           in (mand (dur_res all_prop) (fm_out1), fm_out2, ((fst tp)@[pi],(snd tp)@[ghost_prop]) )
        ]
 
   | Par(rs1,rs2)     -> (rmtld3_fm_of_rmdsl' rs1)@(rmtld3_fm_of_rmdsl' rs2) (* unreal paralell (split case) *)
@@ -287,14 +276,22 @@ let rec rmtld3_fm_of_rmdsl' ex : ((rmtld3_fm * rmtld3_fm * 'a) -> rmtld3_fm -> (
 let rmtld3_fm_lst_of_rmdsl_lst expression =
   let rmdsl_lst = rmtld3_fm_of_rmdsl' expression
   in fold_left (fun a f ->
-    let ex,ex2,tp = f (mtrue,mtrue,mk_empty_tuple) mtrue in
-    let lcm_bound = lcm_list (List.map (fun a -> int_of_float a) (fst tp)) in
-    let fm = malways (float_of_int lcm_bound) (mand ex ex2) in
-    let fm = mand (meventually_eq 1. (mand (Prop("RN#core0")) (meventually_eq 1. (Prop("RE#core0ts1")) )) )
-    (*) (Until(1.,(Prop("RN#core0")),(Prop("RE#core0ts1"))))*) fm in
+    let _,_,ghost_propositions = f (mtrue,mtrue,mk_empty_tuple) mtrue (* this step is to find the ghost propositions *)
+    in let init () = fold_left (fun a b -> if b == mtrue then a else (next (mand a b)) ) mtrue (snd ghost_propositions)
+    in
 
-    (*let fm = (mand (fold_left (fun a b -> Until(1., a, b) ) mtrue (snd tp) ) (mimplies (Prop "RE#core0ts1") (Until(3., Prop "RE#core0ts1", Prop "RX#core0ts1")))) in*)
-    (* constructs sequence of operation *)
+    let ex,ex2,tp = f (mtrue,mtrue,mk_empty_tuple) (prop_list_of_fm (init ())) in (* call f with the known ghost propositions *)
+    let lcm_bound = lcm_list (List.map (fun a -> int_of_float a) (fst tp)) in
+    let fm = mand (Prop("sys_init")) (malways (float_of_int lcm_bound) (mand ex ex2)) in
+
+    let fm = (
+      mand (
+        init ()
+      ) (
+        fm
+      )
+    ) in
+
 
     verb
     ( fun _ ->

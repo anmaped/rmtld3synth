@@ -6,13 +6,30 @@ set -e
 echo "Initiating the benchmark process"
 
 declare -a arrayrdsl=(
-	"\rm{core0}{ \tk{ts1}{5,2} }{10,10}"
-	"\rm{core0}{ \tk{ts1}{9,2} \succ \tk{ts2}{9,1} }{20,8}"
+  "\rm{core0}{ \tk{ts1}{5,2} }{10,9}" # sat
+  "\rm{core0}{ \tk{ts1}{5,4} }{10,9}" # unsat (overhead of one unit for the task releases)
+  "\rm{core0}{ \tk{ts1}{15,2} }{30,9}" # sat
+  #
+  "\rm{core0}{ \tk{ts1}{12,2} \succ \tk{ts2}{10,1} }{1,1}" # sat
+  "\rm{core0}{ \tk{ts1}{12,2} \succ \tk{ts2}{9,1} }{1,1}" # sat
+  "\rm{core0}{ \tk{ts1}{12,2} \succ \tk{ts2}{8,1} }{1,1}" # sat
+  "\rm{core0}{ \tk{ts1}{12,2} \succ \tk{ts2}{7,1} }{1,1}" # unsat (* to confirm using unsat cores *)
+  "\rm{core0}{ \tk{ts1}{12,2} \succ \tk{ts2}{6,1} }{1,1}" # sat
+  #
+  "\rm{core0}{ \tk{ts1}{9,2} \succ \tk{ts2}{9,1} }{1,1}" #
+	"\rm{core0}{ \tk{ts1}{9,2} \succ \tk{ts2}{9,1} }{20,8}" # unsat (without --recursive-unrolling; lcm=180)
+  "\rm{core0}{ \tk{ts1}{9,2} \succ \tk{ts2}{9,7} }{20,8}" # unsat (without --recursive-unrolling; lcm=180)
   #"\rm{core0}{ \tk{ts1}{5,3} \succ \tk{ts2}{10,8} }{20,20}"
 	"\rm{core0}{ \tk{ts1}{5,3} \succ \tk{ts2}{10,8} \succ \tk{ts3}{5,3} }{20,20}"
+  #
+  "\rm{server0}{ \tk{ts1}{15,2} }{1,1} \parallel \rm{server1}{ \tk{ts2}{20,3} }{1,1}"
+  "\rm{server0}{ \tk{ts1}{15,2} }{1,1} \mid \rm{server1}{ \tk{ts2}{20,3} }{1,1}"
+  #
 	#"\rm{res0}{ \tk{ts1}{10,8} \succ \tk{ts2}{10,4} \bowtie \tk{ts3}{27,7} }{0,0} \parallel \rm{res1}{ \tk{ts4}{33,4} }{10,5}"
 	#"\rm{core0}{ \tk{ts1}{20,9} \succ \tk{ts2}{15,8} }{60,50}"
 	#"\rm{core0}{ \tk{ts1}{20,9} \succ \tk{ts2}{15,8} \succ \tk{ts3}{10,3} }{60,50}"
+  "\rm{server0}{ \left( \tk{ts1}{10,8} \succ \tk{ts2}{20,5} \right) \bowtie \tk{ts3}{27,7} }{1,1} \mapsto core0  \parallel \rm{server1}{ \tk{ts4}{33,4} \succ \tk{ts5}{6,2} }{1,1} \mapsto core1" # unsat
+  "\rm{server0}{ \tk{ts1}{9,8} \succ \tk{ts2}{3,1} }{20,12} \triangleleft \left( \evtskrunning_{(server_0,ts1)} \rightarrowtriangle \evtskrunning_{(server0,ts2)} \right)"
 )
 
 
@@ -107,22 +124,32 @@ elif [ $# -eq 1 ] && [ $1 == "rmdsl" ] ; then
   VERBOSE="--verbose 2"
 
   # use for loop to read all values and indexes
+  # for (( i=1; i<${arrayrdsllength}+1; i++ ));
+  # do
+  #   echo $i " / " ${arrayrdsllength} " : " ${arrayrdsl[$i-1]}
+  #   TIMEFORMAT="$i: %3R"; time OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solver-z3 --get-trace --recursive-unrolling --input-rmdsl "${arrayrdsl[$i-1]}" $VERBOSE > "trmdsl/testrmdsl$i.log" &
+  #   OUT=$?
+  #   if [ $OUT -ne 0 ]; then
+  #     echo "WARNING: THE BENCHMARK HAS NOT BEEN COMPLETED!!!"
+  #     break
+  #   fi
+  #   #z3 "test$i.smt2" > "results$i.txt"
+  #   if ! (($i % 2)); then
+  #     wait
+  #   fi
+  # done
+
   for (( i=1; i<${arrayrdsllength}+1; i++ ));
   do
-    echo $i " / " ${arrayrdsllength} " : " ${arrayrdsl[$i-1]}
-    OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solver-z3 --get-trace --input-rmdsl "${arrayrdsl[$i-1]}" $VERBOSE > "trmdsl/testrmdsl$i.smt2" &
-    OUT=$?
-    if [ $OUT -ne 0 ]; then
-      echo "WARNING: THE BENCHMARK HAS NOT BEEN COMPLETED!!!"
-      break
-    fi
-    #z3 "test$i.smt2" > "results$i.txt"
-  done
+    echo "echo '$i " / " ${arrayrdsllength} " : " ${arrayrdsl[$i-1]}'; TIMEFORMAT='$i: %3R'; time OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 --solver-z3 --get-trace --recursive-unrolling --input-rmdsl '${arrayrdsl[$i-1]}' $VERBOSE > 'trmdsl/testrmdsl$i.log'; grep -rnw 'trmdsl/testrmdsl$i.log' -e 'Result:'"
+  done | xargs -d'\n' -I{} --max-procs 2 bash -c '
+    {
+      #echo "{}"
+      {}
+    }'
 
-  wait
 
   # "\rm{core0}{ \left( \tk{ts1}{20,9} \succ \tk{ts2}{15,8} \right) \ \bowtie \ \tk{ts3}{10,3} }{60,50}"
-
   # "\rm{res0}{ \left( \tk{ts1}{10,8} \succ \tk{ts2}{20,5} \right) \ \bowtie \ \tk{ts3}{27,7} }{0,0} \ \parallel \ \rm{res1}{ \tk{ts4}{4,33} }{0,0}"
 
 

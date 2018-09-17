@@ -351,7 +351,9 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
         in let prefix,rlst = parse_latexeq_eq' r feed_to_break
         in ([FNot(hd prefix)],rlst)
 
-      | "#" :: n :: r when chk_num n -> parse_latexeq_eq' r (feed@[FVar(n)])
+      | "#" :: n :: r when chk_num n ->
+        let feed,feed_to_break = propagate feed
+        in parse_latexeq_eq' r (if feed_to_break <> [] then [FBreak([FVar(n)])] else [FVar(n)])
 
       (* TODO
       | "frac" :: r        -> parse_latexeq_eq' r (Strr((match_feed feed)@["\\\\"; "frac"]))

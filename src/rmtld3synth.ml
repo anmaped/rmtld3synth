@@ -106,7 +106,7 @@ open Rmtld3synth_ocaml
 open Z3solver_
 open Rmtld3synth_helper
 
-let set_recursive_unrolling f = Rmtld3synth_smt.unroll_until := true
+let set_recursive_unrolling f = Rmtld3synth_smt.recursive_unrolling := true
 let set_solve_z3 f = Rmtld3synth_smt.solver := "z3"
 let set_solve_cvc4 f = Rmtld3synth_smt.solver := "cvc4"
 
