@@ -21,6 +21,7 @@ open Z3.Tactic
 open Rmtld3synth_helper
 
 let parse_smtlibv2 smtlibv2_str =
+  (*ignore (Z3.Log.open_ "Z3.log");*)
   verb (fun _ -> Printf.printf "Running Z3 version %s\n" Version.to_string ) ;
   verb (fun _ -> Printf.printf "Z3 full version string: %s\n" Version.full_version ) ;
   let ctx = (mk_context [("model", "true")]) in
