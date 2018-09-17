@@ -244,6 +244,7 @@ rmtld3synth also supports the automatic generation of unit tests for C++ based o
 
 There are two flags. The `gen_unit_tests` enables the automatic generation of monitors including the makefiles, and the  `gen_concurrency_tests` that instructs the construction of a set of tests for the performance evaluation of the rmtlib.
 
+
 #### Compiling the generated monitors
 
 To compile the generated monitors please use the generated `Makefile`. Please be aware that you need the `rtmlib.a` library.
@@ -254,6 +255,61 @@ Use `make arm-mon` to compile the monitors for ARM architecture with the support
 For that try to install the module files `main.cpp` and `module.mk` in the NuttX modules directory.
 
 For the monitors to be used with Ardupilot replace the external Px4 makefile `px4_common.mk` in `modules/Px4` directory of the Ardupilot.
+
+
+#### Integrating monitors using rtmlib in a bare metal platform
+
+##### NuttX OS
+
+Let us use as example the property 
+```
+(a \rightarrow ((a \lor b) \until{<10} c)) \land \int^{10} c < 4
+```
+and use the command 
+
+```
+./rmtld3synth --synth-cpp11 --input-latexeq
+"(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-src="mon1"
+```
+to create the monitor and some auxiliary functions in the folder `mon1`. The output tree should be something like
+```
+Makefile           (* The makefile with rules: x86-mon, arm-mon *)
+Mon0.h             (* The monitor to be included in the system under observation. *)
+mon0_compute.h     (* The body of the monitor procedure to be included. *)
+mon1.cpp           (* The aggregation point (the monitor mon0 is included here) *)
+mon1.h             (* The header file for aggregation of monitors *)
+rmtld3.h           (* The header containing all the rmtld3 types and macros. *)
+Rmtld3_reader.h    (* The binding for rtmlib *)
+Rmtld3_reader_it.h (* The binding for rtmlib *)
+```
+
+In this case, we only have to compile `mon1.cpp` in order to include it in the SUO.
+We are able to acess the symbols `__start_periodic_monitors` and `__buffer_mon1` in the object file (mon1.o) as included in mon1.h header file
+```
+extern void __start_periodic_monitors();
+extern RTML_buffer<int, 100> __buffer_mon1;
+```
+
+Note that the buffer has the type `RTML_buffer<int, 100>` and can be instantiated elsewhere.
+Inside the mon1.cpp we have
+```
+#ifdef __NUTTX__
+
+__EXPORT RTML_buffer<int, 100> __buffer_mon1 __attribute__((used));
+
+#else
+
+RTML_buffer<int, 100> __buffer_mon1 __attribute__((used));
+
+#endif
+```
+indicating that `__buffer_mon1` is reused or locally instantiated. The function `__start_periodic_monitors` will enable the task using the POSIX Threads interface defined in rtmlib (see task_compat.h for more details).
+
+
+##### FreeRTOS
+
+The approach should be similiar to NuttX OS since both OSs are POSIX compliant.
+
 
 ### License
 
