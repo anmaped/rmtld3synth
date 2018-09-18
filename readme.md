@@ -286,7 +286,7 @@ Rmtld3_reader_it.h (* The binding for rtmlib *)
 ```
 
 In this case, we only have to compile `mon1.cpp` in order to include it in the SUO.
-From now on, we are able to acess the symbols `__start_periodic_monitors` and `__buffer_mon1` in the object file `mon1.o`. mon1.h header file
+From now on, we are able to acess the symbols `__start_periodic_monitors` and `__buffer_mon1` in the object file `mon1.o`. The `mon1.h` header file
 ```
 extern void __start_periodic_monitors();
 extern RTML_buffer<int, 100> __buffer_mon1;
@@ -313,6 +313,30 @@ indicating that `__buffer_mon1` is reused or locally instantiated. The function 
 
 The approach should be similiar to NuttX OS since both OSs are POSIX compliant.
 
+
+#### Match event types
+
+Let us use the previous example containing three propositions `a, b, c` that will be mapped to the SUO in a different way.
+The usage of ASCII characters or strings is not the most efficient way to proceed since they will quickly increase the memory footprint. We will see now how we can avoid it.
+
+The content of the file `mon0_compute.h` describes where the symbols can appear as simple numbers. Indeed `a`,`b` and `c` were mapped using a hash table to some sort of binary enumeration (i.e., `0x04` for a, `0x03` for `b`, and `0x01` for `c`). To be able to match this encoding when generating events describing `a,b,c`, we have to use the macro definitions `SORT_a,SORT_b,SORT_c`. If we have a symbol `sym` then the respective macro should be `SORT_sym`. Althought a check is performed by the tool, we have to be carefull about the macro variable's names accepted in C++11 when describing the name of the propositions in RMTLD3 specifications.
+
+The map function `_mapsorttostring` is also available if we do not want to work with sorts and instead use strings.
+
+```
+  #define SORT_a 4
+  #define SORT_b 3
+  #define SORT_c 1
+  
+  #include <string>
+  #include <unordered_map>
+  // Create an unordered_map of sorts (that map to integers)
+  std::unordered_map<std::string, int> _mapsorttostring = {
+  {"a",4},
+  {"b",3},
+  {"c",1},
+  };
+```
 
 ### License
 

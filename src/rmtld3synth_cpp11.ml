@@ -286,6 +286,7 @@ let compute_fm_ulesseq gamma (sf1,_) (sf2,_) helper = ("[TODO compute_fm_ulesseq
 
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11_compute (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
+    let cmp_str = compute (formula) helper in
     (* Synthesize ocaml formula evaluation algorithm into c++ *)
     let code1 = "
   #ifndef _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
@@ -293,7 +294,18 @@ let synth_cpp11_compute (out_file,out_dir) cluster_name monitor_name monitor_per
 
   #include \"rmtld3.h\"
   
-  auto _"^monitor_name^"_compute = "^compute (formula) helper^";
+  auto _"^monitor_name^"_compute = "^ cmp_str ^";
+
+  // SORTS
+  "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "#define SORT_%s %i\n  " x y)) (get_proposition_hashtbl helper) "" ^"
+
+  /*
+  #include <string>
+  #include <unordered_map>
+  // Create an unordered_map of sorts (that map to integers)
+  std::unordered_map<std::string, int> _mapsorttostring = {
+  "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "{\"%s\",%i},\n  " x y)) (get_proposition_hashtbl helper) "" ^"};
+  */
 
   #endif //_"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
     " in
