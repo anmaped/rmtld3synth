@@ -19,6 +19,7 @@ depends: [
 ]
 
 build: [
+  ["chmod" "ugo+x" "configure"]
   ["./configure" "--prefix=%{prefix}%"]
   [make "all"]
 ]

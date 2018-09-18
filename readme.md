@@ -7,7 +7,7 @@ The rmtld3synth toolchain is able to automatically generate cpp11/ocaml monitors
 Supported by this formalism are polynomial inequalities (using the less relation <) and the common modal operators of temporal logics U (until) and S (since). 
 The existential quantification over these formulas is also possible by adopting the cylindrical algebraic decomposition (CAD) method. This method is suitable to convert quantified formulas into several decomposed conditions without these quantifiers.
 
-For formula satisfiability checking, the tool is ready to synthesize the logic fragment into the input language accepted by the z3 SMT solver.It can be used to discard offline and before execution several constraints involving duration and temporal order of propositions.
+For formula satisfiability checking, the tool is ready to synthesize the logic fragment into the input language accepted by the z3 SMT solver. It can be used to discard offline and before execution several constraints involving duration and temporal order of propositions.
 For instance, schedulability analysis of hard real-time systems is possible by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMT-LIB and then using Z3 to solve it. The idea is to know if there exists a trace for which the RMTLD3 problem is satisfiable, or whether the SMT gives us an unsatisfiable answer meaning that is impossible to schedule such configuration. The latter enforces the refinement by drawing a counter-example.
 
 # Contents
@@ -34,7 +34,7 @@ Let us begin by overviewing a monitor generation using the rmtld3synth tool. For
 Note that `-n` is deprecated and requires to set the config file in the same directory of the executable. For versions >= 0.3-alpha use `--config-file` argument instead of `-n` in order to set the correct path of the one shot configuration file.
 
 After executing the command, the `monitor_set1` folder is available and contains the generated source files of the monitor(s) specified for the `usecaseone` setup.
-At this point, we have the monitor ready to be supplied for GCC, LLVM or other "compatible" C/C++ compiler and deployed in the chosen target architecture. For the current version, C++ and Ocaml synthesis are fully supported but Spark2014 is not yet available.
+At this point, we have the monitor ready to be supplied for GCC, LLVM or other "compatible" C/C++ compiler and deployed in the chosen target architecture. In the current version, C++ and Ocaml synthesis are fully supported and Spark2014 is not yet available.
 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
@@ -56,7 +56,7 @@ opam switch 4.03.0
 eval `opam config env`
 ```
 
-Use the commands below to compile z3 solver and respective ml bindings.
+Use the commands below to compile z3 solver and respective ML bindings.
 ```
 git clone https://github.com/Z3Prover/z3.git z3
 cd z3
@@ -72,7 +72,7 @@ Get the [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository
 opam switch 4.03.0+mingw64
 eval `opam config env`
 ```
-Case you have not properlly installed the flexdll, download the new flexdll [here](http://alain.frisch.fr/flexdll/flexdll-bin-0.35.zip), and decompress the archive in the current directory (PWD) with folder name `flexdll-bin-0.35`.
+In case you have not properlly installed the flexdll, download the new flexdll [here](http://alain.frisch.fr/flexdll/flexdll-bin-0.35.zip), and decompress the archive in the current directory (PWD) with folder name `flexdll-bin-0.35`.
 ```
 export PATH=$(PWD)/flexdll-bin-0.35:$PATH
 ```
@@ -93,12 +93,14 @@ opam install pa_sexp_conv
 
 Use the same commands, as described above for the case of compiling rmtld3synth using Linux and Mac OS, to conclude the compilation.
 
-Case the correct version of GCC is not found then use the environment variables below.
+:grey_exclamation:HINTS!!
+
+If the correct version of GCC is not found then use the environment variables below.
 ```
 CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar
 ```
 
-Case the libz3 is not found then use the command below for manually copy the libraries.
+If the libz3 is not found then use the command below for manually copy the libraries.
 ```
 cp z3/build/libz3.dll.a /lib/
 ```
@@ -245,7 +247,7 @@ rmtld3synth also supports the automatic generation of unit tests for C++ based o
 There are two flags. The `gen_unit_tests` enables the automatic generation of monitors including the makefiles, and the  `gen_concurrency_tests` that instructs the construction of a set of tests for the performance evaluation of the rmtlib.
 
 
-#### Compiling the generated monitors
+#### Compile the generated monitors
 
 To compile the generated monitors please use the generated `Makefile`. Please be aware that you need the `rtmlib.a` library.
 
@@ -257,7 +259,7 @@ For that try to install the module files `main.cpp` and `module.mk` in the NuttX
 For the monitors to be used with Ardupilot replace the external Px4 makefile `px4_common.mk` in `modules/Px4` directory of the Ardupilot.
 
 
-#### Integrating monitors using rtmlib in a bare metal platform
+#### Integrate monitors using rtmlib in a bare metal platform
 
 ##### NuttX OS
 
@@ -284,13 +286,14 @@ Rmtld3_reader_it.h (* The binding for rtmlib *)
 ```
 
 In this case, we only have to compile `mon1.cpp` in order to include it in the SUO.
-We are able to acess the symbols `__start_periodic_monitors` and `__buffer_mon1` in the object file (mon1.o) as included in mon1.h header file
+From now on, we are able to acess the symbols `__start_periodic_monitors` and `__buffer_mon1` in the object file `mon1.o`. mon1.h header file
 ```
 extern void __start_periodic_monitors();
 extern RTML_buffer<int, 100> __buffer_mon1;
 ```
+defines it using the extern keyword.
 
-Note that the buffer has the type `RTML_buffer<int, 100>` and can be instantiated elsewhere.
+Note also that the buffer has the type `RTML_buffer<int, 100>` and can be instantiated elsewhere.
 Inside the mon1.cpp we have
 ```
 #ifdef __NUTTX__
