@@ -6,8 +6,7 @@ else
 endif
 
 
-all: version
-	cp src/interface/z3solver.ml src/interface/z3solver_.ml
+all: version z3
 	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
 	echo "(* dummy js interface *)" >> src/interface/js_helper_.ml
 	ocamlbuild -use-ocamlfind rmtld3synth.byte rmtld3synth.native

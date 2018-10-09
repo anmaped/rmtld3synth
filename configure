@@ -1,8 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 prefix=/usr/local
 debugsym=true
 js_of_ocaml=false
+z3_solver=true
 
 for arg in "$@"; do
     case "$arg" in
@@ -18,6 +19,9 @@ for arg in "$@"; do
     --js_of_ocaml)
         js_of_ocaml=true;;
 
+    --without-z3-solver)
+        z3_solver=false;;
+
     --help)
         echo 'usage: ./configure [options]'
         echo 'options:'
@@ -30,6 +34,10 @@ for arg in "$@"; do
         ;;
     esac
 done
+
+# checks if z3 solver is available
+chmod 755 scripts/check_z3.sh
+. scripts/check_z3.sh
 
 echo 'generating makefile ...'
 echo "PREFIX = $prefix" >Makefile
@@ -46,6 +54,20 @@ if $js_of_ocaml; then
 \tcp src/interface/js_helper.ml src/interface/js_helper_.ml
 \tocamlbuild -use-ocamlfind -pkgs js_of_ocaml rmtld3synth.byte
 \tjs_of_ocaml +nat.js +weak.js _build/src/rmtld3synth.byte" >> Makefile
+fi
+
+if $z3_solver; then
+    if `vercmp "$Z3_VERSION" "4.7.1" "<="`; then
+   echo -e "\nz3: 
+\tcp src/interface/z3solver.ml src/interface/z3solver_.ml" >> Makefile
+    else
+        echo -e "\nz3: 
+\tcp src/interface/z3solver_newAPI.ml src/interface/z3solver_.ml" >> Makefile
+    fi
+
+else
+   echo -e "\nz3: 
+\tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml" >> Makefile 
 fi
 
 echo 'configuration complete, type make to build.'
