@@ -35,6 +35,8 @@ opam pin add pa_sexp_conv pa_sexp_conv/ -n
 opam install oasis
 opam install pa_sexp_conv
 
+opam pin add dolmen https://github.com/Gbury/dolmen.git
+
 git clone https://github.com/Z3Prover/z3.git z3
 cd z3
 

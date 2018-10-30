@@ -10,6 +10,8 @@ open Sexplib.Conv
 open Rmtld3
 open Rmtld3synth_helper
 
+type body = string * string
+
 (* function that pretty prints 'observation' function as a lambda functions in c++ *)
 let synth_obs_function observation_funcname struct_name =
   (* *)
@@ -64,9 +66,9 @@ let compute_function_head_mutable = "[](struct Environment &env, timespan t) mut
 (*
  * Compute terms
  *)
-let compute_tm_constant value helper = ("make_duration("^string_of_float value^",false)","")
+let synth_tm_constant value helper = ("make_duration("^string_of_float value^",false)","")
 
-let compute_tm_duration (di,_) (tf,_) helper =
+let synth_tm_duration (di,_) (tf,_) helper =
     (compute_term_function_head^" {
     
     auto eval_eta =  [](struct Environment env, timespan t, timespan t_upper, "^trace_iterator helper^" iter) -> duration
@@ -147,32 +149,30 @@ let compute_tm_duration (di,_) (tf,_) helper =
 
     }(env,t)","")
 
-let compute_tm_plus (cmptr1,_) (cmptr2,_) helper = ("sum_dur("^ cmptr1 ^" , "^cmptr2^")","")
+let synth_tm_plus (cmptr1,_) (cmptr2,_) helper = ("sum_dur("^ cmptr1 ^" , "^cmptr2^")","")
 
-let compute_tm_times (cmptr1,_) (cmptr2,_) helper = ("mult_dur("^ cmptr1 ^" , "^ cmptr2 ^")","")
+let synth_tm_times (cmptr1,_) (cmptr2,_) helper = ("mult_dur("^ cmptr1 ^" , "^ cmptr2 ^")","")
 
 
 (*
  * compute formulas
 *)
-let compute_fm_true helper =
+let synth_fm_true helper =
   (compute_function_head_mutable^" { return T_TRUE; }","")
 
-let compute_fm_p p helper =
-  let tbl = get_proposition_hashtbl helper in
-  let counter = get_proposition_counter helper in 
+let synth_fm_p p helper =
+  (*let tbl = get_proposition_hashtbl helper in
+  let counter = get_proposition_counter helper in *)
   (compute_function_head_mutable^" { return env.evaluate(env, "^
-    string_of_int (
-      try Hashtbl.find tbl p with Not_found -> Hashtbl.add tbl p counter; counter 
-    ) ^ ", t); }","")
+    string_of_int p  ^ ", t); }","")
 
-let compute_fm_not (cmpfm,_) helper = (compute_function_head_mutable^" { auto sf = "^ cmpfm ^"(env,t); return b3_not (sf); }","")
+let synth_fm_not (cmpfm,_) helper = (compute_function_head_mutable^" { auto sf = "^ cmpfm ^"(env,t); return b3_not (sf); }","")
 
-let compute_fm_or (cmpfm1,_) (cmpfm2,_) helper = (compute_function_head_mutable^" { auto sf1 = "^ cmpfm1 ^"(env,t); auto sf2 = "^ cmpfm2 ^"(env,t); return b3_or (sf1, sf2); }","")
+let synth_fm_or (cmpfm1,_) (cmpfm2,_) helper = (compute_function_head_mutable^" { auto sf1 = "^ cmpfm1 ^"(env,t); auto sf2 = "^ cmpfm2 ^"(env,t); return b3_or (sf1, sf2); }","")
 
-let compute_fm_less (cmptr1,_) (cmptr2,_) helper = (compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ cmptr1 ^"; auto tr2 = "^ cmptr2 ^"; return b3_lessthan (tr1, tr2); }(env,t); }","")
+let synth_fm_less (cmptr1,_) (cmptr2,_) helper = (compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ cmptr1 ^"; auto tr2 = "^ cmptr2 ^"; return b3_lessthan (tr1, tr2); }(env,t); }","")
 
-let compute_fm_uless gamma (sf1,_) (sf2,_) helper =
+let synth_fm_uless gamma (sf1,_) (sf2,_) helper =
   (compute_function_head ^"
   {
     auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator helper^" iter) -> four_valued_type
@@ -279,13 +279,13 @@ let compute_fm_uless gamma (sf1,_) (sf2,_) helper =
 
   ","")
 
-let compute_fm_ueq gamma (sf1,_) (sf2,_) helper = ("[TODO compute_fm_ueq]","")
+let synth_fm_ueq gamma (sf1,_) (sf2,_) helper = ("[TODO compute_fm_ueq]","")
 
-let compute_fm_ulesseq gamma (sf1,_) (sf2,_) helper = ("[TODO compute_fm_ulesseq]","")
+let synth_fm_ulesseq gamma (sf1,_) (sf2,_) helper = ("[TODO compute_fm_ulesseq]","")
 
 
 (* monitor dependent c++ functions begin here *)
-let synth_cpp11_compute (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
+let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
     let cmp_str = compute (formula) helper in
     (* Synthesize ocaml formula evaluation algorithm into c++ *)
     let code1 = "

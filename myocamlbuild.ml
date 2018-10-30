@@ -20,8 +20,9 @@ let () =
     (* Add our rules after the standard ones. *)
   | After_rules ->
     Pathname.define_context "." ["."; "src"];
-    Pathname.define_context "src" ["."; "src/interface"];
+    Pathname.define_context "src" ["."; "src/interface"; "src/language"];
     Pathname.define_context "src/interface" ["."; "src" ];
+    Pathname.define_context "src/language" ["."; "src"];
 
 
   let sexplib_dir = ocamlfind_query "sexplib" in

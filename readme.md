@@ -40,14 +40,10 @@ At this point, we have the monitor ready to be supplied for GCC, LLVM or other "
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
 
 #### To compile rmtld3synth for Linux and Mac OS using Opam and Ocaml 4.03.0
-Just use the following commands and switch the opam compiler to version `4.03.0` if needed. The dependencies should be installed automatically.
+Just use the following commands and switch the opam compiler to version `4.03.0` if needed. All dependencies should be installed automatically.
 
 ```
-git clone https://github.com/anmaped/rmtld3synth.git rmtld3synth
-cd rmtld3synth/
-git submodule update --init --recursive
-opam pin add rmtld3synth . -n
-opam install rmtld3synth
+opam pin add rmtld3synth https://github.com/anmaped/rmtld3synth.git
 ```
 
 Use the following commands to switch opam to the OCaml compiler version 4.03.0

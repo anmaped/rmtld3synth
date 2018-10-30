@@ -7,48 +7,58 @@ open Rmtld3
 open Rmtld3synth_helper
 
 
-type call_body = string * string
+type prop_base10 = int
+
 module type Translate_sig =
 sig
-  val compute_tm_constant : value -> helper -> call_body
-  val compute_tm_duration : call_body -> call_body -> helper -> call_body
-  val compute_tm_plus : call_body -> call_body -> helper -> call_body
-  val compute_tm_times : call_body -> call_body -> helper -> call_body
-  val compute_fm_true : helper -> call_body
-  val compute_fm_p : prop -> helper -> call_body
-  val compute_fm_not : call_body -> helper -> call_body
-  val compute_fm_or : call_body -> call_body -> helper -> call_body
-  val compute_fm_less : call_body -> call_body -> helper -> call_body
-  val compute_fm_uless : value -> call_body -> call_body -> helper -> call_body
-  val compute_fm_ueq : value -> call_body -> call_body -> helper -> call_body
-  val compute_fm_ulesseq : value -> call_body -> call_body -> helper -> call_body
+  type body
+  val synth_tm_constant : value -> helper -> body
+  val synth_tm_duration : body -> body -> helper -> body
+  val synth_tm_plus : body -> body -> helper -> body
+  val synth_tm_times : body -> body -> helper -> body
+  val synth_fm_true : helper -> body
+  val synth_fm_p : prop_base10 -> helper -> body
+  val synth_fm_not : body -> helper -> body
+  val synth_fm_or : body -> body -> helper -> body
+  val synth_fm_less : body -> body -> helper -> body
+  val synth_fm_uless : value -> body -> body -> helper -> body
+  val synth_fm_ueq : value -> body -> body -> helper -> body
+  val synth_fm_ulesseq : value -> body -> body -> helper -> body
 end;;
 
-module Translation (T : Translate_sig) = struct
-  (* Synthesis of the rmtld3 term *)
-  let rec compute_term term helper =
+module Translate (T : Translate_sig) = struct
+  (* Synthesis of the rmtld3 terms *)
+  let rec synth_term term helper =
     match term with
-      | Constant value       -> T.compute_tm_constant value helper
-      | Duration (di,phi)    -> T.compute_tm_duration (compute_term di helper) (compute phi helper) helper
-      | FPlus (tr1,tr2)      -> T.compute_tm_plus (compute_term tr1 helper) (compute_term tr2 helper) helper
-      | FTimes (tr1,tr2)     -> T.compute_tm_times (compute_term tr1 helper) (compute_term tr2 helper) helper
-      | _                    -> raise (Failure "compute_terms: missing term")
+      | Constant value       -> T.synth_tm_constant value helper
+      | Duration (di,phi)    -> T.synth_tm_duration (synth_term di helper) (synth phi helper) helper
+      | FPlus (tr1,tr2)      -> T.synth_tm_plus (synth_term tr1 helper) (synth_term tr2 helper) helper
+      | FTimes (tr1,tr2)     -> T.synth_tm_times (synth_term tr1 helper) (synth_term tr2 helper) helper
+      | _                    -> raise (Failure "synth: unsupported term")
 
-  (* Synthesis of the rmtld3 formula *)
-  and compute formula helper =
+  (* Synthesis of the rmtld3 formulas *)
+  and synth formula helper =
     match formula with
-      | True()                  -> T.compute_fm_true helper
-      | Prop p                  -> T.compute_fm_p p helper
-      | Not sf                  -> T.compute_fm_not (compute sf helper) helper
-      | Or (sf1, sf2)           -> T.compute_fm_or (compute sf1 helper) (compute sf2 helper) helper
-      | Until (gamma, sf1, sf2)     -> if gamma > 0. then T.compute_fm_uless gamma (compute sf1 helper) (compute sf2 helper) helper
+      | True()                  -> T.synth_fm_true helper
+      | Prop p                  ->
+        let tbl = get_proposition_hashtbl helper in
+        let id_num10,id_asciistr = try (Hashtbl.find tbl p,"") with
+          Not_found ->
+            let cnt = get_proposition_counter helper in 
+            set_proposition_two_way_map p cnt helper;
+            (cnt, p) in
+        T.synth_fm_p id_num10 helper
+
+      | Not sf                  -> T.synth_fm_not (synth sf helper) helper
+      | Or (sf1, sf2)           -> T.synth_fm_or (synth sf1 helper) (synth sf2 helper) helper
+      | Until (gamma, sf1, sf2)     -> if gamma > 0. then T.synth_fm_uless gamma (synth sf1 helper) (synth sf2 helper) helper
                                        else raise  (Failure "Gamma of U< operator is negative")
-      | Until_eq (gamma, sf1, sf2)  -> if gamma > 0. then T.compute_fm_ueq gamma (compute sf1 helper) (compute sf2 helper) helper
+      | Until_eq (gamma, sf1, sf2)  -> if gamma > 0. then T.synth_fm_ueq gamma (synth sf1 helper) (synth sf2 helper) helper
                                        else raise  (Failure "Gamma of U= operator is negative")
-      | Until_leq (gamma, sf1, sf2) -> if gamma > 0. then T.compute_fm_ulesseq gamma (compute sf1 helper) (compute sf2 helper) helper
+      | Until_leq (gamma, sf1, sf2) -> if gamma > 0. then T.synth_fm_ulesseq gamma (synth sf1 helper) (synth sf2 helper) helper
                                        else raise  (Failure "Gamma of U<= operator is negative")
-      | LessThan (tr1,tr2)      -> T.compute_fm_less (compute_term tr1 helper) (compute_term tr2 helper) helper
-      | _                       -> raise (Failure ("synth_mon: bad formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
+      | LessThan (tr1,tr2)      -> T.synth_fm_less (synth_term tr1 helper) (synth_term tr2 helper) helper
+      | _                       -> raise (Failure ("synth: unsupported formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
 
 end;;
 
@@ -99,16 +109,17 @@ open Sexplib.Conv
 
 
 open Rmtld3synth_simplify
-open Rmtld3synth_smt
+open Rmtld3synth_smt (* swap to smtlib module only *)
+open Smtlib
 open Rmtld3synth_cpp11
 open Rmtld3synth_ocaml
 (*open Rmtld3synth_tessla*)
 open Z3solver_
 open Rmtld3synth_helper
 
-let set_recursive_unrolling f = Rmtld3synth_smt.recursive_unrolling := true
-let set_solve_z3 f = Rmtld3synth_smt.solver := "z3"
-let set_solve_cvc4 f = Rmtld3synth_smt.solver := "cvc4"
+let set_recursive_unrolling f = Smtlib.enable_recursive_unrolling () ; Rmtld3synth_smt.recursive_unrolling := true (* swap to smtlib module only *)
+let set_solve_z3 f = Smtlib.set_solver Z3 ; Rmtld3synth_smt.solver := "z3" (* swap to smtlib module only *)
+let set_solve_cvc4 f = Smtlib.set_solver CVC4 ; Rmtld3synth_smt.solver := "cvc4" (* swap to smtlib module only *)
 
 
 let chose_synthesis a b c d =
@@ -160,9 +171,9 @@ let synth_monitor fm =
   (*
      Functors for synthesis
    *)
-  let module Conv_cpp11 = Translation(Rmtld3synth_cpp11) in
-  let module Conv_ocaml = Translation(Rmtld3synth_ocaml) in
-  (*let module Conv_tessla = Translation(Rmtld3synth_tessla) in*)
+  let module Conv_cpp11 = Translate(Rmtld3synth_cpp11) in
+  let module Conv_ocaml = Translate(Rmtld3synth_ocaml) in
+  (*let module Conv_tessla = Translate(Rmtld3synth_tessla) in*)
 
   (*
    * External dependencies for monitors; it may include the RV model.
@@ -203,15 +214,15 @@ let synth_monitor fm =
     ( fun _ ->
       (* TODO (out_file,out_dir) *)
       (* monitor synthesis for cpp11 *)
-      synth_cpp11_compute (!out_file,!out_dir) cluster_name monitor_name monitor_period formula (fun a b -> let x,_ = Conv_cpp11.compute a b in x) helper
+      synth_cpp11 (!out_file,!out_dir) cluster_name monitor_name monitor_period formula (fun a b -> let x,_ = Conv_cpp11.synth a b in x) helper
     )
     ( fun _ ->
       (* monitor synthesis for ocaml *)
-      synth_ocaml_compute (!out_file,!out_dir) cluster_name monitor_name monitor_period formula (Conv_ocaml.compute) helper
+      synth_ocaml (!out_file,!out_dir) cluster_name monitor_name monitor_period formula (Conv_ocaml.synth) helper
     )
     ( fun _ ->
       (* monitor synthesis for tessla *)
-      (*synth_tessla_compute (!out_file,!out_dir) cluster_name monitor_name monitor_period formula (Conv_tessla.compute) helper*)()
+      (*synth_tessla_synth (!out_file,!out_dir) cluster_name monitor_name monitor_period formula (Conv_tessla.synth) helper*)()
     )
     ( fun _ ->
       (* monitor synthesis for spark14 *)
@@ -228,7 +239,12 @@ let synth_monitor fm =
 let synth_sat_problem formula =
 begin
   let helper = mk_helper in
+  (* instantiates module for smtlib translation *)
+  let module Smtlib = Translate(Smtlib) in
+  (* does translation *)
+  (*let stmlibv2_str = synth_smtlib (Smtlib.synth) formula helper in*)
   let stmlibv2_str = rmtld3synthsmt formula helper in
+
 
   if isZ3SolverEnabled () then
   begin
@@ -256,12 +272,6 @@ begin
     end
   end;
 
-
-  let sv_str = if isCvc4SolverEnabled () then "(check-sat)" else if isZ3SolverEnabled () then "(check-sat-using (then qe smt))" else "(check-sat)"
-  in let stmlibv2_str = stmlibv2_str^sv_str^"
-(get-model)
-(get-info :all-statistics)
-" in
 
   if String.exists (!out_file) ".smt2" then
     let stream = open_out (!out_file) in

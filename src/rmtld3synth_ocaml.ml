@@ -14,14 +14,16 @@ let has_fm_uless = ref false
 let has_fm_ueq = ref false
 let has_fm_ulesseq = ref false
 
+type body = string * string
+
 
 (* ocaml module api *)
-let compute_tm_constant value helper = ("(fun k s t -> "^ (string_of_float value) ^")","")
-let compute_tm_duration (tm_call,tm_body) (fm_call,fm_body) helper =
+let synth_tm_constant value helper = ("(fun k s t -> "^ (string_of_float value) ^")","")
+let synth_tm_duration (tm_call,tm_body) (fm_call,fm_body) helper =
   has_tm_dur := true;
   ("(compute_tm_duration "^ tm_call ^" "^ fm_call ^")", tm_body^fm_body)
 
-let compute_tm_duration_body = "
+let synth_tm_duration_body = "
 let compute_tm_duration tm fm k u t =
   let dt = (t,tm k u t) in
 
@@ -46,34 +48,34 @@ let compute_tm_duration tm fm k u t =
   eval_eta (k,u) dt fm (sub_k (k,u,t) t')
 "
 
-let compute_tm_plus cmptr1 cmptr2 helper =
+let synth_tm_plus cmptr1 cmptr2 helper =
   ("(fun k s t -> ("^ fst cmptr1 ^" k s t) +. ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
 
-let compute_tm_times cmptr1 cmptr2 helper =
+let synth_tm_times cmptr1 cmptr2 helper =
   ("(fun k s t -> ("^ fst cmptr1 ^" k s t) *. ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
 
-let compute_fm_true helper = ("(fun k s t -> True)","")
-let compute_fm_p p helper = ("(fun k s t -> k.evaluate k.trace \""^ p ^"\" t)","")
-let compute_fm_not cmpfm helper = ("(fun k s t -> b3_not ("^ fst cmpfm ^" k s t))", snd cmpfm)
-let compute_fm_or cmpfm1 cmpfm2 helper =
+let synth_fm_true helper = ("(fun k s t -> True)","")
+let synth_fm_p p helper = ("(fun k s t -> k.evaluate k.trace \""^ string_of_int p ^"\" t)","")
+let synth_fm_not cmpfm helper = ("(fun k s t -> b3_not ("^ fst cmpfm ^" k s t))", snd cmpfm)
+let synth_fm_or cmpfm1 cmpfm2 helper =
   ("(fun k s t -> b3_or ("^ fst cmpfm1 ^" k s t) ("^ fst cmpfm2 ^" k s t))", (snd cmpfm1)^(snd cmpfm2))
 
-let compute_fm_less cmptr1 cmptr2 helper =
+let synth_fm_less cmptr1 cmptr2 helper =
   ("(fun k s t -> b3_lessthan ("^ fst cmptr1 ^" k s t) ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
 
-let compute_fm_uless gamma sf1 sf2 helper =
+let synth_fm_uless gamma sf1 sf2 helper =
   has_fm_uless := true;
   ("(compute_uless "^ (string_of_float gamma) ^" "^ (fst sf1) ^" "^ (fst sf2) ^")", (snd sf1)^(snd sf2))
 
-let compute_fm_ueq gamma sf1 sf2 helper =
+let synth_fm_ueq gamma sf1 sf2 helper =
   has_fm_ueq := true;
   ("(compute_ueq "^ (string_of_float gamma) ^" "^ (fst sf1) ^" "^ (fst sf2) ^")", (snd sf1)^(snd sf2))
 
-let compute_fm_ulesseq gamma sf1 sf2 helper =
+let synth_fm_ulesseq gamma sf1 sf2 helper =
   has_fm_ulesseq := true;
   ("(compute_ulesseq "^ (string_of_float gamma) ^" "^ (fst sf1) ^" "^ (fst sf2) ^")", (snd sf1)^(snd sf2))
 
-let compute_fm_uless_body = "
+let synth_fm_uless_body = "
 let compute_uless gamma f1 f2 k u t =
   let m = (k,u,t) in
   let eval_i b1 b2 =
@@ -115,7 +117,7 @@ let compute_uless gamma f1 f2 k u t =
 "
 
 (* differs from uless on "eval_i" and "sub_k m (gamma +. (epsilon_float *. 100.) )" *)
-let compute_fm_ueq_body = "
+let synth_fm_ueq_body = "
 let compute_ueq gamma f1 f2 k u t =
   let t_i = t in
   let m = (k,u,t) in
@@ -158,7 +160,7 @@ let compute_ueq gamma f1 f2 k u t =
 "
 
 (* differs from uless on "sub_k m (gamma +. (epsilon_float *. 100.) )" *)
-let compute_fm_ulesseq_body = "
+let synth_fm_ulesseq_body = "
 let compute_uless gamma f1 f2 k u t =
   let m = (k,u,t) in
   let eval_i b1 b2 =
@@ -200,7 +202,7 @@ let compute_uless gamma f1 f2 k u t =
 "
 
 
-let synth_ocaml_compute (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
+let synth_ocaml (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
   let mon_call,mon_body = compute formula helper
   in let mon = "
 open List
@@ -210,10 +212,10 @@ module type Trace = sig val trc : trace end
 (* one trace :: module OneTrace : Trace = struct let trc = [(\"a\",(1.,2.))] end *)
 
 module "^ (String.capitalize_ascii monitor_name) ^"  ( T : Trace  ) = struct \n"^ mon_body ^"
-  "^ (if !has_fm_uless then compute_fm_uless_body else "") ^"
-  "^ (if !has_fm_ueq then compute_fm_ueq_body else "") ^"
-  "^ (if !has_fm_ulesseq then compute_fm_ulesseq_body else "") ^"
-  "^ (if !has_tm_dur then compute_tm_duration_body else "") ^"
+  "^ (if !has_fm_uless then synth_fm_uless_body else "") ^"
+  "^ (if !has_fm_ueq then synth_fm_ueq_body else "") ^"
+  "^ (if !has_fm_ulesseq then synth_fm_ulesseq_body else "") ^"
+  "^ (if !has_tm_dur then synth_tm_duration_body else "") ^"
   let env = environment T.trc
   let lg_env = logical_environment
   let t = 0.

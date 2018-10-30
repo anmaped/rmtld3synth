@@ -1,4 +1,4 @@
-<src/rmtld3synth.{byte,native}>: package(unix,type_conv,sexplib,batteries,Z3)
+<src/rmtld3synth.{byte,native}>: package(unix,type_conv,sexplib,batteries,Z3,dolmen)
 "src/rmtld3.ml": package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
 "src/rmtld3_extension.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
 "src/rmtld3synth_helper.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
@@ -6,5 +6,6 @@
 "src/interface/mathkernel.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
 "src/interface/rmdslparser.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
 "src/interface/texeqparser.ml" : package(unix,type_conv,sexplib,batteries), camlp4o, use_sexplib.syntax
-<**/*.ml>: package(unix,type_conv,sexplib,batteries,Z3)
+"src/language/smtlib.ml" : package(dolmen)
+<**/*.ml>: package(unix,type_conv,sexplib,batteries,Z3,dolmen)
 true: warn_error_A
