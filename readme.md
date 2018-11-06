@@ -80,20 +80,16 @@ opam install ocamlbuild ocamlfind batteries pa_sexp_conv sexplib.113.33.00+4.03 
 Get the version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Then, use opam to compile this version, compile the `oasis` dependency and install them.
 ```
 opam install oasis
-
-git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
-cd pa_sexp_conv
-opam pin add pa_sexp_conv . -n
-opam install pa_sexp_conv
+opam pin add pa_sexp_conv https://github.com/janestreet/pa_sexp_conv.git
 ```
 
 Use the same commands, as described above for the case of compiling rmtld3synth using Linux and Mac OS, to conclude the compilation.
 
 :grey_exclamation:HINTS!!
 
-If the correct version of GCC is not found then use the environment variables below.
+If the correct version of GCC is not found when executing `mk_make.py` then use the environment variables below.
 ```
-CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar
+CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar python scripts/mk_make.py --ml
 ```
 
 If the libz3 is not found then use the command below for manually copy the libraries.

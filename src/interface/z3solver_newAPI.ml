@@ -51,6 +51,7 @@ let string_of_z3model model =
 
 
 let get_scheduler ctx model helper =
+  verb (fun _ -> print_endline "get_scheduler") ;
   verb (fun _ -> List.iter (fun el -> print_endline ( "kind: "^(string_of_int (int_of_decl_kind (get_decl_kind el) ) )^ " Name: " ^ ( get_string (get_name el) ) ) )  (get_decls model) ) ;
 
   let trace_size = List.find (fun el -> get_string (get_name el) = "trc_size") (get_decls model) in
@@ -66,29 +67,22 @@ let get_scheduler ctx model helper =
   verb (fun _ -> print_endline ("\nTrace size: "^(Z3.Expr.to_string size_fun_interp)^"\n") ) ;
   let size = int_of_string (Z3.Expr.to_string size_fun_interp) + 2 in (* with interpretation of two more elements *)
 
-
- (*let interp = (match get_func_interp model trace with Some x -> x | None -> raise (Failure ("Function interpret is not possible."))) in
-  verb (fun _ -> print_endline ("N interp: "^(string_of_int (get_num_entries interp)) ) ) ;
-  verb (fun _ -> print_endline (Z3.Model.FuncInterp.to_string interp) ) ;
-  let exp2 = get_else interp in
-*)
-
   let exp_trace = Z3.FuncDecl.apply trace [] in
-  print_endline  (Z3.AST.to_string (ast_of_expr exp_trace)) ;
+  verb (fun _ -> print_endline  (Z3.AST.to_string (ast_of_expr exp_trace)) ) ;
 
   let array_ = (match eval model exp_trace true with Some x -> x | None -> raise (Failure ("Evaluation of exp_trace is not available."))) in
 
-  verb (fun _ -> print_endline ("ARRAY: "^ (Z3.AST.to_string (ast_of_expr array_))) ; ) ;
+  verb (fun _ -> print_endline ("ARRAY: "^ (Z3.AST.to_string ( ast_of_expr array_ ) )) ; ) ;
 
+  let exp2 = Z3.Quantifier.get_body (Z3.Quantifier.quantifier_of_expr array_) in
 
-  (* replace variables and evaluate them *)
+(* replace variables and evaluate *)
   List.fold_right (fun a b ->
-    let rpl_exp = Expr.update array_ [Integer.mk_numeral_i ctx a] in
-     verb (fun _ -> print_endline ("ARRAY: "^ (Z3.AST.to_string (ast_of_expr rpl_exp))) ; ) ;
-    let exx = (match eval model rpl_exp true with Some x -> x | None -> raise (Failure ("Interp interpret is not possible."))) in
-    let name = (Z3.AST.to_string (ast_of_expr exx)) in
-    verb (fun _ -> print_endline ("NM: "^name) ; ) ;
-    verb (fun _ -> print_endline (string_of_int a^" -> "^ (find_proposition_rev_hashtbl (int_of_string name)  helper)) ) ;
-    (find_proposition_rev_hashtbl (int_of_string name)  helper)::b
+    let rpl_exp = Expr.substitute_vars exp2 [Integer.mk_numeral_i ctx a] in
+    let evaluated_expression = (match eval model rpl_exp true with Some x -> x | None -> raise (Failure ("Evaluation is not available."))) in
+    let exp_value = (Z3.AST.to_string (ast_of_expr evaluated_expression)) in
+    verb (fun _ -> print_endline ("NM: "^exp_value) ; ) ;
+    verb (fun _ -> print_endline (string_of_int a^" -> "^ (find_proposition_rev_hashtbl (int_of_string exp_value)  helper)) ) ;
+    (find_proposition_rev_hashtbl (int_of_string exp_value)  helper)::b
     (* print_endline (Z3.AST.to_string (ast_of_expr rpl_exp)) ; *)
   ) (List.of_enum (0--size)) []

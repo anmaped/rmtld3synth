@@ -44,7 +44,7 @@ module Translate (T : Translate_sig) = struct
         let tbl = get_proposition_hashtbl helper in
         let id_num10,id_asciistr = try (Hashtbl.find tbl p,"") with
           Not_found ->
-            let cnt = get_proposition_counter helper in 
+            let cnt = get_proposition_counter helper in
             set_proposition_two_way_map p cnt helper;
             (cnt, p) in
         T.synth_fm_p id_num10 helper

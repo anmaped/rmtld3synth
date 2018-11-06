@@ -55,8 +55,14 @@ let synth_tm_times cmptr1 cmptr2 helper =
   ("(fun k s t -> ("^ fst cmptr1 ^" k s t) *. ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
 
 let synth_fm_true helper = ("(fun k s t -> True)","")
-let synth_fm_p p helper = ("(fun k s t -> k.evaluate k.trace \""^ string_of_int p ^"\" t)","")
+
+let synth_fm_p p helper =
+  let tbl = get_proposition_rev_hashtbl helper in
+  let p_id = Hashtbl.find tbl p in
+  ("(fun k s t -> k.evaluate k.trace \""^ p_id ^"\" t)","")
+
 let synth_fm_not cmpfm helper = ("(fun k s t -> b3_not ("^ fst cmpfm ^" k s t))", snd cmpfm)
+
 let synth_fm_or cmpfm1 cmpfm2 helper =
   ("(fun k s t -> b3_or ("^ fst cmpfm1 ^" k s t) ("^ fst cmpfm2 ^" k s t))", (snd cmpfm1)^(snd cmpfm2))
 
