@@ -110,16 +110,16 @@ open Sexplib.Conv
 
 open Rmtld3synth_simplify
 open Rmtld3synth_smt (* swap to smtlib module only *)
-open Smtlib
+open Smtlib2
 open Rmtld3synth_cpp11
 open Rmtld3synth_ocaml
 (*open Rmtld3synth_tessla*)
 open Z3solver_
 open Rmtld3synth_helper
 
-let set_recursive_unrolling f = Smtlib.enable_recursive_unrolling () ; Rmtld3synth_smt.recursive_unrolling := true (* swap to smtlib module only *)
-let set_solve_z3 f = Smtlib.set_solver Z3 ; Rmtld3synth_smt.solver := "z3" (* swap to smtlib module only *)
-let set_solve_cvc4 f = Smtlib.set_solver CVC4 ; Rmtld3synth_smt.solver := "cvc4" (* swap to smtlib module only *)
+let set_recursive_unrolling f = Smtlib2.enable_recursive_unrolling () ; Rmtld3synth_smt.recursive_unrolling := true (* swap to smtlib module only *)
+let set_solve_z3 f = Smtlib2.set_solver Z3 ; Rmtld3synth_smt.solver := "z3" (* swap to smtlib module only *)
+let set_solve_cvc4 f = Smtlib2.set_solver CVC4 ; Rmtld3synth_smt.solver := "cvc4" (* swap to smtlib module only *)
 
 
 let chose_synthesis a b c d =
@@ -240,7 +240,7 @@ let synth_sat_problem formula =
 begin
   let helper = mk_helper in
   (* instantiates module for smtlib translation *)
-  let module Smtlib = Translate(Smtlib) in
+  let module Smtlib = Translate(Smtlib2) in
   (* does translation *)
   (*let stmlibv2_str = synth_smtlib (Smtlib.synth) formula helper in*)
   let stmlibv2_str = rmtld3synthsmt formula helper in
