@@ -2,8 +2,7 @@
 open Batteries
 open Sexplib
 open Sexplib.Conv
-open Dolmenstandard
-open Dolmensmtlib
+open Dolmen
 
 open Rmtld3
 open Rmtld3synth_helper
