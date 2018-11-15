@@ -778,26 +778,55 @@ let code =
 "
 .DEFAULT_GOAL := all
 
-DIR = tests
+ifndef RTMLIB_INCLUDE_DIR
+  $(error RTMLIB_INCLUDE_DIR is undefined)
+endif
 
-GXX = g++
+DIR = tests
+CXX = g++
 
 ifeq ($(OS),Windows_NT)
-  GXX=i686-w64-mingw32-g++
+  CXX_NAMES = i686-w64-mingw32-g++ x86_64-w64-mingw32-g++
+  CXX := $(foreach exec,$(CXX_NAMES),$(if $(shell which $(exec)),$(exec),))
+  ifeq ($(CXX),)
+    $(error \"No $(exec) in PATH\")
+  endif
 endif
 
 arm-monitor:
-\t arm-none-eabi-g++ -std=c++0x -march=armv7-m -g -fverbose-asm -O -IC:\\ardupilot_pixhawk_testcase\\ardupilot\\modules\\PX4NuttX\\nuttx\\include -Wframe-larger-than=1200 -DCONFIG_WCHAR_BUILTIN -I../../arch/arm/include -I../../ -DARM_CM4_FP -D__NUTTX__ --verbose -c monitor_set1.cpp
+\t ifndef NUTTX_OS_INCLUDE_DIR \
+$(error NUTTX_OS_INCLUDE_DIR is undefined) \
+endif
+\t ifndef CMSIS_INCLUDE_DIR \
+$(error CMSIS_INCLUDE_DIR is undefined) \
+endif
+$(if $(shell which arm-none-eabi-g++,,$(error \"No arm-none-eabi-g++ in PATH\"))
+\t arm-none-eabi-g++ \
+-std=c++0x \
+-march=armv7-m -g \
+-fverbose-asm -O \
+-Wframe-larger-than=1200 \
+-DARM_CM4_FP \
+-D__NUTTX__ \
+-DCONFIG_WCHAR_BUILTIN \
+--verbose \
+-I$(NUTTX_OS_INCLUDE_DIR) \
+-I$(CMSIS_INCLUDE_DIR) \
+-I$(RTMLIB_INCLUDE_DIR) \
+-c monitor_set1.cpp
 
 x86-monitor:
-\t$(GXX) -Wall -g -O0 -std=c++11 -I../../../rtmlib -D__x86__ --verbose -c "^cluster_name^".cpp
+\t$(CXX) -Wall -g -O0 -std=c++11 -I$(RTMLIB_INCLUDE_DIR) --verbose -c "^cluster_name^".cpp
 
 .PHONY: tests
 tests:
 \t make -C $(DIR)
 
 x86-mtest: x86-monitor tests
-\t g++ "^cluster_name^".o tests/tests.o -L../../ -lrteml -pthread -o "^cluster_name^"
+\t ifndef RTMLIB_LIB_DIR \
+$(error RTMLIB_LIB_DIR is undefined) \
+endif
+\t g++ "^cluster_name^".o tests/tests.o -L$(RTMLIB_LIB_DIR) -lrtml -pthread -o "^cluster_name^"
 
 arm-mon: arm-monitor
 

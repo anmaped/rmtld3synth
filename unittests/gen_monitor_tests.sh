@@ -81,8 +81,8 @@ echo "
 
 all:
 	ocamlbuild -use-ocamlfind unittests.byte unittests.native
-	cd gtests/mon1; make x86-monitor; cd ../..
-	cd gtests/mon2; make x86-monitor; cd ../..
+	cd gtests/mon1; make RTMLIB_INCLUDE_DIR=$(PWD)/../rtmlib x86-monitor; cd ../..
+	cd gtests/mon2; make RTMLIB_INCLUDE_DIR=$(PWD)/../rtmlib x86-monitor; cd ../..
 
 clean:
 	ocamlbuild -clean
