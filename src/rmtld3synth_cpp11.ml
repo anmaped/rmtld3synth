@@ -172,76 +172,82 @@ let synth_fm_or (cmpfm1,_) (cmpfm2,_) helper = (compute_function_head_mutable^" 
 
 let synth_fm_less (cmptr1,_) (cmptr2,_) helper = (compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ cmptr1 ^"; auto tr2 = "^ cmptr2 ^"; return b3_lessthan (tr1, tr2); }(env,t); }","")
 
+let eval_b sf1 sf2 = "
+  // eval_b lambda function
+  auto eval_b = []( struct Environment env, timespan t, four_valued_type v ) -> four_valued_type
+  {
+    // eval_i lambda function
+    auto eval_i = [](three_valued_type b1, three_valued_type b2) -> four_valued_type
+    {
+      return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE && b2 == T_FALSE) ? b3_to_b4(b1) : FV_SYMBOL );
+    };
+
+    // change this (trying to get the maximum complexity)
+    //if ( v == FV_SYMBOL )
+    //{
+      DEBUGV_RTEMLD3(\"  compute phi1\\n\");
+      // compute phi1
+      three_valued_type cmpphi1 = "^sf1^"(env, t);
+
+      DEBUGV_RTEMLD3(\"  compute phi2\\n\");
+      // compute phi2
+      three_valued_type cmpphi2 = "^sf2^"(env, t);
+
+      four_valued_type rs = eval_i(cmpphi1, cmpphi2);
+
+      DEBUGV_RTEMLD3(\" phi1=%s UNTIL phi2=%s\\n\", out_p(cmpphi1), out_p(cmpphi2) );
+
+    if ( v == FV_SYMBOL )
+    {
+      return rs;
+    }
+    else
+    {
+      return v;
+    }
+  };
+"
+
+let eval_fold sf1 sf2 helper = "
+  auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator helper^" iter) -> four_valued_type
+  {
+    "^ eval_b sf1 sf2 ^"
+
+    iter.debug();
+
+    ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
+
+    auto cos = iter.getBegin();
+
+    four_valued_type s = std::accumulate(
+      iter.begin(),
+      iter.end(),
+      std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
+        [&env, &cos, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype helper ^" e ) {
+          
+          DEBUGV_RTEMLD3(\"  until++ (%s)\\n\", out_fv(a.first));
+
+          count_until_iterations += 1;
+
+          /* update the new state based on the sub_k calculate iterator.
+           * optimization step: update current index to avoid re-read/evaluate events several times
+           */
+          env.state = std::make_pair ( cos,  a.second);
+          cos++;
+
+          return std::make_pair( eval_b( env, a.second, a.first ), a.second + e.getTime() );
+        }
+    ).first;
+
+    return s;
+  };
+"
+
 let synth_fm_uless gamma (sf1,_) (sf2,_) helper =
   (compute_function_head ^"
   {
-    auto eval_fold = []( struct Environment env, timespan t, "^trace_iterator helper^" iter) -> four_valued_type
-    {
-
-      // eval_b lambda function
-      auto eval_b = []( struct Environment env, timespan t, four_valued_type v ) -> four_valued_type
-      {
-        // eval_i lambda function
-        auto eval_i = [](three_valued_type b1, three_valued_type b2) -> four_valued_type
-        {
-          return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE && b2 == T_FALSE) ? b3_to_b4(b1) : FV_SYMBOL );
-        };
-
-        // change this (trying to get the maximum complexity)
-        //if ( v == FV_SYMBOL )
-        //{
-          DEBUGV_RTEMLD3(\"  compute phi1\\n\");
-          // compute phi1
-          three_valued_type cmpphi1 = "^sf1^"(env, t);
-
-          DEBUGV_RTEMLD3(\"  compute phi2\\n\");
-          // compute phi2
-          three_valued_type cmpphi2 = "^sf2^"(env, t);
-
-          four_valued_type rs = eval_i(cmpphi1, cmpphi2);
-
-          DEBUGV_RTEMLD3(\" phi1=%s UNTIL phi2=%s\\n\", out_p(cmpphi1), out_p(cmpphi2) );
-
-        if ( v == FV_SYMBOL )
-        {
-          return rs;
-        }
-        else
-        {
-          return v;
-        }
-      };
-
-      DEBUGV_RTEMLD3(\"BEGIN until_op.\\n\\n \");
-      iter.debug();
-
-      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
-
-      auto cos = iter.getBegin();
-
-      four_valued_type s = std::accumulate(
-        iter.begin(),
-        iter.end(),
-        std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
-          [&env, &cos, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype(helper) ^" e ) {
-            
-            DEBUGV_RTEMLD3(\"  until++ (%s)\\n\", out_fv(a.first));
-
-            count_until_iterations += 1;
-
-            /* update the new state based on the sub_k calculate iterator.
-             * optimization step: update current index to avoid re-read/evaluate events several times
-             */
-            env.state = std::make_pair ( cos,  a.second);
-            cos++;
-
-            return std::make_pair( eval_b( env, a.second, a.first ), a.second + e.getTime() );
-          }
-      ).first;
-
-      return s;
-    };
-
+    
+    "^ eval_fold sf1 sf2 helper ^"
 
     // sub_k function defines a sub-trace
     auto sub_k = []( struct Environment env, timespan t) -> "^trace_iterator helper^"
@@ -256,7 +262,7 @@ let synth_fm_uless gamma (sf1,_) (sf2,_) helper =
       ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
 
       auto lower = env.trace->searchIndexForwardUntil( it, t);
-      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") - 1 );
+      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") - 1 ); /* [TODO] check this minus */
 
       // set TraceIterator for interval [t, t+"^string_of_float (gamma)^"[
       it.setBound(lower, upper);
@@ -267,9 +273,11 @@ let synth_fm_uless gamma (sf1,_) (sf2,_) helper =
 
     "^trace_iterator helper^" subk = sub_k(env, t);
 
+    DEBUGV_RTEMLD3(\"BEGIN until_op_less.\\n\\n \");
+
     four_valued_type eval_c = eval_fold(env, t, subk );
 
-    DEBUGV_RTEMLD3(\"END until_op (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
+    DEBUGV_RTEMLD3(\"END until_op_less (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
     
     return ( eval_c == FV_SYMBOL ) ?
       ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
@@ -279,9 +287,52 @@ let synth_fm_uless gamma (sf1,_) (sf2,_) helper =
 
   ","")
 
-let synth_fm_ueq gamma (sf1,_) (sf2,_) helper = ("[TODO compute_fm_ueq]","")
+let synth_fm_ueq gamma (sf1,_) (sf2,_) helper =
+  (compute_function_head ^"
+  {
+    
+    "^ eval_fold sf1 sf2 helper ^"
 
-let synth_fm_ulesseq gamma (sf1,_) (sf2,_) helper = ("[TODO compute_fm_ulesseq]","")
+    // sub_k function defines a sub-trace
+    auto sub_k = []( struct Environment env, timespan t) -> "^trace_iterator helper^"
+    {
+
+      // use env.state to speedup the calculation of the new bounds
+      "^trace_iterator helper^" iter = "^trace_iterator helper^" (env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
+
+      // to use the iterator for both searches we use one reference
+      "^trace_iterator helper^" &it = iter;
+
+      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
+
+      auto lower = env.trace->searchIndexForwardUntil( it, t);
+      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") - 1 ); /* [TODO] check this minus */
+
+      // set TraceIterator for interval [t, t+"^string_of_float (gamma)^"[
+      it.setBound(upper, upper); /* [TODO] check this lower=upper and upper=upper to get only the last element */
+
+      // return iterator ... interval length may be zero
+      return it;
+    };
+
+    "^trace_iterator helper^" subk = sub_k(env, t);
+
+    DEBUGV_RTEMLD3(\"BEGIN until_op_leq.\\n\\n \");
+
+    four_valued_type eval_c = eval_fold(env, t, subk );
+
+    DEBUGV_RTEMLD3(\"END until_op_leq (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
+    
+    return ( eval_c == FV_SYMBOL ) ?
+      ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
+    :
+      b4_to_b3(eval_c);
+  }
+
+  ","")
+
+let synth_fm_ulesseq gamma (sf1,a) (sf2,b) helper =
+  synth_fm_or (synth_fm_ueq gamma (sf1,a) (sf2,b) helper) (synth_fm_uless gamma (sf1,a) (sf2,b) helper) helper
 
 
 (* monitor dependent c++ functions begin here *)
@@ -338,6 +389,7 @@ let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period form
 
   public:
     "^String.capitalize_ascii monitor_name^"(useconds_t p): RTML_monitor(p,SCHED_FIFO,50), env(std::make_pair (0, 0), &trace, __observation) {}
+    "^String.capitalize_ascii monitor_name^"(useconds_t p, int sche, int prio): RTML_monitor(p,sche,prio), env(std::make_pair (0, 0), &trace, __observation) {}
 
   };
 
@@ -786,37 +838,49 @@ DIR = tests
 CXX = g++
 
 ifeq ($(OS),Windows_NT)
-  CXX_NAMES = i686-w64-mingw32-g++ x86_64-w64-mingw32-g++
+  CXX_NAMES = x86_64-w64-mingw32-g++ i686-w64-mingw32-g++
   CXX := $(foreach exec,$(CXX_NAMES),$(if $(shell which $(exec)),$(exec),))
   ifeq ($(CXX),)
     $(error \"No $(exec) in PATH\")
   endif
 endif
 
+CXX := $(shell echo \"$(CXX)\" | cut -f 1 -d \" \")
+
 arm-monitor:
-\t ifndef NUTTX_OS_INCLUDE_DIR \
-$(error NUTTX_OS_INCLUDE_DIR is undefined) \
-endif
-\t ifndef CMSIS_INCLUDE_DIR \
-$(error CMSIS_INCLUDE_DIR is undefined) \
-endif
-$(if $(shell which arm-none-eabi-g++,,$(error \"No arm-none-eabi-g++ in PATH\"))
-\t arm-none-eabi-g++ \
--std=c++0x \
--march=armv7-m -g \
--fverbose-asm -O \
--Wframe-larger-than=1200 \
--DARM_CM4_FP \
--D__NUTTX__ \
--DCONFIG_WCHAR_BUILTIN \
---verbose \
+\t if [ -z $NUTTX_OS_INCLUDE_DIR ]; then \\
+\t   echo \"Error: NUTTX_OS_INCLUDE_DIR is missing\"; \\
+\t else \\
+\t   if [ -z $CMSIS_INCLUDE_DIR ]; then \\
+\t     echo \"Error: CMSIS_INCLUDE_DIR is missing\"; \\
+\t   else \\
+\t     $(if $(shell which arm-none-eabi-g++),,$(error \"No arm-none-eabi-g++ in PATH\")) \\
+\t     arm-none-eabi-g++ \
 -I$(NUTTX_OS_INCLUDE_DIR) \
+-I$(NUTTX_OS_INCLUDE_DIR)/cxx \
 -I$(CMSIS_INCLUDE_DIR) \
 -I$(RTMLIB_INCLUDE_DIR) \
--c monitor_set1.cpp
+-fno-builtin-printf \
+-fno-exceptions \
+-fno-rtti \
+-std=gnu++11 \
+-mthumb \
+-march=armv7-m \
+-g \
+-DARM_CM4_FP \
+-D__NUTTX__ \
+-DCONFIG_C99_BOOL8 \
+-DCONFIG_WCHAR_BUILTIN \
+-D__FILE_defined \
+-Wframe-larger-than=1200 \
+-fverbose-asm \
+--verbose \
+-c mon1.cpp; \\
+\t   fi \\
+\t fi
 
 x86-monitor:
-\t$(CXX) -Wall -g -O0 -std=c++11 -I$(RTMLIB_INCLUDE_DIR) --verbose -c "^cluster_name^".cpp
+\t$(CXX) -Wall -g -O0 -std=c++11 -I$(RTMLIB_INCLUDE_DIR) -D__x86__ --verbose -c "^cluster_name^".cpp
 
 .PHONY: tests
 tests:

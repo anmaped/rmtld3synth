@@ -244,11 +244,16 @@ There are two flags. The `gen_unit_tests` enables the automatic generation of mo
 To compile the generated monitors please use the generated `Makefile`. Please be aware that you need the `rtmlib.a` library.
 
 Use `make x86-mon` to compile the monitors with the x86 target or use `x86-mtest` argument to compile both monitors and the unit tests at the same time.
+`RTMLIB_INCLUDE_DIR` and `RTMLIB_LIB_DIR` should be provided e.g. `make RTMLIB_INCLUDE_DIR=/dir/to/rtmlib-headers RTMLIB_LIB_DIR=$RTMLIB_INCLUDE_DIR -C /dir/to/monitor-sources x86-mon``.
 
-Use `make arm-mon` to compile the monitors for ARM architecture with the support of the NuttX OS. After this step, we shall link the monitors as a standalone app or module as provided in the `rtmlib/nuttx` directory.
-For that try to install the module files `main.cpp` and `module.mk` in the NuttX modules directory.
+Use `make arm-mon` to compile the monitors for ARM architecture with the support of the NuttX OS.
+In this case, we should set `NUTTX_OS_INCLUDE_DIR` and `CMSIS_INCLUDE_DIR` environment variables.
 
-For the monitors to be used with Ardupilot replace the external Px4 makefile `px4_common.mk` in `modules/Px4` directory of the Ardupilot.
+After this step, we shall link the monitors as a standalone app or module as provided in the `rtmlib/nuttx` directory.
+First, try to install the module files `main.cpp` and `module.mk` in the NuttX modules directory.
+
+
+The monitors to be used with Ardupilot should be included in the external Px4 makefile `px4_common.mk` in the Ardupilot's directory `modules/Px4`. Check [these instructions](doc/nuttx.md) for more details.
 
 
 #### Integrate monitors using rtmlib in a bare metal platform
