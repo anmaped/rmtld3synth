@@ -8,7 +8,7 @@ mkdir gtests/cpp
 
 CMDGENOCAML="../rmtld3synth.native --config-file "../config/default" --synth-ocaml"
 CMDGENCPP="../rmtld3synth.native --config-file "../config/default" --synth-cpp11"
-CMDSAT="../rmtld3synth.native --synth-smtlibv2 --solver-z3 --recursive-unrolling --get-trace --trace-style "tinterval" --input-latexeq"
+CMDSAT="../rmtld3synth.native --synth-smtlibv2 --solver-z3 --recursive-unrolling --get-trace"
 
 # "(\eventually_{<2} a) \land (\eventually_{<2} b) \land (\eventually_{<6} c)" SAT
 # "(\eventually_{<1} a) \land (\eventually_{<1} b)"                            UNSAT
@@ -18,7 +18,7 @@ CMDSAT="../rmtld3synth.native --synth-smtlibv2 --solver-z3 --recursive-unrolling
 
 # SAT:
 # "\eventually_{<6} a \land (\eventually_{<2} (\always_{<3} b ))"
-# "\always_{<6} a \land (\eventually_{<6} ((\neg b) \until_{=6} b ) )" 
+# "\always_{<6} a \land (\eventually_{<6} ((\neg b) \until_{=6} b ) )"
 # "\always_{<6} a \land (\eventually_{<5} ((\neg b) \until_{=4} b ) )"
 
 # UNSAT:
@@ -31,14 +31,14 @@ declare -a arrayrmtld=(
   "\eventaully_{=2} a \land \eventually_{=3} b \land \eventually_{=4} c"
   "\eventually_{=4} a \land (\eventually_{=5} b ) \land \eventually_{=2} c"
   "\always_{=4} a \land (\eventually_{=4} b )"
-  "\neg ( \always_{<6} a \land (\eventually_{<6} ( ( (\neg a) \land (\neg b) ) \until_{=6} b ) ) )" #VALID FORMULA
+  "\neg ( \always_{<6} a \land (\eventually_{<6} ( ( (\neg a) \land (\neg b) ) \until_{=6} b ) ) )" #Negation
 #
   "a \land \always_{< b1 } a \rightarrow \eventually_{=2} a"
   "(p \lor q) \ \until_{<b1} r "
   "\int^{b1} p < 3"
   "\left( (p \lor q) \ \until_{<b1} r \right) \land \int^{9} r < 2"
-  "\neg (\left( (p \lor q) \ \until_{<b1} r \right) \land 10 < \int^{9} r)" #VALID FORMULA
-  "\neg ( \eventually_{<b1}  p \land \always_{<b2} \neg p )" #VALID FORMULA
+  "\neg (\left( (p \lor q) \ \until_{<b1} r \right) \land 10 < \int^{9} r)" #Negation
+  "\neg ( \eventually_{<b1}  p \land \always_{<b2} \neg p )" #Negation
   "\always_{<b2} (a \lor b) \ \until_{<b1} r"
 )
 arrayrmtldlength=${#arrayrmtld[@]}
@@ -72,7 +72,7 @@ for (( i=1; i<${arrayrmtldlength}+1; i++ ));
 do
   REP=${arrayrmtld[$i-1]//b1/$sample}
   REPP=${REP//b2/$sample}
-  $CMDSAT "$REPP" > gtests/cpp/res$i.trace
+  $CMDSAT --trace-style "tcum" --input-latexeq "$REPP" > gtests/cpp/res$i.trace
   $CMDGENCPP --input-latexeq "$REPP" --out-src="gtests/cpp/mon$i"
 done
 
@@ -90,7 +90,7 @@ for (( i=1; i<${arrayrmtldlength}+1; i++ ));
 do
   REP=${arrayrmtld[$i-1]//b1/$sample}
   REPP=${REP//b2/$sample}
-  $CMDSAT "$REPP" > gtests/res$i.trace
+  $CMDSAT --trace-style "tinterval" --input-latexeq "$REPP" > gtests/res$i.trace
   $CMDGENOCAML --input-latexeq "$REPP" > gtests/res$i.ml
 done
 
@@ -117,7 +117,7 @@ $CHECK_GCC
 all:
 	ocamlbuild -use-ocamlfind unittests.byte unittests.native
 $CPP_TO_BUILD
-	$CXX_INC -std=gnu++11 -D__x86__ -I$(pwd)/../rtmlib -pthread -lm $(pwd)/../rtmlib/RTML_monitor.cpp cpptest.cpp -o cpptest
+	$CXX_INC -Wall -Wextra -std=gnu++11 -D__x86__ -DUSE_UNSAFE_METHODS -DUSE_MAP_SORT -DUSE_DEBUGV_RMTLD3 -DDEBUG=3 -I$(pwd)/../rtmlib -pthread -lm $(pwd)/../rtmlib/RTML_monitor.cpp cpptest.cpp -o cpptest
 
 clean:
 	ocamlbuild -clean

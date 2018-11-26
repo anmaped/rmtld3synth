@@ -265,6 +265,9 @@ begin
         if !trace_style = "tinterval" then
           let _,trc_str = List.fold_left (fun (cnt,a) b -> let cnte = cnt +. 1. in (cnte, a^" (\""^b^"\",("^ string_of_float cnt ^","^ string_of_float cnte ^")); ") ) (0.,"") scheduler_trace
           in print_endline trc_str
+        else if !trace_style = "tcum" then
+          let _,trc_str = List.fold_left (fun (cnt,a) b -> let cnte = cnt +. 1. in (cnte, a^" (\""^b^"\","^ string_of_float (cnte -. cnt) ^"); ") ) (0.,"") scheduler_trace
+          in print_endline trc_str
         else
           print_endline (Sexp.to_string (sexp_of_trace_untimed scheduler_trace)) ;
         ()

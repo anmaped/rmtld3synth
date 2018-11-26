@@ -19,7 +19,7 @@ let synth_obs_function observation_funcname struct_name =
   // obs lambda function
   auto "^observation_funcname^" = []( struct "^struct_name^" &env, proposition p, timespan t) mutable -> three_valued_type
   {
-    DEBUGV_RTEMLD3(\"  eval: %lu prop:%d\\n\", t, p);
+    DEBUGV_RMTLD3(\"  eval: %lu prop:%d\\n\", t, p);
     return b3_or ( env.trace->searchOForward(env.state, p, t), env.trace->searchOBackward(env.state, p, t) );
   };
   " in
@@ -89,7 +89,7 @@ let synth_tm_duration (di,_) (tf,_) helper =
       timespan val1 = ( t == lower )? 0 : t - lower;
       timespan val2 = ( t_upper == upper )? 0 : t_upper - upper;
 
-      DEBUGV_RTEMLD3(\"dur lower(%ld) upper(%ld)\\n\", val1, val2);
+      DEBUGV_RMTLD3(\"dur lower(%ld) upper(%ld)\\n\", val1, val2);
 
       auto cum = lower;
 
@@ -113,7 +113,7 @@ let synth_tm_duration (di,_) (tf,_) helper =
 
           auto x = indicator_function(env, p.second);
 
-          DEBUGV_RTEMLD3(\"dur=%f bottom=%d\\n\", d.first + (x.first * ( e.getTime() - valx )), d.second || x.second);
+          DEBUGV_RMTLD3(\"dur=%f bottom=%d\\n\", d.first + (x.first * ( e.getTime() - valx )), d.second || x.second);
 
           return std::make_pair (make_duration (d.first + (x.first * ( e.getTime() - valx )), d.second || x.second), p.second + e.getTime());
         }
@@ -185,17 +185,17 @@ let eval_b sf1 sf2 = "
     // change this (trying to get the maximum complexity)
     //if ( v == FV_SYMBOL )
     //{
-      DEBUGV_RTEMLD3(\"  compute phi1\\n\");
+      DEBUGV_RMTLD3(\"  compute phi1\\n\");
       // compute phi1
       three_valued_type cmpphi1 = "^sf1^"(env, t);
 
-      DEBUGV_RTEMLD3(\"  compute phi2\\n\");
+      DEBUGV_RMTLD3(\"  compute phi2\\n\");
       // compute phi2
       three_valued_type cmpphi2 = "^sf2^"(env, t);
 
       four_valued_type rs = eval_i(cmpphi1, cmpphi2);
 
-      DEBUGV_RTEMLD3(\" phi1=%s UNTIL phi2=%s\\n\", out_p(cmpphi1), out_p(cmpphi2) );
+      DEBUGV_RMTLD3(\" phi1=%s UNTIL phi2=%s\\n\", out_p(cmpphi1), out_p(cmpphi2) );
 
     if ( v == FV_SYMBOL )
     {
@@ -225,7 +225,7 @@ let eval_fold sf1 sf2 helper = "
       std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
         [&env, &cos, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype helper ^" e ) {
           
-          DEBUGV_RTEMLD3(\"  until++ (%s)\\n\", out_fv(a.first));
+          DEBUGV_RMTLD3(\"  until++ (%s)\\n\", out_fv(a.first));
 
           count_until_iterations += 1;
 
@@ -273,11 +273,11 @@ let synth_fm_uless gamma (sf1,_) (sf2,_) helper =
 
     "^trace_iterator helper^" subk = sub_k(env, t);
 
-    DEBUGV_RTEMLD3(\"BEGIN until_op_less.\\n\\n \");
+    DEBUGV_RMTLD3(\"BEGIN until_op_less.\\n\\n \");
 
     four_valued_type eval_c = eval_fold(env, t, subk );
 
-    DEBUGV_RTEMLD3(\"END until_op_less (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
+    DEBUGV_RMTLD3(\"END until_op_less (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
     
     return ( eval_c == FV_SYMBOL ) ?
       ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
@@ -317,11 +317,11 @@ let synth_fm_ueq gamma (sf1,_) (sf2,_) helper =
 
     "^trace_iterator helper^" subk = sub_k(env, t);
 
-    DEBUGV_RTEMLD3(\"BEGIN until_op_leq.\\n\\n \");
+    DEBUGV_RMTLD3(\"BEGIN until_op_leq.\\n\\n \");
 
     four_valued_type eval_c = eval_fold(env, t, subk );
 
-    DEBUGV_RTEMLD3(\"END until_op_leq (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
+    DEBUGV_RMTLD3(\"END until_op_leq (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
     
     return ( eval_c == FV_SYMBOL ) ?
       ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
@@ -350,13 +350,18 @@ let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period form
   // SORTS
   "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "#define SORT_%s %i\n  " x y)) (get_proposition_hashtbl helper) "" ^"
 
-  /*
+#ifdef USE_MAP_SORT
   #include <string>
   #include <unordered_map>
+
   // Create an unordered_map of sorts (that map to integers)
   std::unordered_map<std::string, int> _mapsorttostring = {
   "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "{\"%s\",%i},\n  " x y)) (get_proposition_hashtbl helper) "" ^"};
-  */
+
+  // Create an unordered_map of sorts (that map to strings)
+  std::unordered_map<int, std::string> _mapsorttoint = {
+  "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "{%i,\"%s\"},\n  " y x)) (get_proposition_hashtbl helper) "" ^"};
+#endif
 
   #endif //_"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
     " in
@@ -384,7 +389,7 @@ let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period form
     void run(){
 
       three_valued_type _out = _"^monitor_name^"_compute(env,0);
-      DEBUG_RTEMLD3(\"Veredict:%d\\n\", _out);
+      DEBUG_RTMLD3(\"Veredict:%d\\n\", _out);
     }
 
   public:
@@ -442,7 +447,7 @@ let synth_cpp1_external_dep src_dir cluster_name helper =
     timespanw formula_t_upper_bound;
 
     public:
-      RMTLD3_reader(CircularBuffer<T> * const buffer, timespan ub) :
+      RMTLD3_reader(Ring_buffer<T> * const buffer, timespan ub) :
         RTML_reader<T>(buffer),
         formula_t_upper_bound(ub)
       {};
@@ -460,7 +465,7 @@ let synth_cpp1_external_dep src_dir cluster_name helper =
 
         aligned_time = iterator.getReader()->getTimeAlignment(current_time);
 
-        DEBUGV_RTEMLD3(\"    ENTER_search_index: c_t:%llu c_idx:%u\\n\", current_time, current_idx);
+        DEBUGV_RMTLD3(\"    ENTER_search_index: c_t:%llu c_idx:%u\\n\", current_time, current_idx);
 
         /* create an iterator where its end is the endpoint of the buffer
          * and process the iteration until the timespanw t is found. After
@@ -511,7 +516,7 @@ let synth_cpp1_external_dep src_dir cluster_name helper =
         // assert if there is no event found then timestamps should be equal
         ASSERT_RMTLD3( (std::get<3>(event_find_tuple)) || (aligned_time == std::get<0>(event_find_tuple)) );
 
-        DEBUGV_RTEMLD3(\"    EXIT_searchindex: find(%d) time(%llu) t=%llu idx(%d)\\n\", std::get<3>(event_find_tuple), std::get<0>(event_find_tuple), t, std::get<2>(event_find_tuple));
+        DEBUGV_RMTLD3(\"    EXIT_searchindex: find(%d) time(%llu) t=%llu idx(%d)\\n\", std::get<3>(event_find_tuple), std::get<0>(event_find_tuple), t, std::get<2>(event_find_tuple));
 
         
 
@@ -525,7 +530,7 @@ let synth_cpp1_external_dep src_dir cluster_name helper =
         // use env.state to speedup the calculation of the new bounds
         TraceIterator<T> it = TraceIterator<T> (this, state.first, 0, state.first, state.second, 0, state.second );
 
-        DEBUGV_RTEMLD3(\"  searchOForward: \");
+        DEBUGV_RMTLD3(\"  searchOForward: \");
         //it.debug();
 
         /* use the function searchIndexForwardUntil to find the index where
@@ -543,28 +548,28 @@ let synth_cpp1_external_dep src_dir cluster_name helper =
           if ( current_time > formula_t_upper_bound )
           {
             // the bound is violated here; raise error message
-            DEBUGV_RTEMLD3(\"monitor overloads with %llu > %llu\\n\", current_time, formula_t_upper_bound);
+            DEBUGV_RMTLD3(\"monitor overloads with %llu > %llu\\n\", current_time, formula_t_upper_bound);
             return T_FALSE;
           }
           else
           {
-            //DEBUGV_RTEMLD3(\"    Unknown\\n\");
+            //DEBUGV_RMTLD3(\"    Unknown\\n\");
             return T_UNKNOWN;
           }
         }
         
         proposition new_p = std::get<1>(event_tuple).getData();
 
-        DEBUGV_RTEMLD3(\"end searchOForward\\n\");
+        DEBUGV_RMTLD3(\"end searchOForward\\n\");
 
         if(new_p == p)
         {
-          //DEBUGV_RTEMLD3(\"    True\\n\");
+          //DEBUGV_RMTLD3(\"    True\\n\");
           return T_TRUE;
         }
         else
         {
-          //DEBUGV_RTEMLD3(\"    False\\n\");
+          //DEBUGV_RMTLD3(\"    False\\n\");
           return T_FALSE;
         }
 
@@ -653,7 +658,7 @@ let synth_cpp1_external_dep src_dir cluster_name helper =
         setCurrentAbsTime(lower_abs_time);
         setUpperAbsTime(upper_abs_time);
 
-        DEBUGV_RTEMLD3(\"setBound: \");
+        DEBUGV_RMTLD3(\"setBound: \");
         debug();
       }
 
@@ -695,7 +700,7 @@ let synth_cpp1_external_dep src_dir cluster_name helper =
 
       void debug()
       {
-        DEBUGV_RTEMLD3(\"It:%u %u %u %llu %llu %llu. pt:%p\\n\", ibegin, iend, it, lower_abstime, upper_abstime, current_abstime, __reader);
+        DEBUGV_RMTLD3(\"It:%u %u %u %llu %llu %llu. pt:%p\\n\", ibegin, iend, it, lower_abstime, upper_abstime, current_abstime, __reader);
       }
   };
   " in
@@ -752,14 +757,14 @@ let synth_cpp1_external_dep src_dir cluster_name helper =
 
   //#define DEBUG_VERBOSE
 
-  #ifndef DEBUG_VERBOSE
-    #define DEBUGV_RTEMLD3(...)
+  #ifndef USE_DEBUGV_RMTLD3
+    #define DEBUGV_RMTLD3(...)
   #else
-    #define DEBUGV_RTEMLD3(args ...) \
+    #define DEBUGV_RMTLD3(args ...) \
       ::printf(args)
   #endif
 
-  #define DEBUG_RTEMLD3(args ...) ::printf(args)
+  #define DEBUG_RTMLD3(args ...) ::printf(args)
 
   #define out_p(res) \
   (res == T_TRUE)? \"true\" : ((res == T_FALSE)? \"false\": \"unknown\")
