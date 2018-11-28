@@ -39,17 +39,11 @@ At this point, we have the monitor ready to be supplied for GCC, LLVM or other "
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
 
-#### To compile rmtld3synth for Linux and Mac OS using Opam and Ocaml 4.03.0
-Just use the following commands and switch the opam compiler to version `4.03.0` if needed. All dependencies should be installed automatically.
+#### To compile rmtld3synth for Linux and OS X using Opam and Ocaml >= 4.03.0
+Just pin the rmtld3synth as an opam package and switch the opam compiler to a version `>= 4.03.0`. All dependencies should be installed automatically.
 
 ```
 opam pin add rmtld3synth https://github.com/anmaped/rmtld3synth.git
-```
-
-Use the following commands to switch opam to the OCaml compiler version 4.03.0
-```
-opam switch 4.03.0
-eval `opam config env`
 ```
 
 Use the commands below to compile z3 solver and respective ML bindings.
@@ -59,11 +53,14 @@ cd z3
 python scripts/mk_make.py --ml
 cd build; make
 sudo make install
+# or just 
+opam install z3
 ```
-Make sure that you have at least the python 2.2.7 installed, the gcc-5, and the g++-5.
+Make sure that you have at least python 2.2.7 and g++-5 installed.
 
-#### To compile rmtld3synth for Windows using ocaml 4.03.0
-Get the [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/). Using the available ocaml console switch the opam compiler to version `4.03.0`.
+
+#### To compile rmtld3synth for Windows using ocaml >= 4.03.0
+Get the [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/) and switch the opam compiler to the version `4.03.0`.
 ```
 opam switch 4.03.0+mingw64
 eval `opam config env`
@@ -72,30 +69,18 @@ In case you have not properlly installed the flexdll, download the new flexdll [
 ```
 export PATH=$(PWD)/flexdll-bin-0.35:$PATH
 ```
-Then, install the required packages by using the following commands
-```
-opam install ocamlbuild ocamlfind batteries pa_sexp_conv sexplib.113.33.00+4.03 type_conv
-```
-:heavy_exclamation_mark:WARNING!! If opam does not found a valid version for `pa_sexp_conv` package then we need to compile this package manually.
-Get the version 113.00.02 from [https://github.com/janestreet/pa_sexp_conv](https://github.com/janestreet/pa_sexp_conv) and uncompress it in the folder `pa_sexp_conv`. Then, use opam to compile this version, compile the `oasis` dependency and install them.
-```
-opam install oasis
-opam pin add pa_sexp_conv https://github.com/janestreet/pa_sexp_conv.git
-```
-
-Use the same commands, as described above for the case of compiling rmtld3synth using Linux and Mac OS, to conclude the compilation.
+Then, you have to pin the rmtld3synth package as described on `compile rmtld3synth for Linux and OS X ` section to conclude the compilation.
 
 :grey_exclamation:HINTS!!
 
-If the correct version of GCC is not found when executing `mk_make.py` then use the environment variables below.
+To compile z3 using cygwin you should use the mingw32 or mingw64 tools, otherwise it will not work properlly.
+If the correct version of GCC is not found when executing `mk_make.py`, modify the flags `CXX` and `AR` as needed. For instance,
 ```
 CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar python scripts/mk_make.py --ml
 ```
 
-If the libz3 is not found then use the command below for manually copy the libraries.
-```
-cp z3/build/libz3.dll.a /lib/
-```
+Ensure also that libz3 is properly installed at the current environment.
+If the libz3 is not found then use the copy command to copy the `z3/build/libz3.dll.a` library to the `/lib` or `/home/current-user/.opam/compiler-version/lib` directories.
 
 
 #### Instructions to compile rtmlib

@@ -40,8 +40,6 @@ cd build
 make
 sudo PATH=$PATH make install
 
-export OPAMBUILDTEST=0
-
 cd ${OLD_DIR}
 
 # UNTIL HERE !

@@ -32,13 +32,13 @@ let mk_writeln s =
 let rec mk_readln () =
   if !initialized then
     let block_size = 250
-    in let r = String.create (block_size + 1)
+    in let r = Bytes.create (block_size + 1)
     in let n = input (fst !mk_proc) r 0 block_size
     in
-    if n=block_size && (String.get r block_size) <> '\n' then (* TODO: we are not sure about the ending of a complete query *)
-      (String.sub r 0 n) ^ (mk_readln ()) (* size is not enough *)
+    if n=block_size && (Bytes.get r block_size) <> '\n' then (* TODO: we are not sure about the ending of a complete query *)
+      ( Bytes.to_string (Bytes.sub r 0 n) ) ^ (mk_readln ()) (* size is not enough *)
     else
-      String.sub r 0 n
+      Bytes.to_string ( Bytes.sub r 0 n )
   else
     ""
 
