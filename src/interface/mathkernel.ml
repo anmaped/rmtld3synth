@@ -1,4 +1,3 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
 
 (* Interface between rmtld3tool and Mathematica's MathKernel *)
 (* Lexer was adapted from Pierre Weis, projet Cristal, INRIA Rocquencourt *)
@@ -15,7 +14,7 @@ open Sexplib
 open Sexplib.Conv
 
 include Mathkernel_call_
-open Rmtld3synth_helper
+open Helper
 
 
 let matches s =
@@ -38,7 +37,7 @@ let rec lex inp =
     [] -> []
   | c::cs -> let prop = if alphanumeric(c) then alphanumeric
                else if symbolic(c) then symbolic
-               else fun c -> false in
+               else fun _ -> false in
     let toktl,rest = lexwhile prop cs in
     ((Char.escaped c)^toktl)::lex rest;;
 
@@ -48,7 +47,7 @@ let rec lex inp =
    	lex (String.explode "if (*p1-- == *p2++) then f() else g()");;
 *)
 
-type tokens = string list with sexp
+type tokens = string list [@@deriving sexp]
 
 (* Parse a Mathematica FullForm term into the intermediate tree. *)
 
@@ -89,10 +88,10 @@ type m_tm =
   | Equal of m_tm list
   (* Simplify *)
   | Simplify of m_tm
-with sexp;;
+[@@deriving sexp];;
 
 
-type m_fm = Tm of m_tm | True | False | Aborted with sexp;;
+type m_fm = Tm of m_tm | True | False | Aborted [@@deriving sexp];;
 
 
 let rec parse_m_tm_lst l =
@@ -100,7 +99,7 @@ let rec parse_m_tm_lst l =
     "[" :: r -> (
       match parse_m_tm_lst r with
         (tm_lst, "]" :: s) -> (tm_lst, s)
-      | (_, s :: s') -> raise (Failure ("bad term list: " ^ s))
+      | (_, s :: _) -> raise (Failure ("bad term list: " ^ s))
       | _ -> raise (Failure "bad term list")
     )
 
@@ -189,7 +188,7 @@ and parse_m_tm' l =
     )
 
 let parse_m_tm l =
-  let (x, y) = parse_m_tm' l
+  let (x, _) = parse_m_tm' l
   in x
 
 

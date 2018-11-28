@@ -24,18 +24,11 @@ opam pin add travis-opam https://github.com/${fork_user}/ocaml-ci-scripts.git#${
 
 # MODIFIED HERE !
 
-# This is a workaround for https://github.com/ocaml/opam-repository/issues/11374.
-opam pin add -y --no-action jbuilder 1.0+beta16
-
 OLD_DIR=$(pwd)
 cd ..
 
-git clone https://github.com/janestreet/pa_sexp_conv.git pa_sexp_conv
-opam pin add pa_sexp_conv pa_sexp_conv/ -n
-opam install oasis
-opam install pa_sexp_conv
-
 opam pin add dolmen https://github.com/Gbury/dolmen.git
+opam install num
 
 git clone https://github.com/Z3Prover/z3.git z3
 cd z3

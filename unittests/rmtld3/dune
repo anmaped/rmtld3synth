@@ -1,0 +1,7 @@
+
+(executable
+  (name            unittest)
+  (public_name     unittest)
+  (libraries       rmtld3synth.synthesis)
+  (modules         Unittest)
+)

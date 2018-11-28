@@ -7,7 +7,7 @@ open List
 open Str
 
 open Rmtld3
-open Rmtld3synth_helper
+open Helper
 
 let has_tm_dur = ref false
 let has_fm_uless = ref false

@@ -1,0 +1,31 @@
+
+(executable
+  (name            rmtld3synth)
+  (public_name     rmtld3synth)
+  (libraries       rmtld3synth.synthesis)
+  (modules         Rmtld3synth Version)
+)
+
+(library
+  (name            rmtld3)
+  (public_name     rmtld3synth.rmtld3)
+  (libraries       batteries sexplib ppx_sexp_conv)
+  (modules         Rmtld3)
+  (preprocess      (pps ppx_sexp_conv))
+)
+
+(library
+  (name            rmtld3_extension)
+  (public_name     rmtld3synth.rmtld3.extension)
+  (libraries       rmtld3synth.rmtld3 sexplib ppx_sexp_conv)
+  (modules         Rmtld3_extension)
+  (preprocess      (pps ppx_sexp_conv))
+)
+
+(library
+  (name            helper)
+  (public_name     rmtld3synth.helper)
+  (libraries       rmtld3synth.rmtld3 rmtld3synth.js sexplib ppx_sexp_conv)
+  (modules         Helper)
+  (preprocess      (pps ppx_sexp_conv))
+)

@@ -1,20 +1,19 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
 
 open Hashtbl
 open Sexplib
 open Sexplib.Conv
 
 open Rmtld3
-include Js_helper_
+include Js.Helper_
 
 (* global_int settings *)
-type global_int = string * int with sexp
+type global_int = string * int [@@deriving sexp]
 (* global_string settings *)
-type global_string = string * string with sexp
+type global_string = string * string [@@deriving sexp]
 (* monitor setting entry*)
-type monitor = string * int * Rmtld3.fm with sexp
+type monitor = string * int * Rmtld3.fm [@@deriving sexp]
 
-type formula = Rmtld3.fm with sexp
+type formula = Rmtld3.fm [@@deriving sexp]
 
 exception Settings_Not_Found of string;;
 
@@ -68,7 +67,7 @@ let get_counter_without_map id lst =
 let get_event_fulltype (t1,t2,_,_,_) = 
   !t1 ^ "< " ^ !t2 ^" >"
 
-let get_event_type (t1,t2,_,_,_) =
+let get_event_type (_,t2,_,_,_) =
   !t2
 
 let set_event_type type_event (t1,_,_,_,_) =
@@ -150,7 +149,7 @@ let settings mon_filename =
   let list_monitor_settings, remainig_elements = List.fold_left (
     fun (lst,lst2) sexp_el -> ( try (monitor_of_sexp sexp_el) :: lst, lst2 with _ -> (lst, sexp_el::lst2) ) ) ([],[]) remainig_elements in
   (* lets draw the settings that are not recognized *)
-  List.fold_left (fun lst sexp_el -> print_endline ( ( Sexp.to_string_hum sexp_el ) ^ " setting is not recognized.");  ) () remainig_elements;
+  List.fold_left (fun _ sexp_el -> print_endline ( ( Sexp.to_string_hum sexp_el ) ^ " setting is not recognized.");  ) () remainig_elements;
 
   (list_global_int_settings, list_global_string_settings, list_monitor_settings) ;;
 
@@ -174,16 +173,16 @@ let search_settings_string word helper =
 (* compute the heap cost of a formula *)
 let rec calculate_heap_cost formula =
   match formula with
-    | Prop p                  -> 1
+    | Prop _                  -> 1
     | Not sf                  -> 1 + calculate_heap_cost sf
     | Or (sf1, sf2)           -> 1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
-    | Until (gamma, sf1, sf2) -> 1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
+    | Until (_, sf1, sf2)     -> 1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
     | LessThan (tr1,tr2)      -> 1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
     | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.") 
 and calculate_heap_cost_term term =
   match term with
-    | Constant value       -> 1
-    | Duration (di,phi)    -> 1 + calculate_heap_cost phi
+    | Constant _           -> 1
+    | Duration (_,phi)     -> 1 + calculate_heap_cost phi
     | FPlus (tr1,tr2)      -> 1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
     | FTimes (tr1,tr2)     -> 1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
     | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
@@ -191,24 +190,24 @@ and calculate_heap_cost_term term =
 
 let rec calculate_cycle_cost formula l =
   match formula with
-    | Prop p                  -> 0
+    | Prop _                  -> 0
     | Not sf                  -> 0 + calculate_cycle_cost sf l
     | Or (sf1, sf2)           -> 0 + (calculate_cycle_cost sf1 l) + (calculate_cycle_cost sf2 l)
-    | Until (gamma, sf1, sf2) ->
+    | Until (_, sf1, sf2)     ->
 
     let lend i = if List.length i > 0 then List.tl i else [] in
    	let x,_ =
-    List.fold_left ( fun (a,c) b -> ( (a + (calculate_cycle_cost sf1 c) + (calculate_cycle_cost sf2 c) + 1), (lend c)) ) (0,( l)) l in
+    List.fold_left ( fun (a,c) _ -> ( (a + (calculate_cycle_cost sf1 c) + (calculate_cycle_cost sf2 c) + 1), (lend c)) ) (0,( l)) l in
     							x + 0
 
-    | LessThan (tr1,tr2)      -> 0
+    | LessThan (_,_)       -> 0
     | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.") 
 and calculate_cycle_cost_term term l =
   match term with
-    | Constant value       -> 0
-    | Duration (di,phi)    -> 0 + calculate_cycle_cost phi l
-    | FPlus (tr1,tr2)      -> 0
-    | FTimes (tr1,tr2)     -> 0
+    | Constant _           -> 0
+    | Duration (_,phi)     -> 0 + calculate_cycle_cost phi l
+    | FPlus (_,_)          -> 0
+    | FTimes (_,_)         -> 0
     | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
 
 

@@ -1,6 +1,5 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
-
-(* RESTRICTED METRIC TEMPORAL LOGIC WITH DURATIONS EVALUATION MODULE
+(* 
+ * RESTRICTED METRIC TEMPORAL LOGIC WITH DURATIONS EVALUATION MODULE
  *
  * The RMTLD3 syntax and semantics have been implemented in this module. The
  * evaluation of the logical formulas is given by the models function, and the
@@ -13,13 +12,13 @@ open Batteries
 open List
 
 open Sexplib
-open Sexplib.Conv
+open Sexplib.Std
 
 
-type var_id = string with sexp
-type prop   = string with sexp
-type time   = float with sexp
-type value  = float with sexp
+type var_id = string [@@deriving sexp]
+type prop   = string [@@deriving sexp]
+type time   = float [@@deriving sexp]
+type value  = float [@@deriving sexp]
 
 type fm =
           True of unit
@@ -43,10 +42,10 @@ and tm =
         | FPlus of tm * tm
         | FTimes of tm * tm
         | Duration of tm * fm
-with sexp
+[@@deriving sexp]
 
-type rmtld3_tm = tm with sexp
-type rmtld3_fm = fm with sexp
+type rmtld3_tm = tm [@@deriving sexp]
+type rmtld3_fm = fm [@@deriving sexp]
 
 
 (* RMTLD3 abreviations *)
@@ -76,14 +75,14 @@ type idx_ct = KUntil of time * fm * fm | KDuration of fm * tm | KFormula of fm
 (*
    Untimed trace is a time of the form, prop1,prop2,...
 *)
-type trace_untimed = (prop) list with sexp
+type trace_untimed = (prop) list [@@deriving sexp]
 
 (*
  *  trace is a list of n elements of the form,
  *    (prop, interval_1),...,(prop, interval_n)
  *)
-type trace = (prop * (time*time)) list with sexp
-type trace_short = (prop * time) list with sexp
+type trace = (prop * (time*time)) list [@@deriving sexp]
+type trace_short = (prop * time) list [@@deriving sexp]
 
 
 type term_indefeasible = V of value | Indefeasible
@@ -246,9 +245,9 @@ let gen_formula_default () = gen_formula 20 (5,5, (1,4),(1,4), 0.2,0.1,0.3,0.3)
 (* measuring formulas (n durations, n temporal operators) *)
 let rec measure_term term =
    match term with
-   | Constant value      -> (0,0)
+   | Constant _          -> (0,0)
 
-   | Variable id         -> (0,0)
+   | Variable _          -> (0,0)
 
    | Duration (trm,sf)   -> let x1,y1 = measure_term trm in
                             let x2,y2 = measure_formula sf in
@@ -264,15 +263,15 @@ let rec measure_term term =
                             
 and measure_formula formula =
    match formula with
-   | Prop p          -> (0,0) 
+   | Prop _                 -> (0,0) 
    | Not sf                 -> measure_formula sf
    | Or (sf1, sf2)          -> let x1,y1 = measure_formula sf1 in
                                let x2,y2 = measure_formula sf2 in
                                (x1+x2, y1+y2)
-   | Until (pval, sf1, sf2) -> let x1,y1 = measure_formula sf1 in
+   | Until (_, sf1, sf2)    -> let x1,y1 = measure_formula sf1 in
                                let x2,y2 = measure_formula sf2 in
                                (x1+x2, 1+y1+y2)
-   | Exists (var,sf)        -> measure_formula sf
+   | Exists (_,sf)          -> measure_formula sf
    | LessThan (tr1,tr2)     -> let x1,y1 = measure_term tr1 in
                                let x2,y2 = measure_term tr2 in
                                (x1+x2, y1+y2)
@@ -293,8 +292,8 @@ let rec generate_uniform_traces value samples lst =
 (* asymptotic function for complexity *)
 let rec asym_comp (a,b,c) fm =
   match fm with
-  | Until(vl, fm1, fm2) when a <> []-> fst (fold_left (fun (cts,lst) el -> (cts + (asym_comp (lst,b,c) fm1) + (asym_comp (lst,b,c) fm2), List.tl lst ) ) (0,a) a)
-  | Prop(str) -> 1
+  | Until(_, fm1, fm2) when a <> []-> fst (fold_left (fun (cts,lst) _ -> (cts + (asym_comp (lst,b,c) fm1) + (asym_comp (lst,b,c) fm2), List.tl lst ) ) (0,a) a)
+  | Prop(_) -> 1
   | _ -> raise (Failure ("Not supported formula."))
 
 (* generate an until formula using triangle pattern *)
@@ -322,13 +321,13 @@ let gen_u_formula_with_maximum_prop_evaluation size pval samples =
       in
       let fm2 = gen_u_formula_with_maximum_prop_evaluation' (size_op-2) pval trc
       in
-      let n_du1, n_to1 = measure_formula fm1
+      let _, n_to1 = measure_formula fm1
       in
-      let n_du2, n_to2 = measure_formula fm2
+      let _, n_to2 = measure_formula fm2
       in
       let fm3 = gen_u_formula_with_maximum_prop_evaluation' (size_op - n_to2 - 2) pval trc
       in
-      let n_du2, n_to3 = measure_formula fm3
+      let _, n_to3 = measure_formula fm3
       in
       
       let fm1_tree = Until(pval, fm1, gen_u_formula_with_maximum_prop_evaluation' (size_op - n_to1 - 1) pval trc)
@@ -422,7 +421,7 @@ let observation duration (trace_backward,trace_forward) p t =
       search (tl trace) prop t
   in
   let search_forward trace prop t =
-    let (b_p, (b_i, b_i')) = hd trace in
+    let (_, (b_i, _)) = hd trace in
     (* check t lower b_i *)
     if (not (b_i <= t)) then
       False
@@ -430,7 +429,7 @@ let observation duration (trace_backward,trace_forward) p t =
       search trace prop t
   in
   let search_backward trace prop t =
-    let (b_p, (b_i, b_i')) = hd trace in
+    let (_, (_, b_i')) = hd trace in
     (* check t upper b_i' *)
     if (not (t < b_i')) then
       False
@@ -481,14 +480,14 @@ let rec logical_environment = {
 }
 
 (* sub-trace function *)
-let sub_k (k,u,t) gamma =
+let sub_k (k,_,t) gamma =
        (* construct a sub list *)
        let _,tb = k.trace in
        (* check k size *)
        if length tb < 1 then
          []
        else
-         let p1,p2 = partition (fun (_,(i1,i2)) -> if t <= i1 && i1 < (t+.gamma) then true else false) tb in
+         let p1,_ = partition (fun (_,(i1,_)) -> if t <= i1 && i1 < (t+.gamma) then true else false) tb in
          (*Printf.printf "(%f)s-" t ;
          print_trace p1;
          Printf.printf "--" ;
@@ -559,7 +558,7 @@ and compute_term_duration (k,u) dt formula =
             else
               (i'-.i) *. (indicator_function m i phi)
           ) in
-        let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
+        let eval_eta m dt phi x = fold_left (fun s (_,(i,t')) -> (riemann_sum
         m dt (i,t') phi) +. s) 0. x in
         let t,t' = dt in
         eval_eta (k,u) dt formula (sub_k (k,u,t) t')
@@ -615,7 +614,7 @@ and compute_uless m gamma phi1 phi2 =
             print_plaintext_formula phi2 ;
             Printf.printf "\n" ;
           end;
-          let s,_ = fold_left (fun (v,t') (prop,(ii1,ii2)) ->
+          let s,_ = fold_left (fun (v,t') (_,(ii1,ii2)) ->
 
             if activate_debug = ref true then
             begin
@@ -666,7 +665,7 @@ and compute_uless m gamma phi1 phi2 =
 let rec calculate_t_upper_bound (formula: rmtld3_fm) =
   match formula with
     | True()                  -> 0.
-    | Prop p                  -> 0.
+    | Prop _                  -> 0.
     | Not sf                  -> calculate_t_upper_bound sf
     | Or (sf1, sf2)           -> Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
     | Until (gamma, sf1, sf2)    -> gamma +. Pervasives.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
@@ -676,10 +675,10 @@ let rec calculate_t_upper_bound (formula: rmtld3_fm) =
     | _ -> raise (Failure ("ERROR: Calculating bound for unsupported formula="^(Sexp.to_string (sexp_of_rmtld3_fm formula)))) 
 and calculate_t_upper_bound_term term =
   match term with
-    | Constant value       -> 0.
-    | Duration (di,phi)    -> 0.
-    | FPlus (tr1,tr2)      -> 0.
-    | FTimes (tr1,tr2)     -> 0.
+    | Constant _           -> 0.
+    | Duration (_,_)       -> 0.
+    | FPlus (_,_)          -> 0.
+    | FTimes (_,_)         -> 0.
     | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
 
 
@@ -744,7 +743,7 @@ let _ =
       ) in
 
     let fprint_metrics_list oc lst =
-      fold_left (fun a (x,y,z) -> Printf.fprintf oc "%f %i %i\\\\ " x y z  ) () lst ;
+      fold_left (fun _ (x,y,z) -> Printf.fprintf oc "%f %i %i\\\\ " x y z  ) () lst ;
       () in
 
     let fprint_metrics oc =
@@ -841,7 +840,7 @@ let _ =
        let time_end = Sys.time () in
        let n_du, n_to = measure_formula formula in
        let delta_t = (time_end -. time_start) in 
-       Printf.printf "Duration %fs\nMetrics:\n" delta_t;
+       Printf.printf "%d)Duration %fs\nMetrics:\n" i delta_t;
        Printf.printf "  Cardinality: %d\n" (length trace);
        Printf.printf "  Measure(temporal operators): %d\n" n_to;
        Printf.printf "  Measure(duration terms): %d\n" n_du;

@@ -1,5 +1,3 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
-
 
 open List
 open Batteries
@@ -8,7 +6,7 @@ open Sexplib
 open Sexplib.Conv
 
 open Rmtld3
-open Rmtld3synth_helper
+open Helper
 
 (* parsing latex equations *)
 
@@ -37,10 +35,10 @@ let rec lex inp =
     ((Char.escaped c)^toktl)::lex rest;;
 
 
-type tokens = string list with sexp
+type tokens = string list [@@deriving sexp]
 
 (* intermediate representation *)
-type op = Leq of unit | Geq of unit | Eq of unit | Less of unit | Greater of unit | N of unit with sexp
+type op = Leq of unit | Geq of unit | Eq of unit | Less of unit | Greater of unit | N of unit [@@deriving sexp]
 type intermediate_ltx_pm =
     PEmpty of unit
   | POp of op * intermediate_ltx_tm list
@@ -71,10 +69,10 @@ and intermediate_ltx_fm =
   | Strr of string list
   | FBreak of intermediate_ltx_fm list
   | FVar of string
-with sexp
+[@@deriving sexp]
 
-type intermediate_ltx_tm_list = intermediate_ltx_tm list with sexp
-type intermediate_ltx_fm_list = intermediate_ltx_fm list with sexp
+type intermediate_ltx_tm_list = intermediate_ltx_tm list [@@deriving sexp]
+type intermediate_ltx_fm_list = intermediate_ltx_fm list [@@deriving sexp]
 
 let chk_alphanum a = List.for_all alphanumeric (String.explode a)
 let chk_num a = List.for_all numeric (String.explode a)

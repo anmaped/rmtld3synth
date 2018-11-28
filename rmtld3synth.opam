@@ -10,14 +10,15 @@ authors: [
 ]
 
 depends: [
-  "ocamlbuild" {build}
-  "ocamlfind"  {build}
-  "batteries"
-  "pa_sexp_conv" {<= "113.00.02"}
-  "sexplib" {<= "113.33.00+4.03"}
-  "type_conv" {<= "113.00.02"}
+  "ocamlfind" {build}
+  "dune" {build}
+  "batteries" {build}
+  "sexplib" {build}
+  "ppx_sexp_conv" {build}
   "dolmen" {build}
 ]
+
+available: [ ocaml-version >= "4.03.0" ]
 
 build: [
   ["chmod" "ugo+x" "configure"]
@@ -25,7 +26,4 @@ build: [
   [make "all"]
 ]
 
-install: [make "install"]
-remove: ["ocamlfind" "remove" "rmtld3synth"]
-
-build-test: [make "tests"]
+run-test: [make "tests"]

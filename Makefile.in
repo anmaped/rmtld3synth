@@ -8,11 +8,11 @@ endif
 
 all: version z3
 	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
-	echo "(* dummy js interface *)" >> src/interface/js_helper_.ml
-	ocamlbuild -use-ocamlfind rmtld3synth.byte rmtld3synth.native
+	echo "(* dummy js interface *)" >> src/js/helper_.ml
+	dune build --profile release @install
 
 version:
-	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > version.ml
+	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > src/version.ml
 
 tests:
 	mkdir _build_tests && cp -R unittests/* _build_tests && cd _build_tests && bash -ex gen_unit_tests.sh
@@ -22,9 +22,8 @@ clean-tests:
 
 install:
 	@echo "OS: ${OS}"
-	@echo "Installing rmtld3synth.native to ${PREFIX}/bin"
-	mkdir --parents ${PREFIX}/bin; cp _build/src/rmtld3synth.native ${PREFIX}/bin/rmtld3synth$(EXT)
-	@echo "Please install Z3 libs"
+	@echo "Installing rmtld3synth to ${PREFIX}/bin"
+	dune install
 
 uninstall:
 	rm -f ${PREFIX}/bin/rmtld3synth$(EXT)
@@ -33,4 +32,4 @@ uninstall:
 clean:
 	ocamlbuild -clean
 	rm -f *.byte *.native
-	rm -f src/interface/z3solver_.ml src/interface/mathkernel_call_.ml src/interface/js_helper_.ml version.ml
+	rm -f src/interface/z3solver_.ml src/interface/mathkernel_call_.ml src/js/helper_.ml version.ml

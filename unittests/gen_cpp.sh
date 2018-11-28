@@ -17,17 +17,17 @@ RTML_buffer<int, 300> __buffer_mon1 __attribute__((used));
 for (( i=1; i<${arrayrmtldlength}+1; i++ ));
 do
 	cppgen+="
-#include \"gtests/cpp/mon$i/Rmtld3_reader.h\"
-#include \"gtests/cpp/mon$i/mon0_compute.h\"
+#include \"cpp/mon$i/Rmtld3_reader.h\"
+#include \"cpp/mon$i/mon0_compute.h\"
 
 void test$i() {
-	std::list<std::pair<std::string,int>> trc =  { $( echo "$(dos2unix gtests/cpp/res$i.trace; cat gtests/cpp/res$i.trace)" | sed -e "s/)/}/g" -e "s/(/{/g" -e "s/;/,/g" ) };
+	std::list<std::pair<std::string,int>> trc =  { $( echo "$(dos2unix $TEST_DIR/cpp/res$i.trace; cat $TEST_DIR/cpp/res$i.trace)" | sed -e "s/)/}/g" -e "s/(/{/g" -e "s/;/,/g" ) };
 	std::list<std::pair<int,timespan>> enc_trc;
 
-	timespan counter = 0;
+	timespan delay_time = 0;
 	for (auto it = trc.begin(); it != trc.end(); it++) {
-		enc_trc.push_back ( std::make_pair (_mapsorttostring[(*it).first], counter ) );
-		counter += (timespan) (*it).second;
+		enc_trc.push_back ( std::make_pair (_mapsorttostring[(*it).first], delay_time ) );
+		delay_time = (timespan) (*it).second;
 	}
 
 	RTML_writer< int > __writer = RTML_writer< int >( __buffer_mon1.getBuffer() );
@@ -65,7 +65,7 @@ cppgen+="
 }
 "
 
-echo "$cppgen" > cpptest.cpp
+echo "$cppgen" > $TEST_DIR/cpptest.cpp
 
 # int main()
 # {

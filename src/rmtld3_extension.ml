@@ -1,17 +1,16 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
 
 (*
    RMTLD3 type extensions
  *)
 
 open Sexplib
-open Sexplib.Conv
+open Sexplib.Std
 
 open Rmtld3
 
-type kmap = KVar of var_id | KProp of prop | KForm of string with sexp 
+type kmap = KVar of var_id | KProp of prop | KForm of string [@@deriving sexp]
 
-type tm_var = Var of var_id with sexp
+type tm_var = Var of var_id [@@deriving sexp]
 
 
 (*
@@ -30,7 +29,7 @@ type tm_disj_ex = Var of var_id | C of value | Dur of tm_disj_ex * fm_disj_ex | 
 and fm_atom_ex = Not of fm_atom_ex | True | Prop of prop | Less of tm_disj_ex * tm_disj_ex | Equal of tm_disj_ex * tm_disj_ex | EqualD of tm_var * (tm_disj_ex * fm_disj_ex) | ULess of time * fm_disj_ex * fm_disj_ex | E of var_id * fm_disj_ex | RU of prop
 and fm_conj_ex = [`And of fm_atom_ex * fm_conj_ex |  `X of fm_atom_ex]
 and fm_disj_ex = [`Or of fm_conj_ex * fm_disj_ex | `Conj of fm_conj_ex]
-with sexp
+[@@deriving sexp]
 
 
 (*
@@ -66,7 +65,7 @@ and fm_disj_notless = [`Or of fm_conj_notless * fm_disj_notless | `Conj of fm_co
 module Fm_container = Map.Make(String);;
 
 (* RMTLD index type for fm_disj_ex type container *)
-type idx_ct_fm_disj_ex = KUntil of time * fm_disj_ex * fm_disj_ex | KDuration of fm_disj_ex * tm_disj_ex | KFormula of fm_disj_ex with sexp
+type idx_ct_fm_disj_ex = KUntil of time * fm_disj_ex * fm_disj_ex | KDuration of fm_disj_ex * tm_disj_ex | KFormula of fm_disj_ex [@@deriving sexp]
 
 type map_of_fm = idx_ct Fm_container.t
 type map_of_fm_disj_ex = idx_ct_fm_disj_ex Fm_container.t

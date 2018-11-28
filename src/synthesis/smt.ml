@@ -5,7 +5,7 @@ open Sexplib
 open Sexplib.Conv
 
 
-open Rmtld3synth_helper
+open Helper
 
 let recursive_unrolling = ref false
 let solver = ref ""
@@ -275,8 +275,8 @@ let rec synth_smtlib_tm t term helper =
     						  let sf_out1, sf_out2 = synth_smtlib_fm t phi helper in
     						  let dur_out1, dur_out2 = duration (string_of_int idx) t tr_out1 sf_out1 in
     						  (dur_out1, tr_out2^sf_out2^dur_out2)
-    | FPlus (tr1,tr2)      -> ("", "")
-    | FTimes (tr1,tr2)     -> ("", "")
+    | FPlus (_,_)          -> ("", "")
+    | FTimes (_,_)         -> ("", "")
     | _                    -> raise (Failure ("synth_smtlib_tm: bad term "^( Sexp.to_string_hum (sexp_of_rmtld3_tm term))))
 and synth_smtlib_fm t formula helper =
   match formula with

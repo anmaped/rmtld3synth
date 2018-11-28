@@ -22,6 +22,10 @@ addons:
 
 env:
   - OCAML_VERSION=4.03 PACKAGE=rmtld3synth
+  - OCAML_VERSION=4.04 PACKAGE=rmtld3synth
+  - OCAML_VERSION=4.05 PACKAGE=rmtld3synth
+  - OCAML_VERSION=4.06 PACKAGE=rmtld3synth
+  - OCAML_VERSION=4.07 PACKAGE=rmtld3synth
 
 os:
   - linux

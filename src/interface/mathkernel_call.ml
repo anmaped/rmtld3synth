@@ -2,7 +2,7 @@
 open Batteries
 open Unix
 
-open Rmtld3synth_helper
+open Helper
 
 
 (* change it for MACOS *)
@@ -89,7 +89,7 @@ let mk_handshake () =
 
 (* Close MathKernel process *)
 
-let mk_close ignore_outcome =
+let mk_close _ =
   let _ = Unix.close_process !mk_proc in
   ();;
 (*Printf.printf status;

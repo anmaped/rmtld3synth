@@ -1,5 +1,3 @@
-(*pp camlp4o `ocamlfind query type_conv`/pa_type_conv.cma  `ocamlfind query pa_sexp_conv`/pa_sexp_conv.cma  -I `ocamlfind query sexplib` -I `ocamlfind query pa_sexp_conv` *)
-
 
 open List
 open Batteries
@@ -9,19 +7,19 @@ open Sexplib.Conv
 
 open Texeqparser
 open Rmtld3
-open Rmtld3synth_helper
+open Helper
 
 (* parser for rmdsl *)
 (* operators for tasks: \succ, \bowtie; and for RM: \parallel, \gg *)
 
-type parameter = PInt of int | PFreevar of string with sexp
+type parameter = PInt of int | PFreevar of string [@@deriving sexp]
 
 type rmdsl_tk =
     TkEmp of unit
   | Tsk of string * parameter list
   | Pri of rmdsl_tk * rmdsl_tk
   | Arb of rmdsl_tk * rmdsl_tk
-with sexp
+[@@deriving sexp]
 
 type rmdsl_rs =
     Emp of unit
@@ -29,7 +27,7 @@ type rmdsl_rs =
   | Par of rmdsl_rs * rmdsl_rs
   | Seq of rmdsl_rs * rmdsl_rs
   | Cmp of rmdsl_rs * rmdsl_rs
-with sexp
+[@@deriving sexp]
 
 
 (* direct parsing *)
@@ -168,7 +166,7 @@ let rec remove_dups lst =
 
 let prop_list_of_fm fm : rmtld3_fm = fold_left (fun a b -> Or(a,b)) (Not(mtrue)) (remove_dups (prop_list_of_fm' fm)) (* it removes duplications *)
 
-type tp_tuple = float list * rmtld3_fm list with sexp
+type tp_tuple = float list * rmtld3_fm list [@@deriving sexp]
 let mk_empty_tuple = ([],[])
 
 (* Let's define a meta next *)

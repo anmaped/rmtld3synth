@@ -8,7 +8,7 @@ open Sexplib
 open Sexplib.Conv
 
 open Rmtld3
-open Rmtld3synth_helper
+open Helper
 
 type body = string * string
 

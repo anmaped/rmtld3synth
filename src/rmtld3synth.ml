@@ -4,7 +4,7 @@ open Sexplib
 open Sexplib.Conv
 
 open Rmtld3
-open Rmtld3synth_helper
+open Helper
 
 
 type prop_base10 = int
@@ -107,19 +107,19 @@ open Unix
 open Sexplib
 open Sexplib.Conv
 
-
-open Rmtld3synth_simplify
-open Rmtld3synth_smt (* swap to smtlib module only *)
-open Smtlib2
-open Rmtld3synth_cpp11
-open Rmtld3synth_ocaml
+open Synthesis
+open Synthesis.Simplify
+open Synthesis.Smt (* swap to smtlib module only *)
+open Synthesis.Smtlib2
+open Synthesis.Cpp11
+open Synthesis.Ocaml
 (*open Rmtld3synth_tessla*)
-open Z3solver_
-open Rmtld3synth_helper
+open Interface.Z3solver_
+open Helper
 
-let set_recursive_unrolling f = Smtlib2.enable_recursive_unrolling () ; Rmtld3synth_smt.recursive_unrolling := true (* swap to smtlib module only *)
-let set_solve_z3 f = Smtlib2.set_solver Z3 ; Rmtld3synth_smt.solver := "z3" (* swap to smtlib module only *)
-let set_solve_cvc4 f = Smtlib2.set_solver CVC4 ; Rmtld3synth_smt.solver := "cvc4" (* swap to smtlib module only *)
+let set_recursive_unrolling f = Smtlib2.enable_recursive_unrolling () ; Smt.recursive_unrolling := true (* swap to smtlib module only *)
+let set_solve_z3 f = Smtlib2.set_solver Z3 ; Smt.solver := "z3" (* swap to smtlib module only *)
+let set_solve_cvc4 f = Smtlib2.set_solver CVC4 ; Smt.solver := "cvc4" (* swap to smtlib module only *)
 
 
 let chose_synthesis a b c d =
@@ -171,8 +171,8 @@ let synth_monitor fm =
   (*
      Functors for synthesis
    *)
-  let module Conv_cpp11 = Translate(Rmtld3synth_cpp11) in
-  let module Conv_ocaml = Translate(Rmtld3synth_ocaml) in
+  let module Conv_cpp11 = Translate(Synthesis.Cpp11) in
+  let module Conv_ocaml = Translate(Synthesis.Ocaml) in
   (*let module Conv_tessla = Translate(Rmtld3synth_tessla) in*)
 
   (*
@@ -297,8 +297,9 @@ end
 
 
 open Version
-open Rmdslparser
-open Rmtld3synth_helper
+open Interface
+open Interface.Rmdslparser
+open Helper
 
 (*
    Command Line Interface

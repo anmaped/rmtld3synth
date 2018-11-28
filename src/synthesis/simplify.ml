@@ -8,8 +8,9 @@ open Sexplib.Conv
 
 open Rmtld3
 open Rmtld3_extension
-open Rmtld3synth_helper
-open Mathkernel
+open Helper
+open Interface
+open Interface.Mathkernel
 
 
 exception Empty_wineq_lst of unit;;

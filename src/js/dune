@@ -1,0 +1,8 @@
+
+(library
+  (name            js)
+  (public_name     rmtld3synth.js)
+  (libraries       sexplib ppx_sexp_conv)
+  (modules         Helper_)
+  (preprocess      (pps ppx_sexp_conv))
+)

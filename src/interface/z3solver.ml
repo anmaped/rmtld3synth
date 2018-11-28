@@ -18,7 +18,7 @@ open Z3.Symbol
 open Z3.Arithmetic
 open Z3.Tactic
 
-open Rmtld3synth_helper
+open Helper
 
 let parse_smtlibv2 smtlibv2_str =
   (*ignore (Z3.Log.open_ "Z3.log");*)

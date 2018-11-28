@@ -5,7 +5,7 @@ open Sexplib.Conv
 open Dolmen
 
 open Rmtld3
-open Rmtld3synth_helper
+open Helper
 
 type body = Term.t * Statement.t list
 
