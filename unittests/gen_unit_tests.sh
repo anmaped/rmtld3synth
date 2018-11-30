@@ -121,7 +121,7 @@ all:
 	dune build -p unittests @install
 	dune install -p unittests --prefix=./
 $CPP_TO_BUILD
-	$CXX_INC -Wall -Wextra -std=gnu++11 -D__x86__ -DUSE_UNSAFE_METHODS -DUSE_MAP_SORT -DUSE_DEBUGV_RMTLD3 -DDEBUG=3 -I$(pwd)/../rtmlib -pthread -lm $(pwd)/../rtmlib/RTML_monitor.cpp cpptest.cpp -o cpptest
+	$CXX_INC -Wall -Wextra -std=gnu++11 -D__x86__ -DUSE_UNSAFE_METHODS -DUSE_MAP_SORT -DUSE_DEBUGV_RMTLD3_ -DDEBUG=3 -I$(pwd)/../rtmlib -pthread -lm $(pwd)/../rtmlib/RTML_monitor.cpp cpptest.cpp -o cpptest
 
 clean:
 	ocamlbuild -clean
@@ -145,6 +145,8 @@ echo -e "\e[1m### result from ocaml synthesis\e[0m"
 #show results from cpp synthesis
 echo -e "\e[1m### result from cpp synthesis\e[0m"
 ./$TEST_DIR/cpptest 2>&1
+
+../$BINDIR/unittest
 
 # read -p "Press enter to continue or wait 90s" -t 90
 if read -r -s -n 1 -t 90 -p "Press enter to abort" key #key in a sense has no use at all

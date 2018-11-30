@@ -30,6 +30,6 @@ uninstall:
 
 
 clean:
-	ocamlbuild -clean
+	dune clean
 	rm -f *.byte *.native
 	rm -f src/interface/z3solver_.ml src/interface/mathkernel_call_.ml src/js/helper_.ml version.ml

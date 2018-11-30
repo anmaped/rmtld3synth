@@ -6,61 +6,7 @@ open Sexplib.Conv
 open Rmtld3
 open Helper
 
-
-type prop_base10 = int
-
-module type Translate_sig =
-sig
-  type body
-  val synth_tm_constant : value -> helper -> body
-  val synth_tm_duration : body -> body -> helper -> body
-  val synth_tm_plus : body -> body -> helper -> body
-  val synth_tm_times : body -> body -> helper -> body
-  val synth_fm_true : helper -> body
-  val synth_fm_p : prop_base10 -> helper -> body
-  val synth_fm_not : body -> helper -> body
-  val synth_fm_or : body -> body -> helper -> body
-  val synth_fm_less : body -> body -> helper -> body
-  val synth_fm_uless : value -> body -> body -> helper -> body
-  val synth_fm_ueq : value -> body -> body -> helper -> body
-  val synth_fm_ulesseq : value -> body -> body -> helper -> body
-end;;
-
-module Translate (T : Translate_sig) = struct
-  (* Synthesis of the rmtld3 terms *)
-  let rec synth_term term helper =
-    match term with
-      | Constant value       -> T.synth_tm_constant value helper
-      | Duration (di,phi)    -> T.synth_tm_duration (synth_term di helper) (synth phi helper) helper
-      | FPlus (tr1,tr2)      -> T.synth_tm_plus (synth_term tr1 helper) (synth_term tr2 helper) helper
-      | FTimes (tr1,tr2)     -> T.synth_tm_times (synth_term tr1 helper) (synth_term tr2 helper) helper
-      | _                    -> raise (Failure "synth: unsupported term")
-
-  (* Synthesis of the rmtld3 formulas *)
-  and synth formula helper =
-    match formula with
-      | True()                  -> T.synth_fm_true helper
-      | Prop p                  ->
-        let tbl = get_proposition_hashtbl helper in
-        let id_num10,id_asciistr = try (Hashtbl.find tbl p,"") with
-          Not_found ->
-            let cnt = get_proposition_counter helper in
-            set_proposition_two_way_map p cnt helper;
-            (cnt, p) in
-        T.synth_fm_p id_num10 helper
-
-      | Not sf                  -> T.synth_fm_not (synth sf helper) helper
-      | Or (sf1, sf2)           -> T.synth_fm_or (synth sf1 helper) (synth sf2 helper) helper
-      | Until (gamma, sf1, sf2)     -> if gamma > 0. then T.synth_fm_uless gamma (synth sf1 helper) (synth sf2 helper) helper
-                                       else raise  (Failure "Gamma of U< operator is negative")
-      | Until_eq (gamma, sf1, sf2)  -> if gamma > 0. then T.synth_fm_ueq gamma (synth sf1 helper) (synth sf2 helper) helper
-                                       else raise  (Failure "Gamma of U= operator is negative")
-      | Until_leq (gamma, sf1, sf2) -> if gamma > 0. then T.synth_fm_ulesseq gamma (synth sf1 helper) (synth sf2 helper) helper
-                                       else raise  (Failure "Gamma of U<= operator is negative")
-      | LessThan (tr1,tr2)      -> T.synth_fm_less (synth_term tr1 helper) (synth_term tr2 helper) helper
-      | _                       -> raise (Failure ("synth: unsupported formula "^( Sexp.to_string_hum (sexp_of_rmtld3_fm formula))))
-
-end;;
+open Synthesis
 
 (*
    CLI for rmtld3synth tool
@@ -130,7 +76,7 @@ let chose_synthesis a b c d =
  *)
 let synth_monitor fm =
   (* helper to support query's settings along the tool's execution *)
-  let a,b,c = settings config_file in
+  let a,b,c = settings (settings_from_file !config_file) in
   let c = if c <> [] then c else
     if fm <> mfalse then [("mon0",0,fm)]
     else []
@@ -171,8 +117,8 @@ let synth_monitor fm =
   (*
      Functors for synthesis
    *)
-  let module Conv_cpp11 = Translate(Synthesis.Cpp11) in
-  let module Conv_ocaml = Translate(Synthesis.Ocaml) in
+  let module Conv_cpp11 = Standard.Translate(Synthesis.Cpp11) in
+  let module Conv_ocaml = Standard.Translate(Synthesis.Ocaml) in
   (*let module Conv_tessla = Translate(Rmtld3synth_tessla) in*)
 
   (*
@@ -192,7 +138,6 @@ let synth_monitor fm =
     if !out_dir <> "" then
     begin
     (* External dependencies and environment for cpp11 *)
-    synth_cpp1_external_dep (if !out_dir <> "" then !out_dir else "") cluster_name helper;
     synth_cpp11_env (if !out_dir <> "" then !out_dir else "") cluster_name evt_subtype event_queue_size helper;
     end
     
@@ -240,7 +185,7 @@ let synth_sat_problem formula =
 begin
   let helper = mk_helper in
   (* instantiates module for smtlib translation *)
-  let module Smtlib = Translate(Smtlib2) in
+  let module Smtlib = Standard.Translate(Smtlib2) in
   (* does translation *)
   (*let stmlibv2_str = synth_smtlib (Smtlib.synth) formula helper in*)
   let stmlibv2_str = rmtld3synthsmt formula helper in

@@ -3,6 +3,6 @@
   (name            synthesis)
   (public_name     rmtld3synth.synthesis)
   (libraries       rmtld3synth.rmtld3.extension rmtld3synth.interface dolmen)
-  (modules         Smt Smtlib2 Simplify Cpp11 Ocaml)
+  (modules         Standard Smt Smtlib2 Simplify Cpp11 Ocaml)
   (preprocess      (pps ppx_sexp_conv))
 )
