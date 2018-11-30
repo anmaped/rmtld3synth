@@ -3,6 +3,8 @@
 set -x
 set -e
 
+[ -f "`ocamlfind query z3`/libz3.dylib" ] && export DYLD_LIBRARY_PATH=`ocamlfind query z3`
+
 TEST_DIR=_gtest
 
 mkdir $TEST_DIR

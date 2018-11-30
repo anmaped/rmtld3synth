@@ -54,7 +54,7 @@ python scripts/mk_make.py --ml
 cd build; make
 sudo make install
 # or just 
-opam install z3
+opam install z3 -v
 ```
 Make sure that you have at least python 2.2.7 and g++-5 installed.
 
@@ -80,7 +80,7 @@ CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar py
 ```
 
 Ensure also that libz3 is properly installed at the current environment.
-If the libz3 is not found then use the copy command to copy the `z3/build/libz3.dll.a` library to the `/lib` or `/home/current-user/.opam/compiler-version/lib` directories.
+If the libz3 is not found then use the copy command to copy the `z3/build/libz3.dll.a` library to the `/lib` or `/home/current-user/.opam/compiler-version/lib` directory.
 
 
 #### Instructions to compile rtmlib

@@ -56,7 +56,9 @@ if $js_of_ocaml; then
 \tjs_of_ocaml +nat.js +weak.js _build/src/rmtld3synth.byte" >> Makefile
 fi
 
-if $z3_solver; then
+if [ -n "$Z3_VERSION" ] && [ $z3_solver ]; then
+    echo "Z3 Version Found: $Z3_VERSION";
+
     if `vercmp "$Z3_VERSION" "4.7.1" "<="`; then
    echo -e "\nz3: 
 \tcp src/interface/z3solver.ml src/interface/z3solver_.ml" >> Makefile

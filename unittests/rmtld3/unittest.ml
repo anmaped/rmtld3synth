@@ -33,9 +33,9 @@ let rmtld3_unit_test_case_generation trace formula computed_value computef
         ( a ^ "\tbuf->writeEvent("
           ^ string_of_int
               ( try Hashtbl.find hasht p with Not_found ->
-                let cnt = get_proposition_counter helper in
-                set_proposition_two_way_map p cnt helper;
-                cnt
+                  let cnt = get_proposition_counter helper in
+                  set_proposition_two_way_map p cnt helper ;
+                  cnt
                   (*Printf.printf "Proposition %s is not found.\n" d ;
                   raise (Failure "rmtld3_synth_test: proposition is missing.")*)
               )
@@ -52,165 +52,78 @@ let rmtld3_unit_test_case_generation trace formula computed_value computef
   in
   let code = code ^ monitor_eval in
   let code =
-    code ^ "
-\n
-\n\t__buffer_" ^ cluster_name
-    ^ ".debug();
-\n
-\n\tDEBUG_RTEMLD3(\"##__unit_test_" ^ cluster_name ^ "_c"
+    code ^ "\n\n\n\n\t__buffer_" ^ cluster_name
+    ^ ".debug();\n\n\n\n\tDEBUG_RTMLD3(\"##__unit_test_" ^ cluster_name ^ "_c"
     ^ string_of_int id
-    ^ "\\n\");
-\n
-\n\t// lets defining the reader
-\n\tRMTLD3_reader<"
-    ^ get_event_type helper ^ "> trace = RMTLD3_reader<"
-    ^ get_event_type helper
-    ^ ">( buf, 200000. );
-\n\
-       \tstruct Environment env = Environment(std::make_pair (0, 0), &trace, \
-       __observation); // [TODO] CHECK state pair
-\n\
-       
-\n\
-       \tcount_until_iterations = 0;
-\n\
-       
-\n\
-       \t
-\n\
-       #ifdef __NUTTX__
-\n\
-       \t// reset stack coloring
-\n\
-       
-\n\
-       \t// BEGIN stack measurement
-\n\
+    ^ "\\n\");\n\n\n\n\t// lets defining the reader\n\n\tRMTLD3_reader<"
+    ^ get_event_type helper ^ ", " ^ get_event_fulltype helper
+    ^ " > trace = RMTLD3_reader<" ^ get_event_type helper ^ ", "
+    ^ get_event_fulltype helper
+    ^ ">( buf, 200000. );\n\n\tenvironment env = Environment< "
+    ^ get_event_type helper ^ ", " ^ get_event_fulltype helper
+    ^ " >(std::make_pair (0, 0), &trace, __observation< "
+    ^ get_event_type helper ^ ", " ^ get_event_fulltype helper
+    ^ " >); // [TODO] CHECK state pair\n\n\n\n\
+       \tcount_until_iterations = 0;\n\n\n\n\
+       \t\n\n\
+       #ifdef __NUTTX__\n\n\
+       \t// reset stack coloring\n\n\n\n\
+       \t// BEGIN stack measurement\n\n\
        \tunsigned stack_size = (uintptr_t)sched_self()->adj_stack_ptr - \
-       (uintptr_t)sched_self()->stack_alloc_ptr;
-\n\
-       \tunsigned stack_free = 0;
-\n\
-       \tuint8_t *stack_sweeper = (uint8_t *)sched_self()->stack_alloc_ptr;
-\n\
-       
-\n\
-       \tuint32_t sp;
-\n\
-      \  \t__asm__ volatile
-\n\
-      \  \t(
-\n\
-      \    \t\"\\tmov %0, sp\\n\\t\"
-\n\
-      \    \t: \"=r\"(sp)
-\n\
-      \  \t);
-\n\
-       
-\n\
-       \tuint8_t *stack_begin = (uint8_t *)sched_self()->stack_alloc_ptr;
-\n\
-       
-\n\
+       (uintptr_t)sched_self()->stack_alloc_ptr;\n\n\
+       \tunsigned stack_free = 0;\n\n\
+       \tuint8_t *stack_sweeper = (uint8_t *)sched_self()->stack_alloc_ptr;\n\n\n\n\
+       \tuint32_t sp;\n\n\
+      \  \t__asm__ volatile\n\n\
+      \  \t(\n\n\
+      \    \t\"\\tmov %0, sp\\n\\t\"\n\n\
+      \    \t: \"=r\"(sp)\n\n\
+      \  \t);\n\n\n\n\
+       \tuint8_t *stack_begin = (uint8_t *)sched_self()->stack_alloc_ptr;\n\n\n\n\
        \tuintptr_t d_p = ((uintptr_t)sp - \
-       (uintptr_t)sched_self()->stack_alloc_ptr);
-\n\
-       
-\n\
-       \t// set 0xff until adj_stack_ptr
-\n\
-       \tint i=0;
-\n\
-       \twhile(i< d_p - 10)
-\n\
-       \t{
-\n\
-       \t\t*stack_begin++ = 0xff;
-\n\
-       \t\ti++;
-\n\
-       \t}
-\n\
-       #endif
-\n\
-       
-\n\
-       \t// let measure the execution time
-\n\
-       \tSTART_MEASURE();
-\n\
-       
-\n\
-       \tthree_valued_type comp = [_local_compute](struct Environment env) \
-       __attribute__ ((noinline)) { return  _local_compute(env, 0.); }(env);
-\n\
-       
-\n\
-       \tSTOP_MEASURE();
-\n\
+       (uintptr_t)sched_self()->stack_alloc_ptr);\n\n\n\n\
+       \t// set 0xff until adj_stack_ptr\n\n\
+       \tint i=0;\n\n\
+       \twhile(i< d_p - 10)\n\n\
+       \t{\n\n\
+       \t\t*stack_begin++ = 0xff;\n\n\
+       \t\ti++;\n\n\
+       \t}\n\n\
+       #endif\n\n\n\n\
+       \t// let measure the execution time\n\n\
+       \tSTART_MEASURE();\n\n\n\n\
+       \tthree_valued_type comp = [_local_compute](environment env) \
+       __attribute__ ((noinline)) { return  _local_compute(env, 0.); }(env);\n\n\n\n\
+       \tSTOP_MEASURE();\n\n\
        \tDEBUGV(\"TIME_MES: %llu:%d\\n\", stop-start, "
     ^ string_of_int (List.length trace)
-    ^ ");
-\n\
-       
-\n\
-       #ifdef __NUTTX__
-\n\
-       \t// BEGIN stack measurement
-\n\
-       
-\n\
-       \twhile (stack_free < stack_size) {
-\n\
-       \t\tif (*stack_sweeper++ != 0xff)
-\n\
-       \t\t\tbreak;
-\n\
-       
-\n\
-       \t\tstack_free++;
-\n\
-       \t}
-\n\
-       
-\n\
+    ^ ");\n\n\n\n\
+       #ifdef __NUTTX__\n\n\
+       \t// BEGIN stack measurement\n\n\n\n\
+       \twhile (stack_free < stack_size) {\n\n\
+       \t\tif (*stack_sweeper++ != 0xff)\n\n\
+       \t\t\tbreak;\n\n\n\n\
+       \t\tstack_free++;\n\n\
+       \t}\n\n\n\n\
        \t::printf(\"sp_usage_begin:%u sp_usage_end:%u/%u \
        already_consumed:%u\\n\", d_p, stack_size - stack_free, stack_size, \
-       stack_size-d_p);
-\n\
+       stack_size-d_p);\n\n\
        \t::printf(\"function %s used: %u\\n\", \"__unit_test_" ^ cluster_name
     ^ "_c" ^ string_of_int id
-    ^ " ()\", (stack_size - stack_free)-(stack_size-d_p));
-\n\
-       \t// END stack measurement
-\n\
-       #endif
-\n\
-       
-\n\
-       \tDEBUG_RTEMLD3(\"count:%d\", count_until_iterations);
-\n\
-       
-\n\
+    ^ " ()\", (stack_size - stack_free)-(stack_size-d_p));\n\n\
+       \t// END stack measurement\n\n\
+       #endif\n\n\n\n\
+       \tDEBUG_RTMLD3(\"count:%d\", count_until_iterations);\n\n\n\n\
        \tif( comp == "
     ^ string_of_three_valued computed_value
-    ^ " )
-\n\t\tDEBUG_RTEMLD3(\"Checked: %s : __unit_test_" ^ cluster_name
+    ^ " )\n\n\t\tDEBUG_RTMLD3(\"Checked: %s : __unit_test_" ^ cluster_name
     ^ "_c" ^ string_of_int id
-    ^ "\\n\", out_p (comp));
-\n\
-       \telse
-\n\
-       \t\tDEBUG_RTEMLD3(\"Failed: %s : __unit_test_" ^ cluster_name ^ "_c"
-    ^ string_of_int id ^ "\\n\", out_p (comp));
-\n
-\n\treturn comp == "
+    ^ "\\n\", out_p (comp));\n\n\
+       \telse\n\n\
+       \t\tDEBUG_RTMLD3(\"Failed: %s : __unit_test_" ^ cluster_name ^ "_c"
+    ^ string_of_int id ^ "\\n\", out_p (comp));\n\n\n\n\treturn comp == "
     ^ string_of_three_valued computed_value
-    ^ ";
-\n}
-\n
-\n"
+    ^ ";\n\n}\n\n\n\n"
   in
   let oc = open_out_gen [Open_creat; Open_text; Open_append] 0o640 filename in
   output_string oc code ; close_out oc ; ()
@@ -222,20 +135,16 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
   if Sys.file_exists filename then Sys.remove filename else () ;
   let oc = open_out filename in
   output_string oc
-    ( "
-\n\
-       #include \"Rmtld3_reader.h\"
-\n\
-       #include \"RTML_monitor.h\"
-\n\
-       #include \"" ^ cluster_name
-    ^ ".h\"
-\n
-\n#ifdef __NUTTX__
-\n#include <nuttx/sched.h>
-\n#endif
-\n
-\n" ) ;
+    ( "\n\n\
+       #include \"rmtld3/reader.h\"\n\n\
+       #include \"RTML_monitor.h\"\n\n\
+       #ifdef __NUTTX__\n\n\
+       #include <nuttx/sched.h>\n\n\
+       #endif\n\n\
+       typedef struct Environment< " ^ get_event_type helper ^ ", "
+    ^ get_event_fulltype helper ^ " > environment;\n\n\
+    RTML_buffer<" ^ get_event_type helper ^ ", 50> __buffer_" ^ cluster_name
+        ^ ";" ) ;
   close_out oc ;
   let t_u = logical_environment in
   (* a logic environment for all tests *)
@@ -265,7 +174,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
     let t_value = compute (k, t_u, 0.) formula in
     if t_value = expected_value then (
       let id = string_of_int (get_counter_test_cases helper) in
-      Printf.printf "[PASSED]%s \n" (b3_to_string t_value) ;
+      Printf.printf "\x1b[32m[Sucess]\x1b[0m (%s) \n" (b3_to_string t_value) ;
       (* to generate C++ unit tests *)
       rmtld3_unit_test_case_generation trace formula t_value computef helper
         filename cluster_name n ;
@@ -527,9 +436,8 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
   
   (* lets create a function to run all tests *)
   let oc = open_out_gen [Open_creat; Open_text; Open_append] 0o640 filename in
-  output_string oc ("
-\nauto __run_unit_tests = []() {" ^ !call_list ^ "
-\n};") ;
+  output_string oc
+    ("\n\nauto __run_unit_tests = []() {" ^ !call_list ^ "\n\n};") ;
   close_out oc
 
 let test () cluster_name helper =
@@ -539,15 +447,10 @@ let test () cluster_name helper =
   (* lets define the makefile *)
   let stream = open_out (cluster_name ^ "/tests/Makefile") in
   let code =
-    "
-\n\
-     x86-test:
-\n\
-     \t g++ -Wall -g -O0 -std=c++0x -I../../../ -I../ -D__x86__ --verbose -c \
-     tests.cpp
-\n\
-     
-\n"
+    "\n\
+     x86-test:\n\
+     \t g++ -Wall -DUSE_UNSAFE_METHODS -g -O0 -std=c++0x -I../../../rtmlib -D__x86__ --verbose \
+     tests.cpp -o tests\n"
   in
   Printf.fprintf stream "%s\n" code ;
   close_out stream ;
@@ -557,57 +460,32 @@ let test () cluster_name helper =
   let consumer_lambda_function l =
     List.fold_left
       (fun a (b, _) ->
-        "
-\n\tauto consumer" ^ string_of_int b
-        ^ " = [](void *) -> void*
-\n\
-           \t{
-\n\
+        "\n\n\tauto consumer" ^ string_of_int b
+        ^ " = [](void *) -> void*\n\n\
+           \t{\n\n\
            \t\tstatic RTEML_reader<int> __reader = RTEML_reader<int>(__buffer_"
         ^ cluster_name
-        ^ ".getBuffer());
-\n\
-           \t\tEvent<int> tmpEvent;
-\n\
-           
-\n\
-           \t\tstd::pair<state_rd_t,Event<int> > rd_tuple = \
-           __reader.dequeue();
-\n\
-           \t\ttmpEvent = rd_tuple.second;
-\n\
+        ^ ".getBuffer());\n\n\
+           \t\tEvent<int> tmpEvent;\n\n\n\n\
+           \t\tstd::pair<state_rd_t,Event<int> > rd_tuple = __reader.dequeue();\n\n\
+           \t\ttmpEvent = rd_tuple.second;\n\n\
            \t\t::printf(\"Event_consumed: %lu, %d code: %d\\n\", \
-           tmpEvent.getTime(), tmpEvent.getData(), rd_tuple.first);
-\n\
-           
-\n\
-           \t\treturn NULL;
-\n\
-           \t};
-\n\
+           tmpEvent.getTime(), tmpEvent.getData(), rd_tuple.first);\n\n\n\n\
+           \t\treturn NULL;\n\n\
+           \t};\n\n\
            \t" ^ a )
       "" l
   in
   let producer_lambda_function l =
     List.fold_left
       (fun a (b, _) ->
-        "
-\n\tauto producer" ^ string_of_int b
-        ^ " = [](void *) -> void*
-\n\
-           \t{
-\n\
+        "\n\n\tauto producer" ^ string_of_int b
+        ^ " = [](void *) -> void*\n\n\
+           \t{\n\n\
            \t\tstatic RTML_writer<int> __writer = RTML_writer<int>(__buffer_"
-        ^ cluster_name ^ ".getBuffer());
-\n
-\n\t\t__writer.enqueue("
-        ^ string_of_int b ^ ");
-\n
-\n\t\t__buffer_" ^ cluster_name
-        ^ ".debug();
-\n\t\treturn NULL;
-\n\t};
-\n\t" ^ a )
+        ^ cluster_name ^ ".getBuffer());\n\n\n\n\t\t__writer.enqueue("
+        ^ string_of_int b ^ ");\n\n\n\n\t\t__buffer_" ^ cluster_name
+        ^ ".debug();\n\n\t\treturn NULL;\n\n\t};\n\n\t" ^ a )
       "" l
   in
   Random.self_init () ;
@@ -619,80 +497,39 @@ let test () cluster_name helper =
   let producers_ids = gen_task_ids [] 50 in
   let consumers_ids = gen_task_ids [] 40 in
   let code =
-    "
-\n\
-     #include <stdio.h>
-\n\
-     #include <unistd.h>
-\n\
-     
-\n\
-     #include \"task_compat.h\"
-\n\
-     
-\n\
-     #include \"" ^ cluster_name
-    ^ ".h\"
-\n\
-       
-\n\
-       #include \"unit_test_cases.h\"
-\n\
-       
-\n\
-       
-\n\
-       int main( int argc, const char* argv[] )
-\n\
-       {
-\n\
-       \tprintf( \"RMTLD3 test for " ^ cluster_name
-    ^ "\\n\" );
-\n
-\n\t//__start_periodic_monitors();
-\n
-\n\t"
+    "\n\
+     #include <stdio.h>\n\
+     #include <unistd.h>\n\
+     #include \"task_compat.h\"\n\
+     #include \"unit_test_cases.h\"\n\n\
+     int count_until_iterations;\n\n\
+     int main( int argc, const char* argv[] )\n\
+     {\n\
+     \tprintf( \"RMTLD3 test for " ^ cluster_name
+    ^ "\\n\" );\n\t//__start_periodic_monitors();\n\n\t"
     (* begins the test for concurrency if enabled *)
     ^ ( if concurrency_on = "true" then
-        "
-\n\t// basic enqueue and dequeue test case
-\n\t"
+        "\n\n\t// basic enqueue and dequeue test case\n\n\t"
         ^ producer_lambda_function producers_ids
-        ^ "
-\n
-\n\t"
+        ^ "\n\n\n\n\t"
         ^ consumer_lambda_function consumers_ids
-        ^ "
-\n
-\n\t// lets create three producers
-\n\t"
+        ^ "\n\n\n\n\t// lets create three producers\n\n\t"
         ^ List.fold_left
             (fun a (id, p) ->
               "__attribute__ ((unused)) __task producer_" ^ string_of_int id
               ^ " = __task(\"producer" ^ string_of_int id ^ "\", producer"
               ^ string_of_int id
               ^ ", sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, "
-              ^ string_of_int p ^ ");
-\n\t" ^ a )
+              ^ string_of_int p ^ ");\n\n\t" ^ a )
             "" producers_ids
-        ^ "
-\n\
-           
-\n\
-           \t// and two consumers
-\n\
-           \t/* we have two cases:
-\n\
+        ^ "\n\n\n\n\
+           \t// and two consumers\n\n\
+           \t/* we have two cases:\n\n\
            \t * - consumer is faster than producer (it will cause no side \
-           efects)
-\n\
+           efects)\n\n\
            \t * - producer is faster than consumer (it will cause overwritten \
-           of buffer)
-\n\
-           \t */
-\n\
-           
-\n\
+           of buffer)\n\n\
+           \t */\n\n\n\n\
            \t"
         ^ List.fold_left
             (fun a (id, p) ->
@@ -700,31 +537,22 @@ let test () cluster_name helper =
               ^ " = __task(\"consumer" ^ string_of_int id ^ "\", consumer"
               ^ string_of_int id
               ^ ", sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, "
-              ^ string_of_int p ^ ");
-\n\t" ^ a )
+              ^ string_of_int p ^ ");\n\n\t" ^ a )
             "" consumers_ids
-        ^ "
-\n\t"
+        ^ "\n\n\t"
       else "" )
-    ^ "
-\n
-\n\t"
+    ^ "\n\n\n\n\t"
     (* begins the test for units if enabled *)
     ^ ( if
         unit_on = "true"
         || search_settings_string "gen_paper_results" helper = "true"
-      then "
-\n\t// if unit tests on then do that
-\n\t__run_unit_tests();
-\n\t"
+      then
+        "\n\n\t// if unit tests on then do that\n\n\t__run_unit_tests();\n\n\t"
       else "" )
     ^ ( if concurrency_on = "true" then
         " while(true) {sleep(1);}; // do sleep (delay) "
       else "" )
-    ^ "
-\n}
-\n
-\n"
+    ^ "\n\n}\n\n\n\n"
   in
   Printf.fprintf stream "%s\n" code ;
   close_out stream
@@ -745,6 +573,10 @@ let _ =
     ; setting_from_string "(gen_paper_results false)" ]
   in
   let helper = set_parameters (settings settings_sexp) mk_helper in
+  let evt_type = search_settings_string "event_type" helper in
+  let evt_subtype = search_settings_string "event_subtype" helper in
+  set_event_type evt_type helper ;
+  set_event_subtype evt_subtype helper ;
   let module Conv_cpp11 = Translate (Synthesis.Cpp11) in
   create_dir cluster_name ;
   create_dir (!out_dir ^ "/" ^ cluster_name ^ "/tests") ;

@@ -22,27 +22,12 @@ eval $(opam config env)
 opam depext -y conf-m4
 opam pin add travis-opam https://github.com/${fork_user}/ocaml-ci-scripts.git#${fork_branch}
 
-# MODIFIED HERE !
-
-OLD_DIR=$(pwd)
-cd ..
-
+# include other packages
 opam pin add dolmen https://github.com/Gbury/dolmen.git
-opam install num
+opam install z3 -v
+[ -f "`ocamlfind query z3`/libz3.so" ] && sudo cp `ocamlfind query z3`/libz3.so /usr/lib
+#[ -f "`ocamlfind query z3`/libz3.dylib" ] && sudo cp `ocamlfind query z3`/libz3.dylib ~/Library/
 
-git clone https://github.com/Z3Prover/z3.git z3
-cd z3
-
-git checkout 3b1b82bef05a1b5fd69ece79c80a95fb6d72a990
-
-python scripts/mk_make.py --ml
-cd build
-make
-sudo PATH=$PATH make install
-
-cd ${OLD_DIR}
-
-# UNTIL HERE !
 
 echo -en "travis_fold:end:prepare.ci\r"
 opam config exec -- ci-opam
