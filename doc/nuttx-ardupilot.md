@@ -1,4 +1,4 @@
-## NuttX Sample Monitor
+## NuttX Sample Monitor for Ardupilot
 
 First, retrieve the last source files from Ardupilot using the command
 
