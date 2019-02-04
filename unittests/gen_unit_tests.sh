@@ -33,7 +33,7 @@ declare -a arrayrmtld=(
   "\always_{<6} a \land (\eventually_{<7} b )"
   "\eventually_{<6} a \land (\eventually_{<2} (\always_{<3} b ))"
   "\always_{<6} a \land (\eventually_{<5} ((\neg b) \until_{=4} b ) )"
-  "\eventaully_{=2} a \land \eventually_{=3} b \land \eventually_{=4} c"
+  "\eventually_{=2} a \land \eventually_{=3} b \land \eventually_{=4} c"
   "\eventually_{=4} a \land (\eventually_{=5} b ) \land \eventually_{=2} c"
   "\always_{=4} a \land (\eventually_{=4} b )"
   "\neg ( \always_{<6} a \land (\eventually_{<6} ( ( (\neg a) \land (\neg b) ) \until_{=6} b ) ) )" #Negation

@@ -23,7 +23,8 @@ opam depext -y conf-m4
 opam pin add travis-opam https://github.com/${fork_user}/ocaml-ci-scripts.git#${fork_branch}
 
 # include other packages
-opam pin add dolmen https://github.com/Gbury/dolmen.git
+opam pin add dolmen https://github.com/Gbury/dolmen.git#309c83067d2c4e026dc56ca3dfd839e1b2d5b9f6
+opam pin add dolmen-export https://github.com/Gbury/dolmen.git#309c83067d2c4e026dc56ca3dfd839e1b2d5b9f6
 opam install z3 -v
 [ -f "`ocamlfind query z3`/libz3.so" ] && sudo cp `ocamlfind query z3`/libz3.so /usr/lib
 #[ -f "`ocamlfind query z3`/libz3.dylib" ] && sudo cp `ocamlfind query z3`/libz3.dylib ~/Library/

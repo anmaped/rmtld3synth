@@ -71,9 +71,17 @@ let f_const_term a = Term.const (Id.mk Id.Term a)
 
 let f_const_sort a = Term.const (Id.mk Id.Sort a)
 
+let f_tvtrue = f_const_term "TVTRUE"
+
+let f_tvnot a = Term.apply (Term.const (Id.mk Id.Term "tvnot")) [a]
+
 let f_or a b = Term.apply (Term.const (Id.mk Id.Term "or")) [a; b]
 
+let f_tvor a b = Term.apply (Term.const (Id.mk Id.Term "tvor")) [a; b]
+
 let f_and a b = Term.apply (Term.const (Id.mk Id.Term "and")) [a; b]
+
+let f_tvand a b = f_tvnot (f_tvor (f_tvnot a) (f_tvnot b) )
 
 let f_implies a b = Term.apply (Term.const (Id.mk Id.Term "=>")) [a; b]
 
@@ -201,7 +209,7 @@ let evalfold_param gamma id =
 let dummy_tuple = (Term.const (Id.mk Id.Term "dummy"), [])
 
 let synth_tm_constant value helper =
-  empty_body (Term.const (Id.mk Id.Term (string_of_int (int_of_float value))))
+  empty_body (Term.apply (f_const_term "dsome") [(Term.const (Id.mk Id.Term (string_of_int (int_of_float value))))] )
 
 let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
   let duration id dt fm =
@@ -231,7 +239,7 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
       declare_fun l_lst
         (Id.mk Id.Term ("evaleta" ^ id))
         [f_const_sort "Time"; f_const_sort "Time"]
-        (Term.const (Id.mk Id.Term "Int")) ;
+        (Term.const (Id.mk Id.Term "Duration")) ;
       if !recursive_unrolling then (
         let cartesian l l' =
           List.concat (List.map (fun e -> List.map (fun e' -> (e, e')) l') l)
@@ -245,17 +253,19 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
               (* (assert (= (evaleta"^ id ^" "^ string_of_int x ^" "^ string_of_int i ^") (+ (evaleta"^ id ^" (- "^ string_of_int x ^" 1) "^ string_of_int i ^") (indicator"^ id ^" trc "^ string_of_int x ^") )) ) *)
               assert_ l_lst
                 (f_equal
-                   (Term.apply
-                      (f_const_term ("evaleta" ^ id))
-                      [ f_const_term (string_of_int x)
-                      ; f_const_term (string_of_int i) ])
+                   (Term.apply (f_const_term "dval")
+                      [ Term.apply
+                          (f_const_term ("evaleta" ^ id))
+                          [ f_const_term (string_of_int x)
+                          ; f_const_term (string_of_int i) ] ])
                    (f_sum
-                      (Term.apply
-                         (f_const_term ("evaleta" ^ id))
-                         [ f_minus
-                             (f_const_term (string_of_int x))
-                             (f_const_term "1")
-                         ; f_const_term (string_of_int i) ])
+                      (Term.apply (f_const_term "dval")
+                         [ Term.apply
+                             (f_const_term ("evaleta" ^ id))
+                             [ f_minus
+                                 (f_const_term (string_of_int x))
+                                 (f_const_term "1")
+                             ; f_const_term (string_of_int i) ] ])
                       (Term.apply
                          (f_const_term ("indicator" ^ id))
                          [f_const_term "trc"; f_const_term (string_of_int x)])))
@@ -263,10 +273,11 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
               (* (assert (= (evaleta"^ id ^" "^ string_of_int x ^" "^ string_of_int i ^") (indicator"^ id ^" trc "^ string_of_int x ^") ) ) *)
               assert_ l_lst
                 (f_equal
-                   (Term.apply
-                      (f_const_term ("evaleta" ^ id))
-                      [ f_const_term (string_of_int x)
-                      ; f_const_term (string_of_int i) ])
+                   (Term.apply (f_const_term "dval")
+                      [ Term.apply
+                          (f_const_term ("evaleta" ^ id))
+                          [ f_const_term (string_of_int x)
+                          ; f_const_term (string_of_int i) ] ])
                    (Term.apply
                       (f_const_term ("indicator" ^ id))
                       [f_const_term "trc"; f_const_term (string_of_int x)])) )
@@ -298,21 +309,24 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
                    (* (= (evaleta"^ id ^" x i) (+ (evaleta"^ id ^" (- x 1) i) (indicator"^ id ^" trc x) )) *)
                    (f_equal
                       (f_sum
-                         (Term.apply
-                            (f_const_term ("evaleta" ^ id))
-                            [ f_minus (f_const_term "x") (f_const_term "1")
-                            ; f_const_term "i" ])
+                         (Term.apply (f_const_term "dval")
+                            [ Term.apply
+                                (f_const_term ("evaleta" ^ id))
+                                [ f_minus (f_const_term "x") (f_const_term "1")
+                                ; f_const_term "i" ] ])
                          (Term.apply
                             (f_const_term ("indicator" ^ id))
                             [f_const_term "trc"; f_const_term "x"]))
-                      (Term.apply
-                         (f_const_term ("evaleta" ^ id))
-                         [f_const_term "x"; f_const_term "i"]))
+                      (Term.apply (f_const_term "dval")
+                         [ Term.apply
+                             (f_const_term ("evaleta" ^ id))
+                             [f_const_term "x"; f_const_term "i"] ]))
                    (* (= (evaleta"^ id ^" x i) (indicator"^ id ^" trc x) ) *)
                    (f_equal
-                      (Term.apply
-                         (f_const_term ("evaleta" ^ id))
-                         [f_const_term "x"; f_const_term "i"])
+                      (Term.apply (f_const_term "dval")
+                         [ Term.apply
+                             (f_const_term ("evaleta" ^ id))
+                             [f_const_term "x"; f_const_term "i"] ])
                       (Term.apply
                          (f_const_term ("indicator" ^ id))
                          [f_const_term "trc"; f_const_term "x"]))))) ;
@@ -321,13 +335,13 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
     indicator id ;
     evaleta id ;
     (*
-			(define-fun computeduration"^ id ^" ((mt Time) (mtb Time)) Duration
+			(define-fun duration_op"^ id ^" ((mt Time) (mtb Time)) Duration
 				(and (>= trc_size mt) (evaleta"^ id ^" (- mt 1) mtb) )
 			)
 		*)
     define_fun l_lst
       (* id *)
-      (Id.mk Id.Term ("computeduration" ^ id))
+      (Id.mk Id.Term ("duration_op" ^ id))
       (* arguments *)
       [ Term.colon
           (Term.const (Id.mk Id.Term "mt"))
@@ -338,7 +352,7 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
       (* return type *)
       (Term.const (Id.mk Id.Sort "Duration"))
       (* body *)
-      (f_and
+      (ite
          (f_geq
             (Term.const (Id.mk Id.Term "trc_size"))
             (Term.const (Id.mk Id.Term "mt")))
@@ -347,11 +361,13 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
             [ f_minus
                 (Term.const (Id.mk Id.Term "mt"))
                 (Term.const (Id.mk Id.Term "1"))
-            ; Term.const (Id.mk Id.Term "mtb") ])) ;
-    (* (computeduration"^ id ^" (+ mt "^ dt ^") mt) *)
+            ; Term.const (Id.mk Id.Term "mtb") ])
+         (Term.const (Id.mk Id.Term "dnone"))) ;
+    (* this symbol is not correct; it should be the bottom_duration *)
+    (* (duration_op"^ id ^" (+ mt "^ dt ^") mt) *)
     ( Term.apply
-        (Term.const (Id.mk Id.Term ("computeduration" ^ id)))
-        [ f_sum (Term.const (Id.mk Id.Term "mt")) dt
+        (Term.const (Id.mk Id.Term ("duration_op" ^ id)))
+        [ f_sum (Term.const (Id.mk Id.Term "mt")) (Term.apply (f_const_term "dval") [dt])
         ; Term.const (Id.mk Id.Term "mt") ]
     , !l_lst (* list of asserts and intermediate definitions *) )
   in
@@ -395,7 +411,7 @@ let synth_fm_less cmptr1 cmptr2 helper =
   synthesis of U<
 *)
 let synth_fm_uless gamma sf1 sf2 helper =
-  let compute_until_less id (comp1, comp1_append) (comp2, comp2_append) =
+  let until_less id (comp1, comp1_append) (comp2, comp2_append) =
     let gamma = int_of_float gamma in
     let evalb id =
       (*
@@ -472,13 +488,13 @@ let synth_fm_uless gamma sf1 sf2 helper =
     add_l comp1_append ;
     add_l comp2_append ;
     (*
-			(define-fun computeUless" ^ id ^ "  ((mt Time) (mtb Time) ) Threevalue
+			(define-fun until_less_op" ^ id ^ "  ((mt Time) (mtb Time) ) Threevalue
 				(mapb3 (evalc" ^ id ^ " mt mtb ))
 			)
 		*)
     define_fun lst
       (* id *)
-      (Id.mk Id.Term ("computeUless" ^ id))
+      (Id.mk Id.Term ("until_less_op" ^ id))
       (* arguments *)
       [ Term.colon
           (Term.const (Id.mk Id.Term "mt"))
@@ -497,25 +513,142 @@ let synth_fm_uless gamma sf1 sf2 helper =
          ])
   in
   let idx = get_until_counter helper in
-  compute_until_less ("!" ^ string_of_int idx) sf1 sf2 ;
-  (* "(computeUless!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt t )" *)
+  until_less ("!" ^ string_of_int idx) sf1 sf2 ;
+  (* "(until_less_op!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt t )" *)
   ( Term.apply
-      (Term.const (Id.mk Id.Term ("computeUless!" ^ string_of_int idx)))
+      (Term.const (Id.mk Id.Term ("until_less_op!" ^ string_of_int idx)))
       [ f_sum
           (Term.const (Id.mk Id.Term "mt"))
           (Term.const (Id.mk Id.Term (string_of_int (int_of_float gamma))))
       ; Term.const (Id.mk Id.Term "mt") ]
   , []
-    (* things are append in compute_until_less; we don't need (snd sf1@snd sf2) *)
+    (* things are append in until_less; we don't need (snd sf1@snd sf2) *)
   )
 
-let synth_fm_ulesseq gamma sf1 sf2 helper =
-  ignore (raise (Failure "Unimplemented Feature")) ;
-  dummy_tuple
+let synth_fm_ev_eq gamma sf1 helper =
+  let eventually_eq id (comp1, comp1_append) =
+    let gamma = int_of_float gamma in
+    let evalb id =
+      (*
+        (define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (mtb Time) (v Fourvalue) ) Fourvalue
+          (ite (= v FVSYMBOL) (evali "^ comp1 ^" "^ comp2 ^" ) v )
+        )
+      *)
+      define_fun lst
+        (* id *)
+        (Id.mk Id.Term ("evalb" ^ id))
+        (* arguments *)
+        [ Term.colon
+            (Term.const (Id.mk Id.Term "mk"))
+            (Term.const (Id.mk Id.Sort "Trace"))
+        ; Term.colon
+            (Term.const (Id.mk Id.Term "mt"))
+            (Term.const (Id.mk Id.Sort "Time"))
+        ; Term.colon
+            (Term.const (Id.mk Id.Term "mtb"))
+            (Term.const (Id.mk Id.Sort "Time"))
+        ; Term.colon
+            (Term.const (Id.mk Id.Term "v"))
+            (Term.const (Id.mk Id.Sort "Fourvalue")) ]
+        (* return type *)
+        (Term.const (Id.mk Id.Sort "Fourvalue"))
+        (* body *)
+        (ite
+           (f_equal
+              (Term.const (Id.mk Id.Term "v"))
+              (Term.const (Id.mk Id.Term "FVSYMBOL")))
+           (Term.apply (Term.const (Id.mk Id.Term "evali")) [f_tvtrue; comp1])
+           (Term.const (Id.mk Id.Term "v")))
+    in
+    let evalc id =
+      (*
+        (define-fun evalc" ^ id ^ " ((mt Time) (mtb Time) ) (Pair Bool Fourvalue)
+          (mk-pair (<= trc_size (+ " ^ (string_of_int gamma) ^ " mtb ) ) (evalb" ^ id ^ " trc mt mtb FVSYMBOL ))
+        )
+      *)
+      define_fun lst
+        (* id *)
+        (Id.mk Id.Term ("evalc" ^ id))
+        (* arguments *)
+        [ Term.colon
+            (Term.const (Id.mk Id.Term "mt"))
+            (Term.const (Id.mk Id.Sort "Time"))
+        ; Term.colon
+            (Term.const (Id.mk Id.Term "mtb"))
+            (Term.const (Id.mk Id.Sort "Time")) ]
+        (* return type *)
+        (Term.apply
+           (Term.const (Id.mk Id.Sort "Pair"))
+           [ Term.const (Id.mk Id.Sort "Bool")
+           ; Term.const (Id.mk Id.Sort "Fourvalue") ])
+        (* body *)
+        (Term.apply
+           (Term.const (Id.mk Id.Term "mk-pair"))
+           [ f_geq
+               (f_sum
+                  (Term.const (Id.mk Id.Term (string_of_int gamma)))
+                  (Term.const (Id.mk Id.Term "mtb")))
+               (Term.const (Id.mk Id.Term "trc_size"))
+           ; Term.apply
+               (Term.const (Id.mk Id.Term ("evalb" ^ id)))
+               [ Term.const (Id.mk Id.Term "trc")
+               ; Term.const (Id.mk Id.Term "mt")
+               ; Term.const (Id.mk Id.Term "mtb")
+               ; Term.const (Id.mk Id.Term "FVSYMBOL") ] ])
+    in
+    evalb id ;
+    evalc id ;
+    add_l comp1_append ;
+    (*
+      (define-fun eventually_op" ^ id ^ "  ((mt Time) (mtb Time) ) Threevalue
+        (mapb3 (evalc" ^ id ^ " mt mtb ))
+      )
+    *)
+    define_fun lst
+      (* id *)
+      (Id.mk Id.Term ("eventually_op" ^ id))
+      (* arguments *)
+      [ Term.colon
+          (Term.const (Id.mk Id.Term "mt"))
+          (Term.const (Id.mk Id.Sort "Time"))
+      ; Term.colon
+          (Term.const (Id.mk Id.Term "mtb"))
+          (Term.const (Id.mk Id.Sort "Time")) ]
+      (* return type *)
+      (Term.const (Id.mk Id.Sort "Threevalue"))
+      (* body *)
+      (Term.apply
+         (Term.const (Id.mk Id.Term "mapb3"))
+         [ Term.apply
+             (Term.const (Id.mk Id.Term ("evalc" ^ id)))
+             [Term.const (Id.mk Id.Term "mt"); Term.const (Id.mk Id.Term "mtb")]
+         ])
+  in
+  let idx = get_until_counter helper in
+  eventually_eq ("!" ^ string_of_int idx) sf1 ;
+  (* "(eventually_op!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt t )" *)
+  ( Term.apply
+      (Term.const (Id.mk Id.Term ("eventually_op!" ^ string_of_int idx)))
+      [ f_sum
+          (Term.const (Id.mk Id.Term "mt"))
+          (Term.const (Id.mk Id.Term (string_of_int (int_of_float gamma))))
+      ; Term.const (Id.mk Id.Term "mt") ]
+  , []
+    (* things are append in until_less; we don't need (snd sf1) *)
+  )
+
+let synth_fm_aw_eq gamma sf1 helper =
+  synth_fm_not (synth_fm_uless gamma (empty_body f_tvtrue) (synth_fm_not sf1 helper) helper) helper
 
 let synth_fm_ueq gamma sf1 sf2 helper =
-  ignore (raise (Failure "Unimplemented Feature")) ;
-  dummy_tuple
+  let x, y = synth_fm_aw_eq gamma sf1 helper in
+  let x2, y2 = synth_fm_ev_eq gamma sf2 helper in
+  (f_tvand x x2, y @ y2)
+
+let synth_fm_ulesseq gamma sf1 sf2 helper =
+  let x, y = synth_fm_uless gamma sf1 sf2 helper in
+  let x2, y2 = synth_fm_ev_eq gamma sf2 helper in
+  (f_tvor x x2, y @ y2)
 
 (* this is similar to synth_fm_uless \/ synth_fm_ulesseq *)
 
@@ -552,8 +685,15 @@ let synth_smtlib_common_types () =
   define_sort lst (Id.mk Id.Sort "Proptype") []
     (Term.const (Id.mk Id.Sort "Int")) ;
   define_sort lst (Id.mk Id.Sort "Time") [] (Term.const (Id.mk Id.Sort "Int")) ;
-  define_sort lst (Id.mk Id.Sort "Duration") []
-    (Term.const (Id.mk Id.Sort "Time")) ;
+  (* (declare-datatypes ((Duration 0)) (( (dnone) (dsome (val Int) ) ))  ) *)
+  define_datatypes lst
+    [ ( Id.mk Id.Sort "Duration"
+      , []
+      , [ (Id.mk Id.Sort "dnone", [])
+        ; ( Id.mk Id.Sort "dsome"
+          , [ Term.colon
+                (Term.const (Id.mk Id.Sort "dval"))
+                (Term.const (Id.mk Id.Sort "Int")) ] ) ] ) ] ;
   (* (declare-datatypes (T1 T2) ((Pair (mk-pair (first T1) (second T2))))) --> (declare-datatypes ( (Pair 2) ) ((par (T1 T2) ( (mk-pair (first T1) (second T2)) )))) *)
   define_datatypes lst
     [ ( Id.mk Id.Sort "Pair"
@@ -651,7 +791,7 @@ let synth_smtlib_common_types () =
           (Term.const (Id.mk Id.Term "TVUNKNOWN")))) ;
   (*
 		(define-fun tvlessthan ((eta1 Duration) (eta2 Duration)) Threevalue
-			(ite (< eta1 eta2) TVTRUE TVFALSE )
+			   (ite (or (= eta1 dnone) (= eta2 dnone)) TVUNKNOWN (ite (< (dval eta1) (dval eta2) ) TVTRUE TVFALSE) )
 		)
 	*)
   define_fun lst
@@ -668,11 +808,24 @@ let synth_smtlib_common_types () =
     (Term.const (Id.mk Id.Sort "Threevalue"))
     (* body *)
     (ite
-       (f_less
-          (Term.const (Id.mk Id.Term "eta1"))
-          (Term.const (Id.mk Id.Term "eta2")))
-       (Term.const (Id.mk Id.Term "TVTRUE"))
-       (Term.const (Id.mk Id.Term "TVFALSE"))) ;
+       (f_or
+          (f_equal
+             (Term.const (Id.mk Id.Term "eta1"))
+             (Term.const (Id.mk Id.Term "dnone")))
+          (f_equal
+             (Term.const (Id.mk Id.Term "eta2"))
+             (Term.const (Id.mk Id.Term "dnone"))))
+       (Term.const (Id.mk Id.Term "TVUNKNOWN"))
+       (ite
+          (f_less
+             (Term.apply
+                (Term.const (Id.mk Id.Term "dval"))
+                [Term.const (Id.mk Id.Term "eta1")])
+             (Term.apply
+                (Term.const (Id.mk Id.Term "dval"))
+                [Term.const (Id.mk Id.Term "eta2")]))
+          (Term.const (Id.mk Id.Term "TVTRUE"))
+          (Term.const (Id.mk Id.Term "TVFALSE")))) ;
   ()
 
 let synth_smtlib_common_macros () =
@@ -827,7 +980,7 @@ let synth_smtlib_common_prop () =
         (Term.const (Id.mk Id.Term "p"))
         (Term.const (Id.mk Id.Sort "Proptype")) ]
     (* return type *)
-    (Term.const (Id.mk Id.Sort "Fourvalue"))
+    (Term.const (Id.mk Id.Sort "Threevalue"))
     (* body *)
     (ite
        (f_geq
@@ -887,16 +1040,19 @@ let synth_smtlib synth_fun formula helper =
     (Statement.assert_
        (Term.apply
           (Term.const (Id.mk Id.Term "allcheck"))
-          [Term.const (Id.mk Id.Term "trc"); Term.const (Id.mk Id.Term "0")])) ;
+          [Term.const (Id.mk Id.Term "trc"); f_const_term "0"])) ;
   if (not (isCvc4SolverEnabled ())) && not (isZ3SolverEnabled ()) then
     check_sat lst ;
   (* if isZ3SolverEnabled () then "(check-sat-using (then qe smt))" ; this entry is available only in Z3 *)
-  get_model lst ;
+  if not (isZ3SolverEnabled ()) then get_model lst ;
   get_info lst ":all-statistics" ;
   (* pretty print smtlib statements to string *)
   List.iter
     (fun a ->
-      Statement.print Format.str_formatter a ;
-      Format.pp_print_newline Format.str_formatter () )
+      verb_m 2 (fun _ ->
+          Statement.print Format.std_formatter a ;
+          Format.pp_print_newline Format.std_formatter (); ) ;
+      (* print smtlib *)
+      Dolmen_export.Smtlib.print Format.str_formatter a )
     (List.rev !lst) ;
   Format.flush_str_formatter ()

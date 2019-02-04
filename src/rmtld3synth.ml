@@ -79,7 +79,7 @@ open Sexplib
 open Sexplib.Conv
 open Synthesis
 open Synthesis.Simplify
-open Synthesis.Smt
+(*open Synthesis.Smt*)
 
 (* swap to smtlib module only *)
 open Synthesis.Smtlib2
@@ -91,18 +91,18 @@ open Interface.Z3solver_
 open Helper
 
 let set_recursive_unrolling f =
-  Smtlib2.enable_recursive_unrolling () ;
-  Smt.recursive_unrolling := true
+  Smtlib2.enable_recursive_unrolling ()
+  (*Smt.recursive_unrolling := true*)
 
 (* swap to smtlib module only *)
 let set_solve_z3 f =
-  Smtlib2.set_solver Z3 ;
-  Smt.solver := "z3"
+  Smtlib2.set_solver Z3
+  (*Smt.solver := "z3"*)
 
 (* swap to smtlib module only *)
 let set_solve_cvc4 f =
-  Smtlib2.set_solver CVC4 ;
-  Smt.solver := "cvc4"
+  Smtlib2.set_solver CVC4
+  (*Smt.solver := "cvc4"*)
 
 (* swap to smtlib module only *)
 let chose_synthesis a b c d =
@@ -211,8 +211,8 @@ let synth_sat_problem formula =
   (* Functor to translate rmtld3 into smtlib2 *)
   let module Smtlib = Standard.Translate (Smtlib2) in
   (* 'smtlib2_str' will contain the output of the translation *)
-  (*let smtlib2_str = synth_smtlib (Smtlib.synth) formula helper in*)
-  let smtlib2_str = rmtld3synthsmt formula helper in
+  let smtlib2_str = synth_smtlib (Smtlib.synth) formula helper in
+  (*let smtlib2_str = rmtld3synthsmt formula helper in*)
   if isZ3SolverEnabled () then (
     verb (fun _ -> print_endline "Z3 solver enabled.") ;
     let ctx, exp = parse_smtlibv2 smtlib2_str in
