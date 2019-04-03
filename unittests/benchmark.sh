@@ -47,6 +47,9 @@ declare -a arrayrmtld=(
 # Parsing parameters and executing benchmarks
 
 SOLVEFLAG="--solver-z3 --recursive-unrolling"
+#SOLVEFLAG="--solver-cvc4 --recursive-unrolling"
+CVC4DIR="./cvc4-1.6-win64-opt.exe"
+DIRNAME="_benchmark_suite"
 
 if [ $# -eq 0 ] ; then
     echo "No arguments supplied"
@@ -65,7 +68,7 @@ elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
   
   declare -A arr
 
-  mkdir t
+  mkdir $DIRNAME -p
 
   for (( sample=5, j=1; sample<50; sample+=5, j++ ));
   do
@@ -79,13 +82,18 @@ elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
 
       echo $i " / " ${arrayrmtldlength} " : " ${arrayrmtld[$i-1]}
       START=$(date +%s.%N)
-      OCAMLRUNPARAM=b ../rmtld3synth.native --synth-smtlibv2 $SOLVEFLAG --input-latexeq "$REPP" > "t/testrmtld$i.$sample.smt2"
+      OCAMLRUNPARAM=b ../_build/install/default/bin/rmtld3synth --synth-smtlibv2 $SOLVEFLAG --input-latexeq "$REPP" > "$DIRNAME/testrmtld$i.$sample.smt2"
       END=$(date +%s.%N)
 
       OUT=$?
       if [ $OUT -ne 0 ]; then
         echo "WARNING: THE BENCHMARK HAS NOT BEEN COMPLETED!!!"
         break
+      fi
+
+      if [[ $SOLVEFLAG == *"--solver-cvc4"* ]]; then
+        echo "$CVC4DIR $DIRNAME/testrmtld$i.$sample.smt2"
+        $CVC4DIR $DIRNAME/testrmtld$i.$sample.smt2 2>&1
       fi
 
       DIFF=$(echo "$END - $START" | bc)

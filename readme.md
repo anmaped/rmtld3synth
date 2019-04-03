@@ -2,13 +2,13 @@
 rmtld3synth toolchain: Synthesis from a fragment of MTL with durations
 ===========================================
 
-The rmtld3synth toolchain is able to automatically generate cpp11/ocaml monitors and specifications in SMT-LIB v2 standard language from a fragment of metric temporal logic with durations. This logic is a three-valued extension over a restricted fragment of metric temporal logic with durations that allows us to reason about explicit time and temporal order of durations.
+The rmtld3synth toolchain is capable of automatically generating cpp11/ocaml monitors and specifications in SMT-LIB v2 standard language from a fragment of metric temporal logic with durations. This logic is a three-valued extension over a restricted fragment of metric temporal logic with durations that allows us to reason about explicit time and temporal order of durations.
 
 Supported by this formalism are polynomial inequalities (using the less relation <) and the common modal operators of temporal logics U (until) and S (since). 
-The existential quantification over these formulas is also possible by adopting the cylindrical algebraic decomposition (CAD) method. This method is suitable to convert quantified formulas into several decomposed conditions without these quantifiers.
+The existential quantification over these formulas is also possible through the adoption of the cylindrical algebraic decomposition (CAD) method. This method is suitable for converting quantified formulas under various decomposed conditions without these quantifiers.
 
-For formula satisfiability checking, the tool is ready to synthesize the logic fragment into the input language accepted by the z3 SMT solver. It can be used to discard offline and before execution several constraints involving duration and temporal order of propositions.
-For instance, schedulability analysis of hard real-time systems is possible by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMT-LIB and then using Z3 to solve it. The idea is to know if there exists a trace for which the RMTLD3 problem is satisfiable, or whether the SMT gives us an unsatisfiable answer meaning that is impossible to schedule such configuration. The latter enforces the refinement by drawing a counter-example.
+To check formula satisfiability, the tool is ready to synthesize the logic fragment in the input language accepted by the z3 SMT solver or any other prover supporting AUFNIRA logic and SMT-LIB v2. It can be used to discard various constraints involving duration and temporal order of the propositions.
+For example, schedulability analysis of hard real-time systems is possible by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMT-LIB and then using Z3 to solve it. The idea is to know if there exists a trace for which the RMTLD3 problem is satisfiable, or whether the SMT gives us an unsatisfiable answer meaning that is impossible to schedule such a configuration. The latter reinforces the refinement by drawing a counterexample.
 
 # Contents
 
@@ -19,22 +19,23 @@ For instance, schedulability analysis of hard real-time systems is possible by s
 - [Documentation](#documentation)
 - [License](#license)
 
-### Online demonstrator using js_of_ocaml
+### Get started with the online demonstrator
 :camel: [Try it](https://anmaped.github.io/rmtld3synth).
 
 ### Tarball binaries for Windows
 
-Current version is [0.3-alpha2](../../releases/download/v0.3-alpha2/release-v0.3-alpha2-windows64.zip?raw=true).
-Old version is [0.2-alpha](../../releases/download/v0.2-alpha/release-0.2.zip?raw=true).
+The current release version is [0.3-alpha2](../../releases/download/v0.3-alpha2/release-v0.3-alpha2-windows64.zip?raw=true).
 
-Let us begin by overviewing a monitor generation using the rmtld3synth tool. For this example, we adopt the use case one [available here](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html) and the configuration file [`usecaseone`](/config/usecaseone?raw=true) containing the input formula and some intructions for the rmtld3synth to process. To generate the monitor(s), we just need to type the following command in the command shell.
+Monitor generation can be done using rmtld3synth through command line arguments. To ilustrate how, we consider the use case one [available here](http://rawgit.com/cistergit/rmtld3synth/master/doc/usecase1.html) and the configuration file [`usecaseone`](/config/usecaseone?raw=true) that contains the input formula and some detailed settings to perform the synthesis process. To generate the monitor(s), we have to use the following shell command
 ```
-./rmtld3synth.exe -n usecaseone
+./rmtld3synth.exe --config-file usecaseone
 ```
-Note that `-n` is deprecated and requires to set the config file in the same directory of the executable. For versions >= 0.3-alpha use `--config-file` argument instead of `-n` in order to set the correct path of the one shot configuration file.
+The `--config-file` argument instructs the rmtld3synth to use the configuration file `usecaseone`.
 
-After executing the command, the `monitor_set1` folder is available and contains the generated source files of the monitor(s) specified for the `usecaseone` setup.
-At this point, we have the monitor ready to be supplied for GCC, LLVM or other "compatible" C/C++ compiler and deployed in the chosen target architecture. In the current version, C++ and Ocaml synthesis are fully supported and Spark2014 is not yet available.
+After executing the command, the `monitor_set1` folder is available and contains the generated source files of the monitor(s) specified for the `usecaseone` configuration.
+At this point, we have the monitor ready to be supplied for GCC, LLVM or other "compatible" C/C++ compiler and deployed in the chosen target architecture. In the current version, C++ and Ocaml synthesis are fully supported but Spark2014 is not yet available.
+
+More details on instrumenting the monitors can be found in the [Documentation](#documentation) section, including the description for integrating the monitors in bare metal platforms using NuttX and FreeRTOS real-time operating systems.
 
 ### Building from Git
 [![Build Status](https://travis-ci.org/anmaped/rmtld3synth.svg?branch=master)](https://travis-ci.org/anmaped/rmtld3synth)
