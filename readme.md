@@ -19,8 +19,19 @@ For example, schedulability analysis of hard real-time systems is possible by sp
 - [Documentation](#documentation)
 - [License](#license)
 
-### Get started with the online demonstrator
-:camel: [Try it](https://anmaped.github.io/rmtld3synth).
+### Get started with the online demonstrator :camel:
+
+The stable version is available for testing in the browser [Try it](https://anmaped.github.io/rmtld3synth).
+
+### Get started with docker :whale:
+
+The latest docker image is available in [dockerhub](https://cloud.docker.com/u/anmaped/repository/docker/anmaped/rmtld3synth). To use it push the image and execute it.
+```
+docker pull anmaped/rmtld3synth:latest # this will download the pre-built image from dockerhub
+docker run -it anmaped/rmtld3synth  # this will create and run the container
+```
+
+Now you can use the rmtld3synth command line interface.
 
 ### Tarball binaries for Windows
 
