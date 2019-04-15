@@ -9,6 +9,8 @@ module type Translate_sig = sig
 
   val synth_tm_constant : value -> helper -> body
 
+  val synth_tm_variable : string -> helper -> body
+
   val synth_tm_duration : body -> body -> helper -> body
 
   val synth_tm_plus : body -> body -> helper -> body
@@ -37,13 +39,13 @@ module Translate (T : Translate_sig) = struct
   let rec synth_term term helper =
     match term with
     | Constant value -> T.synth_tm_constant value helper
+    | Variable name -> T.synth_tm_variable name helper
     | Duration (di, phi) ->
         T.synth_tm_duration (synth_term di helper) (synth phi helper) helper
     | FPlus (tr1, tr2) ->
         T.synth_tm_plus (synth_term tr1 helper) (synth_term tr2 helper) helper
     | FTimes (tr1, tr2) ->
         T.synth_tm_times (synth_term tr1 helper) (synth_term tr2 helper) helper
-    | _ -> raise (Failure "synth: unsupported term")
 
   (* Synthesis of the rmtld3 formulas *)
   and synth formula helper =

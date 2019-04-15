@@ -69,7 +69,8 @@ let get_scheduler ctx model helper =
 
   verb (fun _ -> print_endline ("\nTrace size: "^(Z3.Expr.to_string size_fun_interp)^"\n") ) ;
 
-  let size = int_of_string (Z3.Expr.to_string size_fun_interp) + 2 in (* with interpretation of two more elements *)
+  (* set default size to 2 when trace_size is unknown/equal to (- 1); sum two to the trace_size value otherwise *)
+  let size = if (Z3.Expr.to_string size_fun_interp) = "(- 1)" then 2 else int_of_string (Z3.Expr.to_string size_fun_interp) + 2 in
 
   let exp2 = get_else interp in
 

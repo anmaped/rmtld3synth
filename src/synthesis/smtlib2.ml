@@ -7,9 +7,13 @@ open Helper
 
 type body = Term.t * Statement.t list
 
+module SS = Set.Make(String)
+
 let recursive_unrolling = ref false
 
 let recursive_unrolling_depth = ref 10
+
+let one_assumption = ref true
 
 type solvers = Z3 | CVC4 | UNKNOWN
 
@@ -23,6 +27,7 @@ let enable_recursive_unrolling () = recursive_unrolling := true
 
 let set_solver (slv : solvers) = solver := slv
 
+let free_variables_set = ref SS.empty
 let lst = ref []
 
 let add a = lst := a :: !lst
@@ -71,7 +76,13 @@ let f_const_term a = Term.const (Id.mk Id.Term a)
 
 let f_const_sort a = Term.const (Id.mk Id.Sort a)
 
+let f_true = f_const_term "true"
+
 let f_tvtrue = f_const_term "TVTRUE"
+
+let f_fvtrue = f_const_term "FVTRUE"
+
+let f_not a = Term.apply (Term.const (Id.mk Id.Term "not")) [a]
 
 let f_tvnot a = Term.apply (Term.const (Id.mk Id.Term "tvnot")) [a]
 
@@ -87,33 +98,83 @@ let f_implies a b = Term.apply (Term.const (Id.mk Id.Term "=>")) [a; b]
 
 let f_less a b = Term.apply (Term.const (Id.mk Id.Term "<")) [a; b]
 
+let f_leq a b = Term.apply (Term.const (Id.mk Id.Term "<=")) [a; b]
+
 let f_geq a b = Term.apply (Term.const (Id.mk Id.Term ">=")) [a; b]
 
 let f_sum a b = Term.apply (Term.const (Id.mk Id.Term "+")) [a; b]
 
 let f_minus a b = Term.apply (Term.const (Id.mk Id.Term "-")) [a; b]
 
+let f_times a b = Term.apply (Term.const (Id.mk Id.Term "*")) [a; b]
+
 let empty_body a = (a, [])
+
+let cartesian l l' =
+  List.concat (List.map (fun e -> List.map (fun e' -> (e, e')) l') l)
 
 (*
 	Synthesis
 *)
 
 (* parameterized synthesis functions for until operators *)
-let evalfold_param gamma id =
+let evalfold_param id =
   let evalfold id =
     (* (declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue ) *)
     declare_fun lst
       (Id.mk Id.Term ("evalfold" ^ id))
       [Term.const (Id.mk Id.Sort "Time"); Term.const (Id.mk Id.Sort "Time")]
       (Term.const (Id.mk Id.Term "Fourvalue")) ;
+
     if !recursive_unrolling then (
-      let cartesian l l' =
-        List.concat (List.map (fun e -> List.map (fun e' -> (e, e')) l') l)
-      in
       (* unrooling the recursion just in case (speedup) *)
       let enumeration = List.of_enum (0 -- !recursive_unrolling_depth) in
       let lst_all_comb = cartesian enumeration enumeration in
+      (* (assert (forall ((x Time) (i Time)) (implies (not (and (and (<= 0 x)  (<= x max_depth) ) (and (<= 0 i)  (<= i max_depth) ) ) )  (= (evalfold!id x i) FVTRUE ) )  ) ) *)
+      (* this assert closes the unroll search space with upper and lower bound for freevariables x and i *)
+      assert_ lst
+        (Term.forall
+          [ Term.colon
+              (Term.const (Id.mk Id.Term "x"))
+              (Term.const (Id.mk Id.Sort "Time"))
+          ; Term.colon
+              (Term.const (Id.mk Id.Term "i"))
+              (Term.const (Id.mk Id.Sort "Time")) ]
+          (f_implies
+            (f_not
+              (f_and
+                (f_and
+                  (f_leq
+                    (f_const_term "0")
+                    (f_const_term "x")
+                  )
+                  (f_leq
+                    (f_const_term "x")
+                    (f_const_term (string_of_int !recursive_unrolling_depth))
+                  )
+                )
+                (f_and
+                  (f_leq
+                    (f_const_term "0")
+                    (f_const_term "i")
+                  )
+                  (f_leq
+                    (f_const_term "i")
+                    (f_const_term (string_of_int !recursive_unrolling_depth))
+                  )
+                )
+              )
+            )
+            (f_equal
+              (Term.apply
+                (Term.const (Id.mk Id.Term ("evalfold" ^ id)) )
+                [ Term.const (Id.mk Id.Term "x")
+                      ; Term.const (Id.mk Id.Term "i") ]
+              )
+              f_fvtrue
+            )
+          )
+        ) ;
       List.fold_left
         (fun a (x, i) ->
           if x > i then
@@ -154,14 +215,11 @@ let evalfold_param gamma id =
     else (
       (*
 				(assert (forall ((x Time) (i Time))
-				  (ite (and (>= i 0) (and (>= x 0) (<= x "^ (string_of_int (gamma + t)) ^")) )
-				    (ite (> x i)
+				  (ite (> x i)
 					  (= (evalb" ^ id ^ " trc x i (evalfold" ^ id ^ " (- x 1) i )) (evalfold" ^ id ^ " x i ) )
 					  (= (evalb" ^ id ^ " trc x i FVSYMBOL) (evalfold" ^ id ^ " x i))
-				    )
-				    (= FVUNKNOWN (evalfold" ^ id ^ " x i))
-				  ))
-				)
+				  )
+				))
 			*)
       assert_ lst
         (Term.forall
@@ -211,9 +269,33 @@ let dummy_tuple = (Term.const (Id.mk Id.Term "dummy"), [])
 let synth_tm_constant value helper =
   empty_body (Term.apply (f_const_term "dsome") [(Term.const (Id.mk Id.Term (string_of_int (int_of_float value))))] )
 
+let synth_tm_variable name helper =
+  if not (SS.exists (fun s -> s = name) !free_variables_set) then ( free_variables_set := SS.add name !free_variables_set; declare_const lst (Id.mk Id.Term name) (Term.const (Id.mk Id.Sort "Real")) ; ) ;
+  empty_body (Term.apply (f_const_term "dsome") [(Term.const (Id.mk Id.Term name))] )
+
 let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
-  let duration id dt fm =
-    (* trc_size >= t + dt is the worst case! (more improvments in the future are possible) *)
+  let idx = get_duration_counter helper in
+  let freevariable = "v_dt!" ^ string_of_int idx in
+  declare_const lst (Id.mk Id.Term freevariable) (Term.const (Id.mk Id.Sort "Duration")) ;
+  if !one_assumption then
+  assert_ lst ( f_equal (Term.const (Id.mk Id.Term freevariable)) (tm_call) )
+else
+  (
+  
+  (if !recursive_unrolling then ( assert_ lst (f_and
+    ( f_less (Term.apply (f_const_term "dval") [f_const_term freevariable]) (f_const_term (string_of_int !recursive_unrolling_depth)) )
+    ( f_less (f_const_term "0") (Term.apply (f_const_term "dval") [f_const_term freevariable]) ) ) ;
+    (* (assert (forall ((i Index)) (<= 0 (select trc_time i) ) ) ) *)
+    assert_ lst (
+Term.forall
+             [ Term.colon (f_const_term "i") (f_const_sort "Index") ]
+             (
+              (f_and (f_less (Term.apply (f_const_term "select") [f_const_sort "trc_time"; f_const_sort "i"]) (f_const_sort (string_of_int 100)) ) )
+               (f_less (f_const_sort "0") (Term.apply (f_const_term "select") [f_const_sort "trc_time"; f_const_sort "i"]) ) )
+    ) ;
+  ) ); ) ;
+
+  let duration id fm =
     let l_lst = ref [] in
     let indicator id =
       (*
@@ -235,18 +317,60 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
            (f_const_term "1") (f_const_term "0"))
     in
     let evaleta id =
-      (* (declare-fun evaleta"^ id ^" ((Time) (Time)) Int) *)
+      (* (declare-fun evaleta"^ id ^" ((Time) (Time)) Duration) *)
       declare_fun l_lst
         (Id.mk Id.Term ("evaleta" ^ id))
         [f_const_sort "Time"; f_const_sort "Time"]
         (Term.const (Id.mk Id.Term "Duration")) ;
       if !recursive_unrolling then (
-        let cartesian l l' =
-          List.concat (List.map (fun e -> List.map (fun e' -> (e, e')) l') l)
-        in
         (* unrooling the recursion just in case (speedup) *)
         let enumeration = List.of_enum (0 -- !recursive_unrolling_depth) in
         let lst_all_comb = cartesian enumeration enumeration in
+        (* (assert (forall ((x Time) (i Time)) (implies (not (and (and (<= 0 x)  (<= x max_depth) ) (and (<= 0 i)  (<= i max_depth) ) ) )  (= evaleta!id x i) dnone ) )  ) ) *)
+        (* this assert closes the unroll search space with upper and lower bound for freevariables x and i *)
+        assert_ l_lst
+          (Term.forall
+            [ Term.colon
+                (Term.const (Id.mk Id.Term "x"))
+                (Term.const (Id.mk Id.Sort "Time"))
+            ; Term.colon
+                (Term.const (Id.mk Id.Term "i"))
+                (Term.const (Id.mk Id.Sort "Time")) ]
+            (f_implies
+              (f_not
+                (f_and
+                  (f_and
+                    (f_leq
+                      (f_const_term "0")
+                      (f_const_term "x")
+                    )
+                    (f_leq
+                      (f_const_term "x")
+                      (f_const_term (string_of_int !recursive_unrolling_depth))
+                    )
+                  )
+                  (f_and
+                    (f_leq
+                      (f_const_term "0")
+                      (f_const_term "i")
+                    )
+                    (f_leq
+                      (f_const_term "i")
+                      (f_const_term (string_of_int !recursive_unrolling_depth))
+                    )
+                  )
+                )
+              )
+              (f_equal
+                (Term.apply
+                  (Term.const (Id.mk Id.Term ("evaleta" ^ id)) )
+                  [ Term.const (Id.mk Id.Term "x")
+                        ; Term.const (Id.mk Id.Term "i") ]
+                )
+                (f_const_term "dnone")
+              )
+            )
+          ) ;
         List.fold_left
           (fun a (x, i) ->
             if x > i then
@@ -266,9 +390,11 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
                                  (f_const_term (string_of_int x))
                                  (f_const_term "1")
                              ; f_const_term (string_of_int i) ] ])
-                      (Term.apply
+                      (f_times (Term.apply
                          (f_const_term ("indicator" ^ id))
-                         [f_const_term "trc"; f_const_term (string_of_int x)])))
+                         [f_const_term "trc"; f_const_term (string_of_int x)])
+                         (if !one_assumption then f_const_term "1" else (Term.apply (f_const_term "select") [f_const_term "trc_time"; f_const_term (string_of_int x) ] ) )
+                      ) ))
             else
               (* (assert (= (evaleta"^ id ^" "^ string_of_int x ^" "^ string_of_int i ^") (indicator"^ id ^" trc "^ string_of_int x ^") ) ) *)
               assert_ l_lst
@@ -278,9 +404,12 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
                           (f_const_term ("evaleta" ^ id))
                           [ f_const_term (string_of_int x)
                           ; f_const_term (string_of_int i) ] ])
-                   (Term.apply
+                   (f_times
+                    (Term.apply
                       (f_const_term ("indicator" ^ id))
-                      [f_const_term "trc"; f_const_term (string_of_int x)])) )
+                      [f_const_term "trc"; f_const_term (string_of_int x)])
+                    (if !one_assumption then f_const_term "1" else (Term.apply (f_const_term "select") [f_const_term "trc_time"; f_const_term (string_of_int x) ] ) )
+                   ) ) )
           () lst_all_comb ;
         () )
       else (
@@ -353,9 +482,15 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
       (Term.const (Id.mk Id.Sort "Duration"))
       (* body *)
       (ite
-         (f_geq
-            (Term.const (Id.mk Id.Term "trc_size"))
-            (Term.const (Id.mk Id.Term "mt")))
+         (f_and
+            (f_geq
+              (Term.const (Id.mk Id.Term "trc_size"))
+              (Term.const (Id.mk Id.Term "mt")))
+            (
+              (* one assumption *)
+              if not !one_assumption then f_equal (Term.apply (f_const_term "dval") [tm_call]) (f_minus (Term.apply (f_const_term "mapt") [f_const_term "mt"]) (Term.apply (f_const_term "mapt") [f_const_term "mtb"]) ) else f_true
+            )
+         )
          (Term.apply
             (Term.const (Id.mk Id.Term ("evaleta" ^ id)))
             [ f_minus
@@ -367,22 +502,20 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
     (* (duration_op"^ id ^" (+ mt "^ dt ^") mt) *)
     ( Term.apply
         (Term.const (Id.mk Id.Term ("duration_op" ^ id)))
-        [ f_sum (Term.const (Id.mk Id.Term "mt")) (Term.apply (f_const_term "dval") [dt])
+        [ f_sum (Term.const (Id.mk Id.Term "mt")) (Term.apply (f_const_term "dval") [f_const_term freevariable])
         ; Term.const (Id.mk Id.Term "mt") ]
     , !l_lst (* list of asserts and intermediate definitions *) )
   in
-  let idx = get_duration_counter helper in
   let dur_out1, dur_out2 =
-    duration ("!" ^ string_of_int idx) tm_call fm_call
+    duration ("!" ^ string_of_int idx) fm_call
   in
   (dur_out1, tm_body @ fm_body @ dur_out2)
 
 let synth_tm_plus cmptr1 cmptr2 helper =
-  (f_sum (fst cmptr1) (fst cmptr2), snd cmptr1 @ snd cmptr2)
+  (Term.apply (Term.const (Id.mk Id.Term "dsome")) [f_sum (Term.apply (Term.const (Id.mk Id.Term "dval")) [fst cmptr1]) (Term.apply (Term.const (Id.mk Id.Term "dval")) [fst cmptr2])], snd cmptr1 @ snd cmptr2)
 
 let synth_tm_times cmptr1 cmptr2 helper =
-  ( Term.apply (Term.const (Id.mk Id.Term "*")) [fst cmptr1; fst cmptr2]
-  , snd cmptr1 @ snd cmptr2 )
+  (Term.apply (Term.const (Id.mk Id.Term "dsome")) [f_times (Term.apply (Term.const (Id.mk Id.Term "dval")) [fst cmptr1]) (Term.apply (Term.const (Id.mk Id.Term "dval")) [fst cmptr2])], snd cmptr1 @ snd cmptr2)
 
 let synth_fm_true helper = empty_body (Term.const (Id.mk Id.Term "TVTRUE"))
 
@@ -411,8 +544,11 @@ let synth_fm_less cmptr1 cmptr2 helper =
   synthesis of U<
 *)
 let synth_fm_uless gamma sf1 sf2 helper =
+  let idx = get_until_counter helper in
+  let freevariable = "v_gamma!" ^ string_of_int idx in
+  declare_const lst (Id.mk Id.Term freevariable) (Term.const (Id.mk Id.Sort "Index")) ;
+  assert_ lst ( f_equal (Term.const (Id.mk Id.Term freevariable)) (Term.const (Id.mk Id.Term ( string_of_int (int_of_float gamma)) )) ) ;
   let until_less id (comp1, comp1_append) (comp2, comp2_append) =
-    let gamma = int_of_float gamma in
     let evalb id =
       (*
 				(define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (mtb Time) (v Fourvalue) ) Fourvalue
@@ -445,7 +581,7 @@ let synth_fm_uless gamma sf1 sf2 helper =
            (Term.apply (Term.const (Id.mk Id.Term "evali")) [comp1; comp2])
            (Term.const (Id.mk Id.Term "v")))
     in
-    let evalfold id = evalfold_param gamma id in
+    let evalfold id = evalfold_param id in
     let evalc id =
       (*
 				(define-fun evalc" ^ id ^ " ((mt Time) (mtb Time) ) (Pair Bool Fourvalue)
@@ -472,7 +608,7 @@ let synth_fm_uless gamma sf1 sf2 helper =
            (Term.const (Id.mk Id.Term "mk-pair"))
            [ f_geq
                (f_sum
-                  (Term.const (Id.mk Id.Term (string_of_int gamma)))
+                  (Term.const (Id.mk Id.Term freevariable))
                   (Term.const (Id.mk Id.Term "mtb")))
                (Term.const (Id.mk Id.Term "trc_size"))
            ; Term.apply
@@ -512,22 +648,24 @@ let synth_fm_uless gamma sf1 sf2 helper =
              [Term.const (Id.mk Id.Term "mt"); Term.const (Id.mk Id.Term "mtb")]
          ])
   in
-  let idx = get_until_counter helper in
   until_less ("!" ^ string_of_int idx) sf1 sf2 ;
   (* "(until_less_op!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt t )" *)
   ( Term.apply
       (Term.const (Id.mk Id.Term ("until_less_op!" ^ string_of_int idx)))
       [ f_sum
           (Term.const (Id.mk Id.Term "mt"))
-          (Term.const (Id.mk Id.Term (string_of_int (int_of_float gamma))))
+          (Term.const (Id.mk Id.Term freevariable))
       ; Term.const (Id.mk Id.Term "mt") ]
   , []
     (* things are append in until_less; we don't need (snd sf1@snd sf2) *)
   )
 
 let synth_fm_ev_eq gamma sf1 helper =
+  let idx = get_until_counter helper in
+  let freevariable = "v_gamma!" ^ string_of_int idx in
+  declare_const lst (Id.mk Id.Term freevariable) (Term.const (Id.mk Id.Sort "Index")) ;
+  assert_ lst ( f_equal (Term.const (Id.mk Id.Term freevariable)) (Term.const (Id.mk Id.Term ( string_of_int (int_of_float gamma)) )) ) ;
   let eventually_eq id (comp1, comp1_append) =
-    let gamma = int_of_float gamma in
     let evalb id =
       (*
         (define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (mtb Time) (v Fourvalue) ) Fourvalue
@@ -586,7 +724,7 @@ let synth_fm_ev_eq gamma sf1 helper =
            (Term.const (Id.mk Id.Term "mk-pair"))
            [ f_geq
                (f_sum
-                  (Term.const (Id.mk Id.Term (string_of_int gamma)))
+                  (Term.const (Id.mk Id.Term freevariable))
                   (Term.const (Id.mk Id.Term "mtb")))
                (Term.const (Id.mk Id.Term "trc_size"))
            ; Term.apply
@@ -624,14 +762,13 @@ let synth_fm_ev_eq gamma sf1 helper =
              [Term.const (Id.mk Id.Term "mt"); Term.const (Id.mk Id.Term "mtb")]
          ])
   in
-  let idx = get_until_counter helper in
   eventually_eq ("!" ^ string_of_int idx) sf1 ;
   (* "(eventually_op!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt t )" *)
   ( Term.apply
       (Term.const (Id.mk Id.Term ("eventually_op!" ^ string_of_int idx)))
       [ f_sum
           (Term.const (Id.mk Id.Term "mt"))
-          (Term.const (Id.mk Id.Term (string_of_int (int_of_float gamma))))
+          (Term.const (Id.mk Id.Term freevariable))
       ; Term.const (Id.mk Id.Term "mt") ]
   , []
     (* things are append in until_less; we don't need (snd sf1) *)
@@ -640,17 +777,24 @@ let synth_fm_ev_eq gamma sf1 helper =
 let synth_fm_aw_eq gamma sf1 helper =
   synth_fm_not (synth_fm_uless gamma (empty_body f_tvtrue) (synth_fm_not sf1 helper) helper) helper
 
+(*
+  synthesis of U=
+*)
 let synth_fm_ueq gamma sf1 sf2 helper =
   let x, y = synth_fm_aw_eq gamma sf1 helper in
   let x2, y2 = synth_fm_ev_eq gamma sf2 helper in
+  (* synth_fm_ueq is equal to synth_fm_aw_eq /\ synth_fm_ev_eq *)
   (f_tvand x x2, y @ y2)
 
+(*
+  synthesis of U<=
+*)
 let synth_fm_ulesseq gamma sf1 sf2 helper =
   let x, y = synth_fm_uless gamma sf1 sf2 helper in
   let x2, y2 = synth_fm_ev_eq gamma sf2 helper in
+  (* synth_fm_ulesseq is equal to synth_fm_uless \/ synth_fm_ev_eq *)
   (f_tvor x x2, y @ y2)
 
-(* this is similar to synth_fm_uless \/ synth_fm_ulesseq *)
 
 let synth_smtlib_header () =
   let common_header () = set_info lst ":smt-lib-version" "2.6" in
@@ -658,11 +802,12 @@ let synth_smtlib_header () =
     if !recursive_unrolling then set_logic lst "QF_AUFDTNIRA"
     else set_logic lst "AUFDTNIRA" ;
     set_info lst ":source" "|https://github.com/anmaped/rmtld3synth|" ;
-    set_info lst ":license" "\"https://creativecommons.org/licenses/by/4.0/\""
+    set_info lst ":license" "\"https://creativecommons.org/licenses/by/4.0/\"" ;
     (*
 		(set-info :category <category>)
 		(set-info :status <status>)
 		*)
+    set_option lst ":produce-models" "true"
   in
   let common_header_z3 () =
     set_option lst ":auto_config" "false" ;
@@ -685,6 +830,7 @@ let synth_smtlib_common_types () =
   define_sort lst (Id.mk Id.Sort "Proptype") []
     (Term.const (Id.mk Id.Sort "Int")) ;
   define_sort lst (Id.mk Id.Sort "Time") [] (Term.const (Id.mk Id.Sort "Int")) ;
+  define_sort lst (Id.mk Id.Sort "Index") [] (Term.const (Id.mk Id.Sort "Int")) ;
   (* (declare-datatypes ((Duration 0)) (( (dnone) (dsome (val Int) ) ))  ) *)
   define_datatypes lst
     [ ( Id.mk Id.Sort "Duration"
@@ -705,12 +851,18 @@ let synth_smtlib_common_types () =
             ; Term.colon
                 (Term.const (Id.mk Id.Sort "second"))
                 (Term.const (Id.mk Id.Sort "T2")) ] ) ] ) ] ;
-  (* (define-sort Trace () (Array Time Proptype) ) *)
+  (* (define-sort Trace () (Array Index Proptype) ) *)
   define_sort lst (Id.mk Id.Sort "Trace") []
     (Term.apply
        (Term.const (Id.mk Id.Sort "Array"))
-       [ Term.const (Id.mk Id.Sort "Time")
+       [ Term.const (Id.mk Id.Sort "Index")
        ; Term.const (Id.mk Id.Sort "Proptype") ]) ;
+  (* (define-sort Trace_ () (Array Index Real) ) *)
+  define_sort lst (Id.mk Id.Sort "Trace_") []
+    (Term.apply
+       (Term.const (Id.mk Id.Sort "Array"))
+       [ Term.const (Id.mk Id.Sort "Index")
+       ; Term.const (Id.mk Id.Sort "Real") ]) ;
   (* (declare-datatypes () ((Fourvalue (FVTRUE) (FVFALSE) (FVUNKNOWN) (FVSYMBOL) ))) *)
   define_datatypes lst
     [ ( Id.mk Id.Sort "Fourvalue"
@@ -956,8 +1108,53 @@ let synth_smtlib_common_trace () =
 		(declare-const trc_size Time)
 	*)
   declare_const lst (Id.mk Id.Term "trc") (Term.const (Id.mk Id.Sort "Trace")) ;
+  if not !one_assumption then declare_const lst (Id.mk Id.Term "trc_time") (Term.const (Id.mk Id.Sort "Trace_")) ;
   declare_const lst (Id.mk Id.Term "trc_size")
     (Term.const (Id.mk Id.Sort "Time")) ;
+
+  if not !one_assumption then (
+  declare_fun lst
+  (* id *)
+  (Id.mk Id.Term "mapt")
+  (* arguments *)
+  [
+    Term.const (Id.mk Id.Sort "Index") ]
+  (* return type *)
+  (Term.const (Id.mk Id.Sort "Real")) ;
+
+  if !recursive_unrolling then (
+      (* unrooling the recursion just in case (speedup) *)
+      let enumeration = List.of_enum (0 -- !recursive_unrolling_depth) in
+      (*let lst_all_comb = cartesian enumeration enumeration in*)
+      List.fold_left
+          (fun _ i -> if 0 < i then
+         assert_ lst ( ( f_equal (Term.apply (f_const_term "mapt") [f_const_term (string_of_int i)]) (f_sum (Term.apply (f_const_term "mapt") [f_minus (f_const_term (string_of_int i)) (f_const_term "1") ]) (Term.apply (Term.const (Id.mk Id.Term "select")) [ Term.const (Id.mk Id.Term "trc_time"); Term.const (Id.mk Id.Term (string_of_int i)) ]) ) ) )
+          else
+          assert_ lst ( ( f_equal (Term.apply (f_const_term "mapt") [f_const_term (string_of_int i)]) (Term.apply (Term.const (Id.mk Id.Term "select")) [ Term.const (Id.mk Id.Term "trc_time"); Term.const (Id.mk Id.Term (string_of_int i)) ]) ) )
+           ) () enumeration ;
+
+assert_ lst ( f_equal (Term.apply (f_const_term "mapt") [f_const_term "(- 1)"]) (f_const_term "0") ) ;
+         (* (assert (= (select trc_time 0) 0 ))  *)
+  (*assert_ lst (f_equal (f_const_term "0") (Term.apply (f_const_term "select") [ f_const_term "trc_time"; f_const_term "0" ]) ) ;*)
+ )
+else
+(
+  assert_ lst (
+    Term.forall
+      [ Term.colon (f_const_term "i") (f_const_sort "Index") ]
+      (
+(ite
+(f_less (f_const_term "0") (f_const_term "i") )
+( f_equal (Term.apply (f_const_term "mapt") [f_const_term "i"]) (f_sum (Term.apply (f_const_term "mapt") [f_minus (f_const_term "i") (f_const_term "1") ]) (Term.apply (Term.const (Id.mk Id.Term "select")) [ Term.const (Id.mk Id.Term "trc_time"); Term.const (Id.mk Id.Term "i") ]) ) )
+( f_equal (Term.apply (f_const_term "mapt") [f_const_term "i"]) (Term.apply (Term.const (Id.mk Id.Term "select")) [ Term.const (Id.mk Id.Term "trc_time"); Term.const (Id.mk Id.Term "i") ]) )
+)
+
+      )
+    ) ;
+
+ 
+) ;
+) ;
   ()
 
 let synth_smtlib_common_prop () =
@@ -1041,11 +1238,14 @@ let synth_smtlib synth_fun formula helper =
        (Term.apply
           (Term.const (Id.mk Id.Term "allcheck"))
           [Term.const (Id.mk Id.Term "trc"); f_const_term "0"])) ;
-  if (not (isCvc4SolverEnabled ())) && not (isZ3SolverEnabled ()) then
+  if not (isZ3SolverEnabled ()) then
+  begin
     check_sat lst ;
+    get_model lst ;
+    get_info lst ":all-statistics" ;
+  end ;
   (* if isZ3SolverEnabled () then "(check-sat-using (then qe smt))" ; this entry is available only in Z3 *)
-  if not (isZ3SolverEnabled ()) then get_model lst ;
-  get_info lst ":all-statistics" ;
+
   (* pretty print smtlib statements to string *)
   List.iter
     (fun a ->

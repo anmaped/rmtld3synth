@@ -113,14 +113,14 @@ let rmtld3_unit_test_case_generation trace formula computed_value computef
     ^ " ()\", (stack_size - stack_free)-(stack_size-d_p));\n\
        \t// END stack measurement\n\
        #endif\n\n\
-       \tDEBUG_RTMLD3(\"count:%d\", count_until_iterations);\n\n\
+       \tDEBUG_RTMLD3(\"count:%d \", count_until_iterations);\n\n\
        \tif( comp == "
     ^ string_of_three_valued computed_value
-    ^ " )\n\t\tDEBUG_RTMLD3(\"Checked: %s : __unit_test_" ^ cluster_name
+    ^ " )\n\t\tDEBUG_RTMLD3(\"\\033[0;32m**Checked: %s\\033[0m : __unit_test_" ^ cluster_name
     ^ "_c" ^ string_of_int id
     ^ "\\n\", out_p (comp));\n\
        \telse\n\
-       \t\tDEBUG_RTMLD3(\"Failed: %s : __unit_test_" ^ cluster_name ^ "_c"
+       \t\tDEBUG_RTMLD3(\"\\033[0;31mFailed: %s\\033[0m : __unit_test_" ^ cluster_name ^ "_c"
     ^ string_of_int id ^ "\\n\", out_p (comp));\n\n\treturn comp == "
     ^ string_of_three_valued computed_value
     ^ ";\n}\n\n"
@@ -449,7 +449,7 @@ let test () cluster_name helper =
     "\n\
      x86-test:\n\
      \t g++ -Wall -DUSE_UNSAFE_METHODS -g -O0 -std=c++0x -I../../../rtmlib \
-     -D__x86__ --verbose tests.cpp -o tests\n"
+     -D__x86__ -DUSE_DEBUG_RMTLD3 --verbose tests.cpp -o tests\n"
   in
   Printf.fprintf stream "%s\n" code ;
   close_out stream ;

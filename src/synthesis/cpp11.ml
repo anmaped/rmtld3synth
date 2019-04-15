@@ -38,6 +38,8 @@ let compute_function_head_mutable = "[](environment &env, timespan t) mutable ->
  *)
 let synth_tm_constant value helper = ("make_duration("^string_of_float value^",false)","")
 
+let synth_tm_variable name helper = failwith "No freevariables allowed."
+
 let synth_tm_duration (di,_) (tf,_) helper =
     (compute_term_function_head^" {
     
@@ -308,10 +310,11 @@ let synth_fm_ulesseq gamma (sf1,a) (sf2,b) helper =
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
     let cmp_str = compute (formula) helper in
+    let randomid = Random.bits () in
     (* Synthesize ocaml formula evaluation algorithm into c++ *)
     let code1 = "
-  #ifndef _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
-  #define _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
+  #ifndef _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_"^ string_of_int randomid ^"
+  #define _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_"^ string_of_int randomid ^"
 
   #include \"rmtld3/rmtld3.h\"
 
@@ -320,7 +323,7 @@ let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period form
   auto _"^monitor_name^"_compute = "^ cmp_str ^";
 
   // SORTS
-  "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "#define SORT_%s %i\n  " x y)) (get_proposition_hashtbl helper) "" ^"
+  "^ (*Hashtbl.fold (fun x y str -> str^(Printf.sprintf "#define SORT_%s %i\n  " x y)) (get_proposition_hashtbl helper) "" ^*)"
 
 #ifdef USE_MAP_SORT
   #include <string>
@@ -335,7 +338,7 @@ let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period form
   "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "{%i,\"%s\"},\n  " y x)) (get_proposition_hashtbl helper) "" ^"};
 #endif
 
-  #endif //_"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_
+  #endif //_"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_"^ string_of_int randomid ^"
     " in
 
 

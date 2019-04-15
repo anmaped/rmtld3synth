@@ -19,6 +19,7 @@ type body = string * string
 
 (* ocaml module api *)
 let synth_tm_constant value helper = ("(fun k s t -> "^ (string_of_float value) ^")","")
+let synth_tm_variable name helper = failwith "No freevariables allowed."
 let synth_tm_duration (tm_call,tm_body) (fm_call,fm_body) helper =
   has_tm_dur := true;
   ("(compute_tm_duration "^ tm_call ^" "^ fm_call ^")", tm_body^fm_body)

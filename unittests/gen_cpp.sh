@@ -3,9 +3,14 @@
 cppgen="
 #include <unistd.h>
 #include <list>
+#include <string>
+#include <unordered_map>
 
 #include \"RTML_buffer.h\"
 #include \"RTML_monitor.h\"
+#include \"rmtld3/reader.h\"
+#include \"rmtld3/rmtld3.h\"
+
 
 int count_until_iterations;
 
@@ -17,17 +22,19 @@ RTML_buffer<int, 300> __buffer_mon1 __attribute__((used));
 for (( i=1; i<${arrayrmtldlength}+1; i++ ));
 do
 	cppgen+="
-#include \"rmtld3/reader.h\"
+namespace Test$i {
 #include \"cpp/mon$i/mon0_compute.h\"
+}
 
 void test$i() {
 	std::list<std::pair<std::string,int>> trc =  { $( echo "$(dos2unix $TEST_DIR/cpp/res$i.trace; cat $TEST_DIR/cpp/res$i.trace)" | sed -e "s/)/}/g" -e "s/(/{/g" -e "s/;/,/g" ) };
 	std::list<std::pair<int,timespan>> enc_trc;
 
 	timespan delay_time = 0;
-	for (auto it = trc.begin(); it != trc.end(); it++) {
+	for (auto it = trc.begin(); it != trc.end(); ++it) {
 		delay_time = (timespan) (*it).second;
-		enc_trc.push_back ( std::make_pair (_mapsorttostring[(*it).first], delay_time ) );
+		DEBUGV_RMTLD3(\"%d %s\n\",Test$i::_mapsorttostring[(*it).first.c_str()],(*it).first.c_str());
+		enc_trc.push_back ( std::make_pair (Test$i::_mapsorttostring[(*it).first], delay_time ) );
 	}
 
 	RTML_writer< int > __writer = RTML_writer< int >( __buffer_mon1.getBuffer() );
@@ -36,16 +43,11 @@ void test$i() {
     __buffer_mon1.debug();
 
     RMTLD3_reader< int, Event < int > > __reader = RMTLD3_reader< int, Event < int > >( __buffer_mon1.getBuffer(), 10. );
-	environment env = Environment< int, Event < int > >(std::make_pair (0, 0), &__reader, __observation< int, Event < int > >);
-	three_valued_type _out = _mon0_compute(env,0);
+	Test$i::environment env = Environment< int, Event < int > >(std::make_pair (0, 0), &__reader, __observation< int, Event < int > >);
+	three_valued_type _out = Test$i::_mon0_compute(env,0);
 	auto _out_readable = (_out == T_TRUE) ? \"\x1b[32m[true]\x1b[0m\" : ((_out == T_FALSE) ? \"\x1b[31m[false]\x1b[0m\" : \"\x1b[33m[unknown]\x1b[0m\" );
 	DEBUG_RTMLD3(\"$i) %s\n\", _out_readable );
 }
-
-/*module T$i : Trace = struct let trc = [] end;;
-module M$i = Res$i.Mon0(T$i);;
-if M$i.mon = Rmtld3.True then print_endline (\"\x1b[32m[true]\x1b[0m\") else (if M$i.mon = Rmtld3.False then print_endline (\"\x1b[31m[false]\x1b[0m\") else print_endline (\"\x1b[33m[unknown]\x1b[0m\"))
-*/
 "
 done
 
