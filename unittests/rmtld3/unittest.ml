@@ -46,7 +46,7 @@ let rmtld3_unit_test_case_generation trace formula computed_value computef
       ( "bool __attribute__ ((noinline)) __unit_test_" ^ cluster_name ^ "_c"
         ^ string_of_int id ^ "_" ^ string_of_int n
         ^ " () {\n\tauto buf = __buffer_" ^ cluster_name
-        ^ ".getBuffer(); \n\tbuf->resetFrameCounter();\n"
+        ^ ".getBuffer(); \n\tbuf->resetFrameCounter();buf->resetFrameTimestamp();\n"
       , 0 )
       trace
   in
@@ -269,7 +269,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
     pass_test False "G_2 ~A" test2_trace (malways 2. (Not (Prop "A"))) ;
     pass_test True "G_4 (A -> (F_2 B))" test1_trace
       (malways 4. (mimplies (Prop "A") (meventually 2. (Prop "B")))) ;
-    pass_test Unknown "G_9.1 (A -> (F_2 B))" test1_trace
+    pass_test False "G_9.1 (A -> (F_2 B))" test1_trace
       (malways 9.1 (mimplies (Prop "A") (meventually 2. (Prop "B")))) ;
     (* complexity *)
     (* (y-2)*(x*(2*x))+((y-3)*x)+x *)
@@ -430,7 +430,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
     ; ("B", (6., 9.))
     ; ("A", (9., 20.)) ]
   in
-  pass_test True "usecase1" trc usecase1_formula ;
+  pass_test Unknown "usecase1" trc usecase1_formula ;
   (* <--- TO CHANGE TO CONFIG FILE *)
   
   (* lets create a function to run all tests *)
@@ -449,7 +449,7 @@ let test () cluster_name helper =
     "\n\
      x86-test:\n\
      \t g++ -Wall -DUSE_UNSAFE_METHODS -g -O0 -std=c++0x -I../../../rtmlib \
-     -D__x86__ -DUSE_DEBUG_RMTLD3 --verbose tests.cpp -o tests\n"
+     -D__x86__ -DUSE_DEBUG_RMTLD3 -DUSE_DEBUGV_RMTLD3X --verbose tests.cpp -o tests\n"
   in
   Printf.fprintf stream "%s\n" code ;
   close_out stream ;

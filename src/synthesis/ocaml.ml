@@ -18,7 +18,7 @@ type body = string * string
 
 
 (* ocaml module api *)
-let synth_tm_constant value helper = ("(fun k s t -> "^ (string_of_float value) ^")","")
+let synth_tm_constant value helper = ("(fun k s t -> Dsome("^ (string_of_float value) ^") )","")
 let synth_tm_variable name helper = failwith "No freevariables allowed."
 let synth_tm_duration (tm_call,tm_body) (fm_call,fm_body) helper =
   has_tm_dur := true;
@@ -45,15 +45,17 @@ let compute_tm_duration tm fm k u t =
     ) in
   let eval_eta m dt phi x = fold_left (fun s (prop,(i,t')) -> (riemann_sum
   m dt (i,t') phi) +. s) 0. x in
-  let t,t' = dt in
-  eval_eta (k,u) dt fm (sub_k (k,u,t) t')
+    match dt with
+  | (t, Dsome(t')) when k.duration_of_trace >= t +. t'  ->
+    Dsome( eval_eta (k, u) (t,t') fm (sub_k (k, u, t) t') )
+  | _ -> Dnone
 "
 
 let synth_tm_plus cmptr1 cmptr2 helper =
-  ("(fun k s t -> ("^ fst cmptr1 ^" k s t) +. ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
+  ("(fun k s t -> match ("^ fst cmptr1 ^" k s t,"^ fst cmptr2 ^" k s t) with | Dsome(v1),Dsome(v2) -> Dsome(v1 +. v2) | _ -> Dnone )", (snd cmptr1)^(snd cmptr2))
 
 let synth_tm_times cmptr1 cmptr2 helper =
-  ("(fun k s t -> ("^ fst cmptr1 ^" k s t) *. ("^ fst cmptr2 ^" k s t))", (snd cmptr1)^(snd cmptr2))
+  ("(fun k s t -> match ("^ fst cmptr1 ^" k s t,"^ fst cmptr2 ^" k s t) with | Dsome(v1),Dsome(v2) -> Dsome(v1 *. v2) | _ -> Dnone )", (snd cmptr1)^(snd cmptr2))
 
 let synth_fm_true helper = ("(fun k s t -> True)","")
 
@@ -88,7 +90,7 @@ let compute_uless gamma f1 f2 k u t =
   let eval_i b1 b2 =
     if b2 <> False then
       b3_to_b4 b2
-    else if b1 <> True && b2 = False then
+    else if b1 <> True then
       b3_to_b4 b1
     else
       Symbol

@@ -151,7 +151,7 @@ let eval_b sf1 sf2 = "
     // eval_i lambda function
     auto eval_i = [](three_valued_type b1, three_valued_type b2) -> four_valued_type
     {
-      return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE && b2 == T_FALSE) ? b3_to_b4(b1) : FV_SYMBOL );
+      return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE) ? b3_to_b4(b1) : FV_SYMBOL );
     };
 
     // change this (trying to get the maximum complexity)

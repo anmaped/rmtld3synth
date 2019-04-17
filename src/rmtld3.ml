@@ -115,6 +115,8 @@ type three_valued = True | False | Unknown
 (* special type for until definition *)
 type three_valued_symbol = STrue | SFalse | SUnknown | Symbol
 
+type duration = Dnone | Dsome of float
+
 (* type conversion *)
 let b3_to_b4 b3 =
   if b3 = True then STrue else if b3 = False then SFalse else SUnknown
@@ -150,7 +152,10 @@ let b3_not b3 =
 
 (* Relation operator < *)
 let b3_lessthan n1 n2 =
-  if n1 < n2 then True else if n1 >= n2 then False else Unknown
+  match n1,n2 with
+  | Dnone,Dnone | Dsome(_),Dnone | Dnone,Dsome(_) -> Unknown
+  | Dsome(v1),Dsome(v2) -> if v1 < v2 then True else False
+  (*if n1 < n2 then True else if n1 >= n2 then False else Unknown*)
 
 (* environment record type *)
 type ev =
@@ -556,13 +561,7 @@ let sub_k (k, _, t) gamma =
       partition
         (fun (_, (i1, _)) -> if t <= i1 && i1 < t +. gamma then true else false)
         tb
-    in
-    (*Printf.printf "(%f)s-" t ;
-         print_trace p1;
-         Printf.printf "--" ;
-         print_trace p2;
-         Printf.printf "-e";*)
-    p1
+    in p1
 
 (*
 (* sub-trace function *)
@@ -605,10 +604,10 @@ let sub_k (k,u,t) gamma =
  *)
 let rec compute_term m t term =
   match term with
-  | Constant value -> value
+  | Constant value -> Dsome(value)
   | Duration (di, phi) -> compute_term_duration m (t, compute_term m t di) phi
-  | FPlus (tr1, tr2) -> compute_term m t tr1 +. compute_term m t tr2
-  | FTimes (tr1, tr2) -> compute_term m t tr1 *. compute_term m t tr2
+  | FPlus (tr1, tr2) -> ( match (compute_term m t tr1,compute_term m t tr2) with | Dsome(v1),Dsome(v2) -> Dsome(v1 +. v2) | _ -> Dnone )
+  | FTimes (tr1, tr2) -> ( match (compute_term m t tr1,compute_term m t tr2) with | Dsome(v1),Dsome(v2) -> Dsome(v1 *. v2) | _ -> Dnone )
   | _ -> raise (Failure "compute_terms: missing term")
 
 and compute_term_duration (k, u) dt formula =
@@ -630,8 +629,10 @@ and compute_term_duration (k, u) dt formula =
   let eval_eta m dt phi x =
     fold_left (fun s (_, (i, t')) -> riemann_sum m dt (i, t') phi +. s) 0. x
   in
-  let t, t' = dt in
-  eval_eta (k, u) dt formula (sub_k (k, u, t) t')
+  match dt with
+  | (t, Dsome(t')) when k.duration_of_trace >= t +. t'  ->
+    Dsome( eval_eta (k, u) (t,t') formula (sub_k (k, u, t) t') )
+  | _ -> Dnone
 
 and compute (env, lg_env, t) formula =
   match formula with
@@ -657,45 +658,45 @@ and compute (env, lg_env, t) formula =
 and compute_uless m gamma phi1 phi2 =
   let eval_i b1 b2 =
     if b2 <> False then b3_to_b4 b2
-    else if b1 <> True && b2 = False then b3_to_b4 b1
+    else if b1 <> True then b3_to_b4 b1
     else Symbol
   in
   let eval_b m phi1 phi2 v =
     if v = Symbol then (
       let cmpphi1 = compute m phi1 in
       let cmpphi2 = compute m phi2 in
-      if activate_debug = ref true then
+      if !activate_debug then
         Printf.printf "SY: phi1: %s | phi2: %s\n" (b3_to_string cmpphi1)
           (b3_to_string cmpphi2) ;
       let rs = eval_i cmpphi1 cmpphi2 in
-      if activate_debug = ref true then
+      if !activate_debug then
         Printf.printf "SY: result %s\n" (b4_to_string rs) ;
       rs )
     else v
   in
   let eval_fold (k, u, t) phi1 phi2 x =
-    if activate_debug = ref true then (
+    if !activate_debug then (
       print_trace x ;
-      Printf.printf "\nfold_init\nFormula1: " ;
+      Printf.printf "\nfold_init\nPhi1: " ;
       print_plaintext_formula phi1 ;
-      Printf.printf "\nFormula2: " ;
+      Printf.printf "\nPhi2: " ;
       print_plaintext_formula phi2 ;
       Printf.printf "\n" ) ;
     let s, _ =
       fold_left
         (fun (v, t') (_, (ii1, ii2)) ->
-          if activate_debug = ref true then
+          if !activate_debug then
             Printf.printf "[%f, %f[ ** ThruthValue: %s \n" ii1 ii2
               (b4_to_string v) ;
           (eval_b (k, u, t') phi1 phi2 v, ii2) )
         (Symbol, t) x
     in
-    if activate_debug = ref true then
+    if !activate_debug then
       Printf.printf "fold_end : %s \n" (b4_to_string s) ;
     s
   in
   if gamma >= 0. then (
-    if activate_debug = ref true then Printf.printf "BeginULess \n" ;
+    if !activate_debug then Printf.printf "Begin ULess \n" ;
     let k, _, t = m in
     let subk = sub_k m gamma in
     let eval_c = eval_fold m phi1 phi2 subk in
@@ -703,11 +704,11 @@ and compute_uless m gamma phi1 phi2 =
       (* we have two cases to consider *)
       (* when the time bound is the last symbol return False *)
       (* when the time bound is greater than trace return Unknown *)
-      if k.duration_of_trace <= t +. gamma then Unknown else False
+      if k.duration_of_trace < t +. gamma then Unknown else False
     else
       let rs = b4_to_b3 eval_c in
-      if activate_debug = ref true then
-        Printf.printf "EndULess: %s\n" (b3_to_string rs) ;
+      if !activate_debug then
+        Printf.printf "End ULess truth-value: %s\n" (b3_to_string rs) ;
       rs )
   else
     (* failure: gamma is not a non-negative value *)
