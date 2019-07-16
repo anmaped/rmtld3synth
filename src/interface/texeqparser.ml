@@ -210,6 +210,7 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
           | FIneq(a)         -> Fland(feed @[ FIneq(a)])
           | Always (a,b)     -> Fland(feed @[ Always(a,b)])
           | Eventually (a,b) -> Fland(feed @[ Eventually(a,b)])
+          | U (a,b,c)        -> Fland(feed @[ U(a,b,c)])
           | FVar(a)          -> Fland(feed @[ FVar(a)])
           | FImplies(a,b)    -> Fland(feed @[ FImplies(a,b)])
           | FNot(a)          -> Fland(feed @[ FNot(a)])

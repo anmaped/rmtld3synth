@@ -186,7 +186,7 @@ let eval_fold sf1 sf2 helper = "
     "^ eval_b sf1 sf2 ^"
 
     iter.debug();
-
+    DEBUGV_RMTLD3(\" %d %d \\n\", t, iter.getLowerAbsoluteTime());
     ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
 
     auto cos = iter.getBegin();
@@ -277,8 +277,9 @@ let synth_fm_ueq gamma (sf1,_) (sf2,_) helper =
 
       ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
 
-      auto lower = env.trace->searchIndexForwardUntil( it, t);
-      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") - 1 ); /* [TODO] check this minus */
+      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") ); /* critical jump part !! */
+
+      it.debug();
 
       // set TraceIterator for interval [t, t+"^string_of_float (gamma)^"[
       it.setBound(upper, upper); /* [TODO] check this lower=upper and upper=upper to get only the last element */
@@ -289,11 +290,11 @@ let synth_fm_ueq gamma (sf1,_) (sf2,_) helper =
 
     "^trace_iterator helper^" subk = sub_k(env, t);
 
-    DEBUGV_RMTLD3(\"BEGIN until_op_leq.\\n\\n \");
+    DEBUGV_RMTLD3(\"BEGIN until_op_ueq.\\n\\n \");
 
-    four_valued_type eval_c = eval_fold(env, t, subk );
+    four_valued_type eval_c = subk.getEnoughSize() ? eval_fold(env, (t + "^string_of_float (gamma)^"), subk ) : FV_SYMBOL; /* critical jump part !! */
 
-    DEBUGV_RMTLD3(\"END until_op_leq (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
+    DEBUGV_RMTLD3(\"END until_op_ueq (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
     
     return ( eval_c == FV_SYMBOL ) ?
       ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )

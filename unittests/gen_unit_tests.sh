@@ -55,6 +55,8 @@ declare -a arrayrmtld=(
   "\eventually_{=2} a \land \eventually_{=3} b \land \eventually_{=4} c"
   "\eventually_{=4} a \land (\eventually_{=5} b ) \land \eventually_{=2} c"
   "\always_{=4} a \land (\eventually_{=4} b )"
+  "\always_{<4} a \land ( (\neg c) \until_{=4} b )" # *NEW*
+  "\neg ( \always_{<6} a \land ( ( (\neg a) \land (\neg b) ) \until_{=6} b ) )" # *NEW*
   "\neg ( \always_{<6} a \land (\eventually_{<6} ( ( (\neg a) \land (\neg b) ) \until_{=6} b ) ) )" #valid (1-assumption)
   "a \land \always_{< b1 } a \rightarrow \eventually_{=2} a"
   "(p \lor q) \ \until_{<b1} r "
