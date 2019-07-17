@@ -4,6 +4,7 @@
   (public_name     rmtld3synth)
   (libraries       rmtld3synth.synthesis)
   (modules         Rmtld3synth Version)
+  (flags           (-cclib -lstdc++) )
 )
 
 (library

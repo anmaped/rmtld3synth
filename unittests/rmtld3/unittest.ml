@@ -448,7 +448,7 @@ let test () cluster_name helper =
   let code =
     "\n\
      x86-test:\n\
-     \t g++ -Wall -DUSE_UNSAFE_METHODS -g -O0 -std=c++0x -I../../../rtmlib \
+     \t g++ -Wall -DUSE_UNSAFE_METHODS -g -O0 -std=gnu++11 -I../../../rtmlib \
      -D__x86__ -DUSE_DEBUG_RMTLD3 -DUSE_DEBUGV_RMTLD3X --verbose tests.cpp -o tests\n"
   in
   Printf.fprintf stream "%s\n" code ;

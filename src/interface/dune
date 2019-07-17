@@ -5,4 +5,5 @@
   (libraries       rmtld3synth.helper rmtld3synth.rmtld3.extension sexplib ppx_sexp_conv z3)
   (modules         Rmdslparser Texeqparser Mathkernel Mathkernel_call_ Z3solver_ )
   (preprocess      (pps ppx_sexp_conv))
+  (c_library_flags -lstdc++)
 )

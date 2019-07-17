@@ -122,7 +122,7 @@ echo "Executing quick cpp test..."
 
 ../$BINDIR/unittest
 
-make -C $TEST_DIR/../_cluster/tests > /dev/null 2>&1
+make -C $TEST_DIR/../_cluster/tests
 
 ./$TEST_DIR/../_cluster/tests/tests
 
