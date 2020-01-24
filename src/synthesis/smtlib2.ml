@@ -11,9 +11,9 @@ module SS = Set.Make(String)
 
 let recursive_unrolling = ref false
 
-let recursive_unrolling_depth = ref 10
+let recursive_unrolling_depth = ref 0
 
-let one_assumption = ref true
+let assume_unary_sequence = ref false
 
 type solvers = Z3 | CVC4 | UNKNOWN
 
@@ -277,7 +277,7 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
   let idx = get_duration_counter helper in
   let freevariable = "v_dt!" ^ string_of_int idx in
   declare_const lst (Id.mk Id.Term freevariable) (Term.const (Id.mk Id.Sort "Duration")) ;
-  if !one_assumption then
+  if !assume_unary_sequence then
   assert_ lst ( f_equal (Term.const (Id.mk Id.Term freevariable)) (tm_call) )
 else
   (
@@ -393,7 +393,7 @@ Term.forall
                       (f_times (Term.apply
                          (f_const_term ("indicator" ^ id))
                          [f_const_term "trc"; f_const_term (string_of_int x)])
-                         (if !one_assumption then f_const_term "1" else (Term.apply (f_const_term "select") [f_const_term "trc_time"; f_const_term (string_of_int x) ] ) )
+                         (if !assume_unary_sequence then f_const_term "1" else (Term.apply (f_const_term "select") [f_const_term "trc_time"; f_const_term (string_of_int x) ] ) )
                       ) ))
             else
               (* (assert (= (evaleta"^ id ^" "^ string_of_int x ^" "^ string_of_int i ^") (indicator"^ id ^" trc "^ string_of_int x ^") ) ) *)
@@ -408,7 +408,7 @@ Term.forall
                     (Term.apply
                       (f_const_term ("indicator" ^ id))
                       [f_const_term "trc"; f_const_term (string_of_int x)])
-                    (if !one_assumption then f_const_term "1" else (Term.apply (f_const_term "select") [f_const_term "trc_time"; f_const_term (string_of_int x) ] ) )
+                    (if !assume_unary_sequence then f_const_term "1" else (Term.apply (f_const_term "select") [f_const_term "trc_time"; f_const_term (string_of_int x) ] ) )
                    ) ) )
           () lst_all_comb ;
         () )
@@ -488,7 +488,7 @@ Term.forall
               (Term.const (Id.mk Id.Term "mt")))
             (
               (* one assumption *)
-              if not !one_assumption then f_equal (Term.apply (f_const_term "dval") [tm_call]) (f_minus (Term.apply (f_const_term "mapt") [f_const_term "mt"]) (Term.apply (f_const_term "mapt") [f_const_term "mtb"]) ) else f_true
+              if not !assume_unary_sequence then f_equal (Term.apply (f_const_term "dval") [tm_call]) (f_minus (Term.apply (f_const_term "mapt") [f_const_term "mt"]) (Term.apply (f_const_term "mapt") [f_const_term "mtb"]) ) else f_true
             )
          )
          (Term.apply
@@ -1108,11 +1108,11 @@ let synth_smtlib_common_trace () =
 		(declare-const trc_size Time)
 	*)
   declare_const lst (Id.mk Id.Term "trc") (Term.const (Id.mk Id.Sort "Trace")) ;
-  if not !one_assumption then declare_const lst (Id.mk Id.Term "trc_time") (Term.const (Id.mk Id.Sort "Trace_")) ;
+  if not !assume_unary_sequence then declare_const lst (Id.mk Id.Term "trc_time") (Term.const (Id.mk Id.Sort "Trace_")) ;
   declare_const lst (Id.mk Id.Term "trc_size")
     (Term.const (Id.mk Id.Sort "Time")) ;
 
-  if not !one_assumption then (
+  if not !assume_unary_sequence then (
   declare_fun lst
   (* id *)
   (Id.mk Id.Term "mapt")
@@ -1232,6 +1232,19 @@ let synth_smtlib synth_fun formula helper =
                [ Term.const (Id.mk Id.Term "trc")
                ; Term.const (Id.mk Id.Term "t") ])
             (Term.const (Id.mk Id.Term "0")))) ;
+    if not !assume_unary_sequence then
+    assert_ lst
+      (Term.forall
+         [ Term.colon
+             (Term.const (Id.mk Id.Term "t"))
+             (Term.const (Id.mk Id.Sort "Time")) ]
+         (f_less
+            (Term.const (Id.mk Id.Term "0"))
+            (Term.apply
+               (Term.const (Id.mk Id.Term "select"))
+               [ Term.const (Id.mk Id.Term "trc_time")
+               ; Term.const (Id.mk Id.Term "t") ])
+            )) ;
   (* (assert (allcheck trc 0) ) *)
   add
     (Statement.assert_

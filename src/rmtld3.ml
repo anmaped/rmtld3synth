@@ -752,12 +752,20 @@ let rec calculate_t_upper_bound (formula : rmtld3_fm) =
 and calculate_t_upper_bound_term term =
   match term with
   | Constant _ -> 0.
-  | Duration (_, _) -> 0.
-  | FPlus (_, _) -> 0.
-  | FTimes (_, _) -> 0.
+  | Duration (Constant c, fm) ->
+        c +.
+        (calculate_t_upper_bound fm)
+  | Duration (tr, fm) ->
+        (calculate_t_upper_bound_term tr) +.
+        (calculate_t_upper_bound fm)
+  | FPlus (tr1, tr2) -> Pervasives.max
+        (calculate_t_upper_bound_term tr1)
+        (calculate_t_upper_bound_term tr2)
+  | FTimes (tr1, tr2) -> Pervasives.max
+        (calculate_t_upper_bound_term tr1)
+        (calculate_t_upper_bound_term tr2)
   | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
 
-(* CONTINUE HERE !!! *)
 
 (* shorthand for simple duration inequalities *)
 let m_duration_less cons1 formula cons2 =

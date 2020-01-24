@@ -34,19 +34,19 @@ declare -a arrayrdsl=(
 
 
 declare -a arrayrmtld=(
-  "a \land \always_{< b1 } a \rightarrow \eventually_{=2} a"
-  "(p \lor q) \ \until_{<b1} r "
+#  "a \land \always_{< b1 } a \rightarrow \eventually_{=2} a"
+#  "(p \lor q) \ \until_{<b1} r "
   "\int^{b1} p < 3"
-  "\left( (p \lor q) \ \until_{<b1} r \right) \land \int^{9} r < 2"
-  "\left( (p \lor q) \ \until_{<b1} r \right) \land 10 < \int^{9} r"
-  "\eventually_{<b1}  p \land \always_{<b2} \neg p"
-  "\always_{<b2} (a \lor b) \ \until_{<b1} r"
+#  "\left( (p \lor q) \ \until_{<b1} r \right) \land \int^{9} r < 2"
+#  "\left( (p \lor q) \ \until_{<b1} r \right) \land 10 < \int^{9} r"
+#  "\eventually_{<b1}  p \land \always_{<b2} \neg p"
+#  "\always_{<b2} (a \lor b) \ \until_{<b1} r"
 )
 
 
 # Parsing parameters and executing benchmarks
 
-SOLVEFLAG="--solver-z3 --recursive-unrolling"
+SOLVEFLAG="--solver-z3 --assume-unary-seq --rec-unrolling=auto"
 #SOLVEFLAG="--solver-cvc4 --recursive-unrolling"
 CVC4DIR="./cvc4-1.6-win64-opt.exe"
 DIRNAME="_benchmark_suite"
@@ -70,7 +70,7 @@ elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
 
   mkdir $DIRNAME -p
 
-  for (( sample=5, j=1; sample<50; sample+=5, j++ ));
+  for (( sample=10, j=1; sample<60; sample+=10, j++ ));
   do
     echo $sample
 
@@ -80,9 +80,9 @@ elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
       REP=${arrayrmtld[$i-1]//b1/$sample}
       REPP=${REP//b2/$sample}
 
-      echo $i " / " ${arrayrmtldlength} " : " ${arrayrmtld[$i-1]}
+      echo $i " / " ${arrayrmtldlength} " : " $REPP
       START=$(date +%s.%N)
-      OCAMLRUNPARAM=b ../_build/install/default/bin/rmtld3synth --synth-smtlibv2 $SOLVEFLAG --input-latexeq "$REPP" > "$DIRNAME/testrmtld$i.$sample.smt2"
+      OCAMLRUNPARAM=b ../_build/install/default/bin/rmtld3synth --synth-smtlibv2 $SOLVEFLAG --input-latexeq "$REPP" > "$DIRNAME/testrmtld$i.$sample.result"
       END=$(date +%s.%N)
 
       OUT=$?

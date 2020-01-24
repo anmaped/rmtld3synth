@@ -90,9 +90,17 @@ open Synthesis.Ocaml
 open Interface.Z3solver_
 open Helper
 
-let set_recursive_unrolling f =
-  Smtlib2.enable_recursive_unrolling ()
-  (*Smt.recursive_unrolling := true*)
+let set_recursive_unrolling arg =
+  (* check scope: auto or [0-9]+ *)
+  if arg <> "auto" && not (Str.string_match (Str.regexp "[0-9]+" ) arg 0) then
+    failwith ("Unrecognized recursive unrolling parameter '"^arg^"'.")
+  else
+    if (Str.string_match (Str.regexp "[0-9]+" ) arg 0) then Smtlib2.recursive_unrolling_depth := int_of_string arg ;
+    Smtlib2.enable_recursive_unrolling ()
+    (*Smt.recursive_unrolling := true*)
+
+let set_assumption_unary_sequence () =
+  Smtlib2.assume_unary_sequence := true
 
 (* swap to smtlib module only *)
 let set_solve_z3 f =
@@ -205,10 +213,16 @@ let synth_monitor fm =
     ()
     (get_settings_monitor helper)
 
-(** Formulates and configures the synthesis of smtlib problems. *)
+(** Formulates and configures the synthesis of rmtld into smtlibv2. *)
 let synth_sat_problem formula =
   let helper = mk_helper in
-  (* Functor to translate rmtld3 into smtlib2 *)
+  (* settings *)
+  if !Smtlib2.recursive_unrolling_depth = 0 then
+    Smtlib2.recursive_unrolling_depth := int_of_float ( try calculate_t_upper_bound formula with Failure _ -> 25. ) ;
+  if !Smtlib2.recursive_unrolling_depth = 0 then (* to force if not zero *)
+    Smtlib2.recursive_unrolling_depth := 1 ;
+  verb (fun _ -> print_endline ( "t_upper_bound" ^ ( string_of_int !Smtlib2.recursive_unrolling_depth ) ) ) ;
+  (* Functor to translate rmtld3 into smtlibv2 *)
   let module Smtlib = Standard.Translate (Smtlib2) in
   (* 'smtlib2_str' will contain the output of the translation *)
   let smtlib2_str = synth_smtlib (Smtlib.synth) formula helper in
@@ -299,9 +313,12 @@ let _ =
     ; ( "--solver-cvc4"
       , Arg.Unit set_solve_cvc4
       , " Enables solving smtlibv2 problems using cvc4 SMT solver" )
-    ; ( "--recursive-unrolling"
-      , Arg.Unit set_recursive_unrolling
-      , " Enables recursive unrolling" )
+    ; ( "--rec-unrolling"
+      , Arg.String set_recursive_unrolling
+      , " Enables recursive unrolling with depth: auto, [0-9]+" )
+    ; ( "--assume-unary-seq"
+      , Arg.Unit set_assumption_unary_sequence
+      , " Assume that the output sequence is unary." )
     ; ( "--solver-statistics"
       , Arg.Unit set_solve_statistics
       , " Enables printing the solver statistics" )
