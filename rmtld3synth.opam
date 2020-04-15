@@ -1,13 +1,14 @@
-opam-version: "1.2"
+opam-version: "2.0"
 name:         "rmtld3synth"
 version:      "0.3-dev"
-maintainer:   "apedro.1@gmail.com"
+maintainer:   "André Pedro <apedro.1@gmail.com>"
+authors:      "André Pedro <apedro.1@gmail.com>"
 homepage:     "https://github.com/anmaped/rmtld3synth"
 bug-reports:  "https://github.com/anmaped/rmtld3synth/issues"
-dev-repo:     "https://github.com/anmaped/rmtld3synth.git"
-authors: [
-  "André Pedro"
-]
+dev-repo:     "git+https://github.com/anmaped/rmtld3synth.git"
+doc:          "https://github.com/anmaped/rmtld3synth#documentation"
+synopsis:     "Runtime Verification toolchain"
+description:  "Runtime Verification toolchain for generating monitors based on the restricted Metric Temporal Logic with Durations."
 
 depends: [
   "ocamlfind" {build}
@@ -18,12 +19,12 @@ depends: [
   "dolmen" {build}
 ]
 
-available: [ ocaml-version >= "4.03.0" ]
-
 build: [
-  ["chmod" "ugo+x" "configure"]
   ["./configure" "--prefix=%{prefix}%"]
-  [make "all"]
+  [make "setup"]
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 
 run-test: [make "tests"]
+

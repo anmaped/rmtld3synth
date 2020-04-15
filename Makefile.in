@@ -5,11 +5,14 @@ else
 	EXT=""
 endif
 
+all: compile install
 
-all: version z3
+compile: setup
+	dune build --profile release @install
+
+setup: version z3
 	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
 	echo "(* dummy js interface *)" >> src/js/helper_.ml
-	dune build --profile release @install
 
 version:
 	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > src/version.ml
@@ -22,11 +25,11 @@ clean-tests:
 
 install:
 	@echo "OS: ${OS}"
-	@echo "Installing rmtld3synth to ${PREFIX}/bin"
+	@echo "Installing rmtld3synth to ${PREFIX}/bin; dune may modify the default path."
 	dune install
 
 uninstall:
-	rm -f ${PREFIX}/bin/rmtld3synth$(EXT)
+	dune uninstall
 
 
 clean:

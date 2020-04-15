@@ -22,12 +22,12 @@ mkdir -p $TEST_DIR
 mkdir -p $TEST_DIR/cpp
 mkdir -p $TEST_DIR/sat
 
-BINDIR=_build/install/default/bin
-CMDGENOCAML="../$BINDIR/rmtld3synth --config-file "../config/default" --synth-ocaml"
-CMDGENCPP="../$BINDIR/rmtld3synth --config-file "../config/default" --synth-cpp11"
-CMDSAT_NO_TRACE="../$BINDIR/rmtld3synth --synth-smtlibv2 --solver-z3 --assume-unary-seq --rec-unrolling=auto"
-CMDSAT="../$BINDIR/rmtld3synth --synth-smtlibv2 --solver-z3 --assume-unary-seq --rec-unrolling=auto --get-trace"
-CMDSAT_DEBUG="../$BINDIR/rmtld3synth --synth-smtlibv2 --assume-unary-seq --rec-unrolling=auto"
+#BINDIR=_build/install/default/bin
+CMDGENOCAML="rmtld3synth --config-file "../config/default" --synth-ocaml"
+CMDGENCPP="rmtld3synth --config-file "../config/default" --synth-cpp11"
+CMDSAT_NO_TRACE="rmtld3synth --synth-smtlibv2 --solver-z3 --assume-unary-seq --rec-unrolling=auto"
+CMDSAT="rmtld3synth --synth-smtlibv2 --solver-z3 --assume-unary-seq --rec-unrolling=auto --get-trace"
+CMDSAT_DEBUG="rmtld3synth --synth-smtlibv2 --assume-unary-seq --rec-unrolling=auto"
 
 # "(\eventually_{<2} a) \land (\eventually_{<2} b) \land (\eventually_{<6} c)" SAT (1-assumption)
 # "(\eventually_{<1} a) \land (\eventually_{<1} b)"                            UNSAT (1-assumption)
@@ -120,7 +120,7 @@ done
 
 echo "Executing quick cpp test..."
 
-../$BINDIR/unittest
+rmtld3synth-unittest
 
 make -C $TEST_DIR/../_cluster/tests
 

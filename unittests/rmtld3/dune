@@ -1,7 +1,7 @@
 
 (executable
   (name            unittest)
-  (public_name     unittest)
+  (public_name     rmtld3synth-unittest)
   (libraries       rmtld3synth.synthesis)
   (modules         Unittest)
 )
