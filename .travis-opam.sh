@@ -26,7 +26,7 @@ opam pin add travis-opam https://github.com/${fork_user}/ocaml-ci-scripts.git#${
 opam pin add dolmen https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b
 opam pin add dolmen-export https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b
 opam install base
-opam install z3 -v
+opam install z3=4.8.4 -v
 [ -f "`ocamlfind query z3`/libz3.so" ] && sudo cp `ocamlfind query z3`/libz3.so /usr/lib
 #[ -f "`ocamlfind query z3`/libz3.dylib" ] && sudo cp `ocamlfind query z3`/libz3.dylib ~/Library/
 

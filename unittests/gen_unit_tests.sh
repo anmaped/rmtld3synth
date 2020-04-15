@@ -22,7 +22,8 @@ mkdir -p $TEST_DIR
 mkdir -p $TEST_DIR/cpp
 mkdir -p $TEST_DIR/sat
 
-#BINDIR=_build/install/default/bin
+BINDIR=_build/install/default/bin
+export PATH=$PATH:$(pwd)/../_build/install/default/bin
 CMDGENOCAML="rmtld3synth --config-file "../config/default" --synth-ocaml"
 CMDGENCPP="rmtld3synth --config-file "../config/default" --synth-cpp11"
 CMDSAT_NO_TRACE="rmtld3synth --synth-smtlibv2 --solver-z3 --assume-unary-seq --rec-unrolling=auto"
