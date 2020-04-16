@@ -1,0 +1,153 @@
+####
+CPU: Intel(R) Core(TM) i5-8365U CPU @ 1.60GHz
+Linux localhost.localdomain 5.5.7-200.fc31.x86_64 #1 SMP Fri Feb 28 17:18:37 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+####
+
+[dematos@localhost unittests]$ ./benchmark.sh rmtld
+Initiating the benchmark process
+Chosen option: rmtld
+Number of formulas: 7
+5
+1  /  7  :  a \land \always_{< 5 } a \rightarrow \eventually_{=2} a
+.092533997
+2  /  7  :  (p \lor q) \ \until_{<5} r
+.056887333
+3  /  7  :  \int^{5} p < 3
+.057899355
+4  /  7  :  \left( (p \lor q) \ \until_{<5} r \right) \land \int^{9} r < 2
+.188895333
+5  /  7  :  \left( (p \lor q) \ \until_{<5} r \right) \land 10 < \int^{9} r
+.045493802
+6  /  7  :  \eventually_{<5} p \land \always_{<5} \neg p
+.050528000
+7  /  7  :  \always_{<5} (a \lor b) \ \until_{<5} r
+.247325487
+10
+1  /  7  :  a \land \always_{< 10 } a \rightarrow \eventually_{=2} a
+.262410483
+2  /  7  :  (p \lor q) \ \until_{<10} r
+.114842977
+3  /  7  :  \int^{10} p < 3
+.125232340
+4  /  7  :  \left( (p \lor q) \ \until_{<10} r \right) \land \int^{9} r < 2
+.227101001
+5  /  7  :  \left( (p \lor q) \ \until_{<10} r \right) \land 10 < \int^{9} r
+.046016293
+6  /  7  :  \eventually_{<10} p \land \always_{<10} \neg p
+.088497524
+7  /  7  :  \always_{<10} (a \lor b) \ \until_{<10} r
+1.195696323
+15
+1  /  7  :  a \land \always_{< 15 } a \rightarrow \eventually_{=2} a
+.408155629
+2  /  7  :  (p \lor q) \ \until_{<15} r
+.237389821
+3  /  7  :  \int^{15} p < 3
+.235844986
+4  /  7  :  \left( (p \lor q) \ \until_{<15} r \right) \land \int^{9} r < 2
+.444344244
+5  /  7  :  \left( (p \lor q) \ \until_{<15} r \right) \land 10 < \int^{9} r
+.062263450
+6  /  7  :  \eventually_{<15} p \land \always_{<15} \neg p
+.285874908
+7  /  7  :  \always_{<15} (a \lor b) \ \until_{<15} r
+6.091215657
+20
+1  /  7  :  a \land \always_{< 20 } a \rightarrow \eventually_{=2} a
+.943244247
+2  /  7  :  (p \lor q) \ \until_{<20} r
+.887228630
+3  /  7  :  \int^{20} p < 3
+.458498627
+4  /  7  :  \left( (p \lor q) \ \until_{<20} r \right) \land \int^{9} r < 2
+1.001103578
+5  /  7  :  \left( (p \lor q) \ \until_{<20} r \right) \land 10 < \int^{9} r
+.093310938
+6  /  7  :  \eventually_{<20} p \land \always_{<20} \neg p
+.393619223
+7  /  7  :  \always_{<20} (a \lor b) \ \until_{<20} r
+70.267398072
+25
+1  /  7  :  a \land \always_{< 25 } a \rightarrow \eventually_{=2} a
+9.057133554
+2  /  7  :  (p \lor q) \ \until_{<25} r
+.656784017
+3  /  7  :  \int^{25} p < 3
+.745563762
+4  /  7  :  \left( (p \lor q) \ \until_{<25} r \right) \land \int^{9} r < 2
+6.531120605
+5  /  7  :  \left( (p \lor q) \ \until_{<25} r \right) \land 10 < \int^{9} r
+.135531130
+6  /  7  :  \eventually_{<25} p \land \always_{<25} \neg p
+.773385983
+7  /  7  :  \always_{<25} (a \lor b) \ \until_{<25} r
+105.926267225
+30
+1  /  7  :  a \land \always_{< 30 } a \rightarrow \eventually_{=2} a
+65.461224916
+2  /  7  :  (p \lor q) \ \until_{<30} r
+1.256994190
+3  /  7  :  \int^{30} p < 3
+1.447186895
+4  /  7  :  \left( (p \lor q) \ \until_{<30} r \right) \land \int^{9} r < 2
+2.939056481
+5  /  7  :  \left( (p \lor q) \ \until_{<30} r \right) \land 10 < \int^{9} r
+.181760039
+6  /  7  :  \eventually_{<30} p \land \always_{<30} \neg p
+1.694293520
+7  /  7  :  \always_{<30} (a \lor b) \ \until_{<30} r
+159.329478508
+35
+1  /  7  :  a \land \always_{< 35 } a \rightarrow \eventually_{=2} a
+304.602158262
+2  /  7  :  (p \lor q) \ \until_{<35} r
+81.176315272
+3  /  7  :  \int^{35} p < 3
+2.906219548
+4  /  7  :  \left( (p \lor q) \ \until_{<35} r \right) \land \int^{9} r < 2
+7.491339986
+5  /  7  :  \left( (p \lor q) \ \until_{<35} r \right) \land 10 < \int^{9} r
+.278317888
+6  /  7  :  \eventually_{<35} p \land \always_{<35} \neg p
+1.653711458
+7  /  7  :  \always_{<35} (a \lor b) \ \until_{<35} r
+2400.455145988
+40
+1  /  7  :  a \land \always_{< 40 } a \rightarrow \eventually_{=2} a
+5.116883789
+2  /  7  :  (p \lor q) \ \until_{<40} r
+3.457027180
+3  /  7  :  \int^{40} p < 3
+5.478763507
+4  /  7  :  \left( (p \lor q) \ \until_{<40} r \right) \land \int^{9} r < 2
+15.212795864
+5  /  7  :  \left( (p \lor q) \ \until_{<40} r \right) \land 10 < \int^{9} r
+.444662521
+6  /  7  :  \eventually_{<40} p \land \always_{<40} \neg p
+4.345866585
+7  /  7  :  \always_{<40} (a \lor b) \ \until_{<40} r
+1782.044289119
+45
+1  /  7  :  a \land \always_{< 45 } a \rightarrow \eventually_{=2} a
+1842.354594635
+2  /  7  :  (p \lor q) \ \until_{<45} r
+168.547636901
+3  /  7  :  \int^{45} p < 3
+8.409291943
+4  /  7  :  \left( (p \lor q) \ \until_{<45} r \right) \land \int^{9} r < 2
+21.519820073
+5  /  7  :  \left( (p \lor q) \ \until_{<45} r \right) \land 10 < \int^{9} r
+.425695294
+6  /  7  :  \eventually_{<45} p \land \always_{<45} \neg p
+5.043155846
+7  /  7  :  \always_{<45} (a \lor b) \ \until_{<45} r
+2260.940611549
+.092533997, .262410483, .408155629, .943244247, 9.057133554, 65.461224916, 304.602158262, 5.116883789, 1842.354594635,
+.056887333, .114842977, .237389821, .887228630, .656784017, 1.256994190, 81.176315272, 3.457027180, 168.547636901,
+.057899355, .125232340, .235844986, .458498627, .745563762, 1.447186895, 2.906219548, 5.478763507, 8.409291943,
+.188895333, .227101001, .444344244, 1.001103578, 6.531120605, 2.939056481, 7.491339986, 15.212795864, 21.519820073,
+.045493802, .046016293, .062263450, .093310938, .135531130, .181760039, .278317888, .444662521, .425695294,
+.050528000, .088497524, .285874908, .393619223, .773385983, 1.694293520, 1.653711458, 4.345866585, 5.043155846,
+.247325487, 1.195696323, 6.091215657, 70.267398072, 105.926267225, 159.329478508, 2400.455145988, 1782.044289119, 2260.940611549,
+[dematos@localhost unittests]$ 
+

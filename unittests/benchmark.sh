@@ -34,13 +34,13 @@ declare -a arrayrdsl=(
 
 
 declare -a arrayrmtld=(
-#  "a \land \always_{< b1 } a \rightarrow \eventually_{=2} a"
-#  "(p \lor q) \ \until_{<b1} r "
+  "a \land \always_{< b1 } a \rightarrow \eventually_{=2} a"
+  "(p \lor q) \ \until_{<b1} r "
   "\int^{b1} p < 3"
-#  "\left( (p \lor q) \ \until_{<b1} r \right) \land \int^{9} r < 2"
-#  "\left( (p \lor q) \ \until_{<b1} r \right) \land 10 < \int^{9} r"
-#  "\eventually_{<b1}  p \land \always_{<b2} \neg p"
-#  "\always_{<b2} (a \lor b) \ \until_{<b1} r"
+  "\left( (p \lor q) \ \until_{<b1} r \right) \land \int^{9} r < 2"
+  "\left( (p \lor q) \ \until_{<b1} r \right) \land 10 < \int^{9} r"
+  "\eventually_{<b1}  p \land \always_{<b2} \neg p"
+  "\always_{<b2} (a \lor b) \ \until_{<b1} r"
 )
 
 
@@ -70,7 +70,7 @@ elif [ $# -eq 1 ] && [ $1 == "rmtld" ] ; then
 
   mkdir $DIRNAME -p
 
-  for (( sample=10, j=1; sample<60; sample+=10, j++ ));
+  for (( sample=5, j=1; sample<50; sample+=5, j++ ));
   do
     echo $sample
 
