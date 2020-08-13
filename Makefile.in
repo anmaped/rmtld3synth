@@ -18,7 +18,7 @@ version:
 	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > src/version.ml
 
 tests:
-	mkdir _build_tests && cp -R unittests/* _build_tests && cd _build_tests && bash -ex gen_unit_tests.sh
+	mkdir _build_tests && cp -R unittests/* _build_tests && cd _build_tests && bash -ex test.sh allchecks
 
 clean-tests:
 	rm _build_tests -r -f

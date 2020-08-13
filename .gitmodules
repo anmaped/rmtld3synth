@@ -1,3 +1,6 @@
 [submodule "rtmlib"]
 	path = rtmlib
 	url = https://github.com/anmaped/rtmlib.git
+[submodule "rtmlib_0.2"]
+	path = rtmlib_0.2
+	url = https://github.com/anmaped/rtmlib.git

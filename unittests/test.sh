@@ -26,9 +26,20 @@ BINDIR=_build/install/default/bin
 export PATH=$PATH:$(pwd)/../_build/install/default/bin
 CMDGENOCAML="rmtld3synth --config-file "../config/default" --synth-ocaml"
 CMDGENCPP="rmtld3synth --config-file "../config/default" --synth-cpp11"
-CMDSAT_NO_TRACE="rmtld3synth --synth-smtlibv2 --solver-z3 --assume-unary-seq --rec-unrolling=auto"
-CMDSAT="rmtld3synth --synth-smtlibv2 --solver-z3 --assume-unary-seq --rec-unrolling=auto --get-trace"
-CMDSAT_DEBUG="rmtld3synth --synth-smtlibv2 --assume-unary-seq --rec-unrolling=auto"
+
+[ "$2" = "" ] || [ "$2" = "discrete" ] && {
+echo "UNROLLING_SETTINGS=\"--assume-unary-seq --rec-unrolling=auto\""
+UNROLLING_SETTINGS="--assume-unary-seq --rec-unrolling=auto"
+}
+
+[ "$2" = "interval" ] && {
+echo "UNROLLING_SETTINGS=\"--rec-unrolling=auto\""
+UNROLLING_SETTINGS="--rec-unrolling=auto"
+}
+
+CMDSAT_DEBUG="rmtld3synth --synth-smtlibv2 $UNROLLING_SETTINGS"
+CMDSAT_NO_TRACE="rmtld3synth --synth-smtlibv2 --solver-z3 $UNROLLING_SETTINGS"
+CMDSAT="$CMDSAT_NO_TRACE --get-trace"
 
 # "(\eventually_{<2} a) \land (\eventually_{<2} b) \land (\eventually_{<6} c)" SAT (1-assumption)
 # "(\eventually_{<1} a) \land (\eventually_{<1} b)"                            UNSAT (1-assumption)
@@ -76,6 +87,8 @@ declare -a arrayrmtld=(
 arrayrmtldlength=${#arrayrmtld[@]}
 
 declare -a arrayrmtld_sat=(
+  "p \land q"
+  "p \until_{<5} q"
   "10 < \int^{9} r"
   "3 < \int^{9} r"
   "\always_{<6} a \land (\eventually_{<6} ( ( (\neg a) \land (\neg b) ) \until_{=6} b ) )"
@@ -93,6 +106,8 @@ declare -a arrayrmtld_sat_expected_result=(
   "unsatisfiable"
   "satisfiable"
   "unsatisfiable"
+  "satisfiable"
+  "unsatisfiable"
   "unsatisfiable"
   "unsatisfiable"
   "unsatisfiable"
@@ -101,7 +116,15 @@ declare -a arrayrmtld_sat_expected_result=(
   "satisfiable"
 )
 
-echo "Satisfiability check of rmtld3 formulas"
+[ "$1" = "" ] && {
+
+echo -e "unknown command\nUsage: test.sh [quickcpp/sat/crosscheck/allchecks]"
+exit 1;
+}
+
+[ "$1" = "sat" ] || [ "$1" = "allchecks" ] && {
+
+echo "Satisfiability check of rmtld3 formulas" ;
 
 for (( i=1; i<${arrayrmtld_satlength}+1; i++ ));
 do
@@ -109,6 +132,7 @@ do
   EXPECT_RES=${arrayrmtld_sat_expected_result[$i-1]}
   $CMDSAT_DEBUG --input-latexeq "$FORMULA" > $TEST_DIR/sat/fm_$i.smt2
   $CMDSAT_NO_TRACE --trace-style "tcum" --input-latexeq "$FORMULA" > $TEST_DIR/sat/fm_$i.result
+  $CMDSAT --trace-style "tcum" --input-latexeq "$FORMULA" > $TEST_DIR/sat/fm_$i.result2
   # check result against expected output
   RES=$(head -n 1 "$TEST_DIR/sat/fm_$i.result" | tr -d '\n' | tr -d '\r')
   if [ "$EXPECT_RES" == "$RES" ];
@@ -117,38 +141,45 @@ do
   else
     printf "$i: \"expected: $EXPECT_RES/result: $RES\" ${RED}Fail${NC}\n"
   fi
-done
+done ;
+}
 
-echo "Executing quick cpp test..."
+[ "$1" = "quickcpp" ] || [ "$1" = "allchecks" ] && {
 
-rmtld3synth-unittest
+echo "Executing quick cpp test..." ;
 
-make -C $TEST_DIR/../_cluster/tests
+rmtld3synth-unittest ;
 
-./$TEST_DIR/../_cluster/tests/tests
+make -C $TEST_DIR/../_cluster/tests ;
+
+./$TEST_DIR/../_cluster/tests/tests ;
+
+}
+
+[ "$1" = "crosscheck" ] || [ "$1" = "allchecks" ] && {
+
+echo "Generating Test Units for Monitor Generation using Ocaml" ;
+
+$CMDGENOCAML --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" > $TEST_DIR/mon1.ml ;
+
+$CMDGENOCAML --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" > $TEST_DIR/mon2.ml ;
+
+$CMDGENOCAML --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" > $TEST_DIR/mon3.ml ;
 
 
-echo "Generating Test Units for Monitor Generation using Ocaml"
 
-$CMDGENOCAML --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" > $TEST_DIR/mon1.ml
+echo "Generating Test Units for Cpp11" ;
 
-$CMDGENOCAML --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" > $TEST_DIR/mon2.ml
+$CMDGENCPP --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-src="$TEST_DIR/mon1" --verbose 2 > /dev/null 2>&1 ;
 
-$CMDGENOCAML --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" > $TEST_DIR/mon3.ml
+$CMDGENCPP --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-src="$TEST_DIR/mon2" --verbose 2 > /dev/null 2>&1 ;
 
-
-echo "Generating Test Units for Cpp11"
-
-$CMDGENCPP --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-src="$TEST_DIR/mon1" --verbose 2 > /dev/null 2>&1
-
-$CMDGENCPP --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-src="$TEST_DIR/mon2" --verbose 2 > /dev/null 2>&1
-
-$CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-src="$TEST_DIR/mon3" --verbose 2 > /dev/null 2>&1
+$CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-src="$TEST_DIR/mon3" --verbose 2 > /dev/null 2>&1 ;
 
 # Add these specific makefile rules
-CPP_TO_BUILD="\tmake -C mon1 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n"
-CPP_TO_BUILD+="\tmake -C mon2 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n"
-CPP_TO_BUILD+="\tmake -C mon3 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n"
+CPP_TO_BUILD="\tmake -C mon1 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n" ;
+CPP_TO_BUILD+="\tmake -C mon2 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n" ;
+CPP_TO_BUILD+="\tmake -C mon3 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n" ;
 
 # Automatic generation of monitors from a set of formulas
 sample=10 # this sample can be changed
@@ -158,18 +189,18 @@ do
   REPP=${REP//b2/$sample}
   $CMDSAT --trace-style "tcum" --input-latexeq "$REPP" > $TEST_DIR/cpp/res$i.trace
   $CMDGENCPP --input-latexeq "$REPP" --out-src="$TEST_DIR/cpp/mon$i" > /dev/null 2>&1
-done
+done ;
 
 # Add auto-generated makefile rules
 for (( i=1; i<${arrayrmtldlength}+1; i++ ));
 do
     CPP_TO_BUILD+="	make -C cpp/mon$i RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n"
-done
+done ;
 
 
-echo "Generating Unit tests for smtlibv2"
+echo "Generating Unit tests for smtlibv2" ;
 
-sample=10 # this sample can be changed
+sample=10 ; # this sample can be changed
 for (( i=1; i<${arrayrmtldlength}+1; i++ ));
 do
   REP=${arrayrmtld[$i-1]//b1/$sample}
@@ -177,10 +208,10 @@ do
   $CMDSAT_DEBUG --input-latexeq "$REPP" > $TEST_DIR/res$i.smt2
   $CMDSAT --trace-style "tinterval" --input-latexeq "$REPP" > $TEST_DIR/res$i.trace
   $CMDGENOCAML --input-latexeq "$REPP" > $TEST_DIR/res$i.ml
-done
+done ;
 
 
-echo "Generating the Makefile...."
+echo "Generating the Makefile...." ;
 
 CHECK_GCC='CXX = g++
 ifeq ($(OS),Windows_NT)
@@ -192,8 +223,8 @@ ifeq ($(OS),Windows_NT)
 endif
 
 CXX := $(shell echo "$(CXX)" | cut -f 1 -d " ")
-'
-CXX_INC='$(CXX)'
+' ;
+CXX_INC='$(CXX)' ;
 
 echo -e "
 
@@ -210,31 +241,33 @@ clean:
 	rm -f -- unittests.ml *.byte *.native
 	rm cpptest
 
-" > $TEST_DIR/Makefile
+" > $TEST_DIR/Makefile ;
 
-. ./gen_ocaml.sh
-. ./gen_cpp.sh
+. ./gen_ocaml.sh ;
+. ./gen_cpp.sh ;
 
 # copy auxiliar files for ocaml synthesis
-cp ../src/rmtld3.ml $TEST_DIR/rmtld3.ml
+cp ../src/rmtld3.ml $TEST_DIR/rmtld3.ml ;
 
-printf "${WHITE}Compiling Ocaml and Cpp11 monitors...${NC}\n"
+printf "${WHITE}Compiling Ocaml and Cpp11 monitors...${NC}\n" ;
 
-make -C $TEST_DIR > /dev/null 2>&1
+make -C $TEST_DIR > /dev/null 2>&1 ;
 
 # show results from ocaml synthesis
-echo -e "\e[1m### result from ocaml synthesis\e[0m"
-./$TEST_DIR/bin/unittests 2>&1
+echo -e "\e[1m### result from ocaml synthesis\e[0m" ;
+./$TEST_DIR/bin/unittests 2>&1 ;
 
 #show results from cpp synthesis
-echo -e "\e[1m### result from cpp synthesis\e[0m"
-./$TEST_DIR/cpptest 2>&1
+echo -e "\e[1m### result from cpp synthesis\e[0m" ;
+./$TEST_DIR/cpptest 2>&1 ;
 
-echo ""
-printf "${GREEN}Tests ended Successfully.${NC}\n\n"
+echo "" ;
+printf "${GREEN}Tests ended Successfully.${NC}\n\n" ;
+
+}
 
 # read -p "Press enter to continue or wait 90s" -t 90
-if read -r -s -n 1 -t 90 -p "Press enter to abort" key #key in a sense has no use at all
+if read -r -s -n 1 -t 15 -p "Press enter to abort" key #key in a sense has no use at all
 then
   echo " aborted"
 else
