@@ -19,6 +19,6 @@ RUN opam pin add dolmen https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08
 RUN opam pin add dolmen-export https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
 RUN apt install python -y && opam install z3 -v -y
 RUN opam pin add rmtld3synth https://github.com/anmaped/rmtld3synth.git -y
-RUN eval $(opam env); cp $(ocamlfind query z3)/libz3.so /usr/lib
+RUN eval $(opam env); #cp $(ocamlfind query z3)/libz3.so /usr/lib
 ENTRYPOINT opam config exec /bin/bash
 WORKDIR /root
