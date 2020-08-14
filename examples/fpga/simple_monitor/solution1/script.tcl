@@ -6,7 +6,7 @@
 open_project simple_monitor
 set_top demo
 add_files simple_monitor/mon1.cpp -cflags "-I../../rtmlib_0.2 -std=c++0x -D__HW__"
-add_files -tb simple_monitor/mon1.cpp -cflags "-DUSE_DEBUG_RMTLD3 -DUSE_DEBUGV_RMTLD3 -DDEBUG=3 -Dx86 -D__HW__ -I../../rtmlib_0.2 -std=c++0x -Wno-unknown-pragmas"
+add_files -tb simple_monitor/mon1.cpp -cflags "-I../../rtmlib_0.2 -DUSE_DEBUG_RMTLD3 -DUSE_DEBUGV_RMTLD3 -DDEBUG=3 -Dx86 -D__HW__ -std=c++0x -Wno-unknown-pragmas" -csimflags "-Wno-unknown-pragmas"
 open_solution "solution1"
 set_part {xc7a200t-fbg484-3}
 create_clock -period 5 -name default

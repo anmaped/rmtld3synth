@@ -51,9 +51,7 @@
                 "dataWidth": "64",
                 "multiInterfaceRef": [
                   "buf_array_time_address0",
-                  "buf_array_time_address1",
-                  "buf_array_time_q0",
-                  "buf_array_time_q1"
+                  "buf_array_time_q0"
                 ],
                 "structImpl": "interface"
               }
@@ -120,17 +118,17 @@
     "Vhdl": [
       "impl\/vhdl\/demo_dcmp_64ns_64cud.vhd",
       "impl\/vhdl\/demo_sitodp_64ns_dEe.vhd",
-      "impl\/vhdl\/demo_urem_1ns_64neOg.vhd",
       "impl\/vhdl\/demo_urem_64ns_64bkb.vhd",
       "impl\/vhdl\/pull.vhd",
+      "impl\/vhdl\/three_valued_type_un.vhd",
       "impl\/vhdl\/demo.vhd"
     ],
     "Verilog": [
       "impl\/verilog\/demo_dcmp_64ns_64cud.v",
       "impl\/verilog\/demo_sitodp_64ns_dEe.v",
-      "impl\/verilog\/demo_urem_1ns_64neOg.v",
       "impl\/verilog\/demo_urem_64ns_64bkb.v",
       "impl\/verilog\/pull.v",
+      "impl\/verilog\/three_valued_type_un.v",
       "impl\/verilog\/demo.v"
     ],
     "Misc": ["impl\/misc\/logo.png"],
@@ -227,17 +225,6 @@
       "bundle_name": "buf_array_time",
       "bundle_role": "address0"
     },
-    "buf_array_time_address1": {
-      "type": "data",
-      "dir": "out",
-      "width": "7",
-      "ctype": {"DATA": {
-          "Type": "null",
-          "Width": "7"
-        }},
-      "bundle_name": "buf_array_time",
-      "bundle_role": "address1"
-    },
     "buf_array_time_q0": {
       "type": "data",
       "dir": "in",
@@ -248,17 +235,6 @@
         }},
       "bundle_name": "buf_array_time",
       "bundle_role": "q0"
-    },
-    "buf_array_time_q1": {
-      "type": "data",
-      "dir": "in",
-      "width": "64",
-      "ctype": {"DATA": {
-          "Type": "integer signed",
-          "Width": "64"
-        }},
-      "bundle_name": "buf_array_time",
-      "bundle_role": "q1"
     },
     "buf_bottom": {
       "type": "data",
@@ -358,18 +334,6 @@
       "dir": "in",
       "width": "64"
     },
-    "buf_array_time_address1": {
-      "dir": "out",
-      "width": "7"
-    },
-    "buf_array_time_ce1": {
-      "dir": "out",
-      "width": "1"
-    },
-    "buf_array_time_q1": {
-      "dir": "in",
-      "width": "64"
-    },
     "buf_top": {
       "dir": "in",
       "width": "64"
@@ -390,12 +354,25 @@
   "ModuleInfo": {
     "Hierarchy": {
       "ModuleName": "demo",
-      "Instances": [{
+      "Instances": [
+        {
           "ModuleName": "pull",
-          "InstanceName": "grp_pull_fu_240"
-        }]
+          "InstanceName": "grp_pull_fu_163"
+        },
+        {
+          "ModuleName": "three_valued_type_un",
+          "InstanceName": "grp_three_valued_type_un_fu_177"
+        }
+      ]
     },
     "Info": {
+      "three_valued_type_un": {
+        "FunctionProtocol": "ap_ctrl_hs",
+        "isTaskLevelControl": "1",
+        "isPipelined": "0",
+        "isCombinational": "0",
+        "isOneStateSeq": "0"
+      },
       "pull": {
         "FunctionProtocol": "ap_ctrl_hs",
         "isTaskLevelControl": "1",
@@ -412,6 +389,30 @@
       }
     },
     "Metrics": {
+      "three_valued_type_un": {
+        "Latency": {
+          "LatencyBest": "3",
+          "LatencyAvg": "57",
+          "LatencyWorst": "74",
+          "PipelineIIMin": "3",
+          "PipelineIIMax": "74",
+          "PipelineII": "3 ~ 74",
+          "PipelineDepth": "",
+          "PipelineType": "none"
+        },
+        "Timing": {
+          "Target": "5.00",
+          "Uncertainty": "0.62",
+          "Estimate": "4.188"
+        },
+        "Area": {
+          "FF": "1157",
+          "LUT": "1264",
+          "BRAM_18K": "0",
+          "DSP48E": "0",
+          "URAM": "0"
+        }
+      },
       "pull": {
         "Latency": {
           "LatencyBest": "3",
@@ -455,14 +456,14 @@
             "TripCount": "",
             "Latency": "",
             "PipelineII": "",
-            "PipelineDepthMin": "89",
-            "PipelineDepthMax": "233",
-            "PipelineDepth": "89 ~ 233"
+            "PipelineDepthMin": "90",
+            "PipelineDepthMax": "235",
+            "PipelineDepth": "90 ~ 235"
           }],
         "Area": {
           "DSP48E": "0",
-          "FF": "6366",
-          "LUT": "5813",
+          "FF": "5458",
+          "LUT": "5397",
           "BRAM_18K": "0",
           "URAM": "0"
         }
@@ -479,7 +480,7 @@
   },
   "GenData": {
     "DataVersion": "0.2",
-    "Time": "2020-08-13 16:56:12 WEST",
+    "Time": "2020-08-14 17:33:54 WEST",
     "ToolName": "vivado_hls",
     "ToolVersion": "2020.1"
   }
