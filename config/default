@@ -2,6 +2,6 @@
 (maximum_inter_arrival_time 1)
 (maximum_period 2000000)
 (event_type Event)
-(event_subtype int)
+(event_subtype proposition)
 (cluster_name mon1)
 (gen_tests false)

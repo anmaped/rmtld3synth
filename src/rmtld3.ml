@@ -480,7 +480,7 @@ and string_of_rmtld_fm rmtld_fm =
         (Failure ("Unsupported formula " ^ Sexp.to_string_hum (sexp_of_fm a)))
 
 (* print formulas and terms in plaintext *)
-let print_plaintext_formula f = print_endline (string_of_rmtld_fm f)
+let print_plaintext_formula f = print_string (string_of_rmtld_fm f)
 
 (* Convert a trace into an observation set *)
 let observation duration (trace_backward, trace_forward) p t =

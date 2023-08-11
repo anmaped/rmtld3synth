@@ -14,318 +14,84 @@ type body = string * string
 
 (* function that pretty prints 'observation' function as a lambda functions in c++ *)
 let synth_obs_function observation_funcname struct_name =
-  (* *)
-  let code = "
-  // obs lambda function
-  auto "^observation_funcname^" = []( struct "^struct_name^" &env, proposition p, timespan t) mutable -> three_valued_type
-  {
-    DEBUGV_RMTLD3(\"  eval: %lu prop:%d\\n\", t, p);
-    return b3_or ( env.trace->searchOForward(env.state, p, t), env.trace->searchOBackward(env.state, p, t) );
-  };
-  " in
-  code
-
-(*
- * some macros for cpp11
- *)
-let trace_iterator helper = "TraceIterator< "^ get_event_type(helper) ^", "^ get_event_fulltype(helper) ^" >";;
-let compute_term_function_head = "[](environment env, timespan t) -> duration";;
-let compute_function_head = "[](environment env, timespan t) -> three_valued_type";;
-let compute_function_head_mutable = "[](environment &env, timespan t) mutable -> three_valued_type";;
+  ""
 
 (*
  * Compute terms
  *)
-let synth_tm_constant value helper = ("make_duration("^string_of_float value^",false)","")
+let synth_tm_constant value helper = failwith "Not implemented."
 
 let synth_tm_variable name helper = failwith "No freevariables allowed."
 
-let synth_tm_duration (di,_) (tf,_) helper =
-    (compute_term_function_head^" {
-    
-    auto eval_eta =  [](environment env, timespan t, timespan t_upper, "^trace_iterator helper^" iter) -> duration
-    {
-      auto indicator_function = [](environment env, timespan t) -> duration {
-        auto formula = "^tf^"(env, t);
+let synth_tm_duration (di,_) (tf,_) helper = failwith "Not implemented."
 
-        return (formula == T_TRUE)? std::make_pair (1,false) : ( (formula == T_FALSE)? std::make_pair (0,false) : std::make_pair (0,true)) ;
+let synth_tm_plus (cmptr1,_) (cmptr2,_) helper = failwith "Not implemented."
 
-      };
-
-
-      // compare if t is equal to the lower bound
-      auto lower = iter.getLowerAbsoluteTime();
-      // compare if t is equal to the upper bound
-      auto upper = iter.getUpperAbsoluteTime();
-
-      timespan val1 = ( t == lower )? 0 : t - lower;
-      timespan val2 = ( t_upper == upper )? 0 : t_upper - upper;
-
-      DEBUGV_RMTLD3(\"dur lower(%ld) upper(%ld)\\n\", val1, val2);
-
-      auto cum = lower;
-
-      // lets do the fold over the trace
-      return std::accumulate(
-        iter.begin(),
-        iter.end(),
-        std::make_pair (make_duration (0, false), (timespan)lower), // initial fold data (duration starts at 0)
-        [&env, val1, val2, &cum, t, t_upper, indicator_function]( const std::pair<duration,timespan> p, "^ get_event_fulltype(helper) ^" e )
-        {
-          auto d = p.first;
-
-          auto t_begin = cum;
-          auto t_end = t_begin + e.getTime();
-          cum = t_end;
-
-          auto cond1 = t_begin <= t && t < t_end;
-          auto cond2 = t_begin <= t_upper && t_upper < t_end;
-
-          auto valx = ((cond1)? val1 : 0 ) + ((cond2)? val2 : 0);
-
-          auto x = indicator_function(env, p.second);
-
-          DEBUGV_RMTLD3(\"dur=%f bottom=%d\\n\", d.first + (x.first * ( e.getTime() - valx )), d.second || x.second);
-
-          return std::make_pair (make_duration (d.first + (x.first * ( e.getTime() - valx )), d.second || x.second), p.second + e.getTime());
-        }
-      ).first;
-      
-    };
-
-    // sub_k function defines a sub-trace
-    auto sub_k = []( environment env, timespan t, timespan t_upper) -> "^trace_iterator helper^"
-    {
-
-      // use env.state to speedup the calculation of the new bounds
-      "^trace_iterator helper^" iter = "^trace_iterator helper^" ( env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
-
-      // to use the iterator for both searches we use one reference
-      "^trace_iterator helper^" &it = iter;
-
-      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
-
-      auto lower = env.trace->searchIndexForwardUntil( it, t);
-      auto upper = env.trace->searchIndexForwardUntil( it, t_upper - 1 );
-
-      // set TraceIterator for interval [t, t + di[
-      it.setBound(lower, upper);
-
-      // return iterator ... interval length may be zero
-      return it;
-    };
-
-    auto t_upper = t + "^di^".first;
-
-    return eval_eta(env, t, t_upper, sub_k(env, t, t_upper));
-
-    }(env,t)","")
-
-let synth_tm_plus (cmptr1,_) (cmptr2,_) helper = ("sum_dur("^ cmptr1 ^" , "^cmptr2^")","")
-
-let synth_tm_times (cmptr1,_) (cmptr2,_) helper = ("mult_dur("^ cmptr1 ^" , "^ cmptr2 ^")","")
+let synth_tm_times (cmptr1,_) (cmptr2,_) helper = failwith "Not implemented."
 
 
 (*
  * compute formulas
 *)
-let synth_fm_true helper =
-  (compute_function_head_mutable^" { return T_TRUE; }","")
+let synth_fm_true helper = ("T_TRUE","")
 
-let synth_fm_p p helper =
-  (*let tbl = get_proposition_hashtbl helper in
-  let counter = get_proposition_counter helper in *)
-  (compute_function_head_mutable^" { return env.evaluate(env, "^
-    string_of_int p  ^ ", t); }","")
+let synth_fm_p p helper = (
+  "prop<T>(trace, PROP_"^ string_of_int p ^", t)",
+  ""
+)
 
-let synth_fm_not (cmpfm,_) helper = (compute_function_head_mutable^" { auto sf = "^ cmpfm ^"(env,t); return b3_not (sf); }","")
+let synth_fm_not (cmpfm,_) helper = ("b3_not("^ cmpfm ^")","")
 
-let synth_fm_or (cmpfm1,_) (cmpfm2,_) helper = (compute_function_head_mutable^" { auto sf1 = "^ cmpfm1 ^"(env,t); auto sf2 = "^ cmpfm2 ^"(env,t); return b3_or (sf1, sf2); }","")
+let synth_fm_or (cmpfm1,_) (cmpfm2,_) helper = ("b3_or("^ cmpfm1 ^", "^ cmpfm2 ^")","")
 
-let synth_fm_less (cmptr1,_) (cmptr2,_) helper = (compute_function_head_mutable^" { return "^compute_function_head^" { auto tr1 = "^ cmptr1 ^"; auto tr2 = "^ cmptr2 ^"; return b3_lessthan (tr1, tr2); }(env,t); }","")
+let synth_fm_less (cmptr1,_) (cmptr2,_) helper = failwith "Not implemented."
 
-let eval_b sf1 sf2 = "
-  // eval_b lambda function
-  auto eval_b = []( environment env, timespan t, four_valued_type v ) -> four_valued_type
-  {
-    // eval_i lambda function
-    auto eval_i = [](three_valued_type b1, three_valued_type b2) -> four_valued_type
-    {
-      return (b2 != T_FALSE) ? b3_to_b4(b2) : ( (b1 != T_TRUE) ? b3_to_b4(b1) : FV_SYMBOL );
-    };
+let synth_fm_uless gamma (sf1,_) (sf2,_) helper = failwith "Not implemented."
 
-    // change this (trying to get the maximum complexity)
-    //if ( v == FV_SYMBOL )
-    //{
-      DEBUGV_RMTLD3(\"  compute phi1\\n\");
-      // compute phi1
-      three_valued_type cmpphi1 = "^sf1^"(env, t);
-
-      DEBUGV_RMTLD3(\"  compute phi2\\n\");
-      // compute phi2
-      three_valued_type cmpphi2 = "^sf2^"(env, t);
-
-      four_valued_type rs = eval_i(cmpphi1, cmpphi2);
-
-      DEBUGV_RMTLD3(\" phi1=%s UNTIL phi2=%s\\n\", out_p(cmpphi1), out_p(cmpphi2) );
-
-    if ( v == FV_SYMBOL )
-    {
-      return rs;
-    }
-    else
-    {
-      return v;
-    }
-  };
-"
-
-let eval_fold sf1 sf2 helper = "
-  auto eval_fold = []( environment env, timespan t, "^trace_iterator helper^" iter) -> four_valued_type
-  {
-    "^ eval_b sf1 sf2 ^"
-
-    iter.debug();
-    DEBUGV_RMTLD3(\" %d %d \\n\", t, iter.getLowerAbsoluteTime());
-    ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
-
-    auto cos = iter.getBegin();
-
-    four_valued_type s = std::accumulate(
-      iter.begin(),
-      iter.end(),
-      std::pair<four_valued_type, timespan>(FV_SYMBOL, t),
-        [&env, &cos, eval_b]( const std::pair<four_valued_type, timespan> a, "^ get_event_fulltype helper ^" e ) {
-          
-          DEBUGV_RMTLD3(\"  until++ (%s)\\n\", out_fv(a.first));
-
-          count_until_iterations += 1;
-
-          /* update the new state based on the sub_k calculate iterator.
-           * optimization step: update current index to avoid re-read/evaluate events several times
-           */
-          env.state = std::make_pair ( cos,  a.second);
-          cos++;
-
-          return std::make_pair( eval_b( env, a.second, a.first ), a.second + e.getTime() );
-        }
-    ).first;
-
-    return s;
-  };
-"
-
-let synth_fm_uless gamma (sf1,_) (sf2,_) helper =
-  (compute_function_head ^"
-  {
-    
-    "^ eval_fold sf1 sf2 helper ^"
-
-    // sub_k function defines a sub-trace
-    auto sub_k = []( environment env, timespan t) -> "^trace_iterator helper^"
-    {
-
-      // use env.state to speedup the calculation of the new bounds
-      "^trace_iterator helper^" iter = "^trace_iterator helper^" (env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
-
-      // to use the iterator for both searches we use one reference
-      "^trace_iterator helper^" &it = iter;
-
-      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
-
-      auto lower = env.trace->searchIndexForwardUntil( it, t);
-      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") - 1 ); /* [TODO] check this minus */
-
-      // set TraceIterator for interval [t, t+"^string_of_float (gamma)^"[
-      it.setBound(lower, upper);
-
-      // return iterator ... interval length may be zero
-      return it;
-    };
-
-    "^trace_iterator helper^" subk = sub_k(env, t);
-
-    DEBUGV_RMTLD3(\"BEGIN until_op_less.\\n\\n \");
-
-    four_valued_type eval_c = eval_fold(env, t, subk );
-
-    DEBUGV_RMTLD3(\"END until_op_less (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
-    
-    return ( eval_c == FV_SYMBOL ) ?
-      ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
-    :
-      b4_to_b3(eval_c);
-  }
-
-  ","")
-
-let synth_fm_ueq gamma (sf1,_) (sf2,_) helper =
-  (compute_function_head ^"
-  {
-    
-    "^ eval_fold sf1 sf2 helper ^"
-
-    // sub_k function defines a sub-trace
-    auto sub_k = []( environment env, timespan t) -> "^trace_iterator helper^"
-    {
-
-      // use env.state to speedup the calculation of the new bounds
-      "^trace_iterator helper^" iter = "^trace_iterator helper^" (env.trace, env.state.first, 0, env.state.first, env.state.second, 0, env.state.second );
-
-      // to use the iterator for both searches we use one reference
-      "^trace_iterator helper^" &it = iter;
-
-      ASSERT_RMTLD3( t == iter.getLowerAbsoluteTime() );
-
-      auto upper = env.trace->searchIndexForwardUntil( it, (t + "^string_of_float (gamma)^") ); /* critical jump part !! */
-
-      it.debug();
-
-      // set TraceIterator for interval [t, t+"^string_of_float (gamma)^"[
-      it.setBound(upper, upper); /* [TODO] check this lower=upper and upper=upper to get only the last element */
-
-      // return iterator ... interval length may be zero
-      return it;
-    };
-
-    "^trace_iterator helper^" subk = sub_k(env, t);
-
-    DEBUGV_RMTLD3(\"BEGIN until_op_ueq.\\n\\n \");
-
-    four_valued_type eval_c = subk.getEnoughSize() ? eval_fold(env, (t + "^string_of_float (gamma)^"), subk ) : FV_SYMBOL; /* critical jump part !! */
-
-    DEBUGV_RMTLD3(\"END until_op_ueq (%s) enough(%d) .\\n\\n \", out_fv(eval_c), subk.getEnoughSize() );
-    
-    return ( eval_c == FV_SYMBOL ) ?
-      ( ( !subk.getEnoughSize() ) ? T_UNKNOWN : T_FALSE )
-    :
-      b4_to_b3(eval_c);
-  }
-
-  ","")
+let synth_fm_ueq gamma (sf1,_) (sf2,_) helper = failwith "Not implemented."
 
 let synth_fm_ulesseq gamma (sf1,a) (sf2,b) helper =
   synth_fm_or (synth_fm_ueq gamma (sf1,a) (sf2,b) helper) (synth_fm_uless gamma (sf1,a) (sf2,b) helper) helper
 
 
 (* monitor dependent c++ functions begin here *)
-let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period formula compute helper =
-    let cmp_str = compute (formula) helper in
-    let randomid = Random.bits () in
+let synth_cpp11 _ _ _ _ _ compute helper =
+
+    print_endline "Current Configuration:";
+    print_settings helper;
+
+    let expressions = get_all_setting_formula "input_exp" helper in
+    let expressions = expressions @ get_all_setting_formula "input_exp_ltxeq" helper in
+    (* let expressions = expressions @ get_all_setting_formula "input_exp_rmdsl" helper in *)
+    
+    print_endline "Expression(s):";
+    List.iter (fun exp -> print_plaintext_formula exp; print_endline "") expressions;
+    let cpp_monitor_lst = List.fold_right (fun exp lst -> ((compute exp helper), string_of_int (List.length lst))::lst) expressions [] in
+
+    let pair_to_string (x, y) = "(" ^ x ^ ", " ^ y ^ ")" in
+    let name = insert_string (get_setting_string "rtm_monitor_name_prefix" helper) (String.sub (Digest.string (String.concat "" (List.map pair_to_string cpp_monitor_lst)) |> Digest.to_hex ) 0 4) '%' in
+
+    let monitor_name = insert_string name "compute" '#' in
+
     (* Synthesize ocaml formula evaluation algorithm into c++ *)
-    let code1 = "
-  #ifndef _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_"^ string_of_int randomid ^"
-  #define _"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_"^ string_of_int randomid ^"
+    let code1 = "/* This file was automatically generated from rmtld3synth tool version
+"^ search_settings_string "version" helper ^". */
+
+  #ifndef "^ String.uppercase_ascii (monitor_name) ^"_H_
+  #define "^ String.uppercase_ascii (monitor_name) ^"_H_
 
   #include \"rmtld3/rmtld3.h\"
-
-  typedef struct Environment< "^ get_event_type(helper) ^", "^ get_event_fulltype(helper) ^" > environment;
+  #include \"rmtld3/macros.h\"
   
-  auto _"^monitor_name^"_compute = "^ cmp_str ^";
-
-  // SORTS
-  "^ (*Hashtbl.fold (fun x y str -> str^(Printf.sprintf "#define SORT_%s %i\n  " x y)) (get_proposition_hashtbl helper) "" ^*)"
-
+  // Propositions
+  "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "const proposition PROP_%i = %i;\n  " y y)) (get_proposition_hashtbl helper) "" ^"
+  " ^
+  ( List.fold_right (fun (cmp_str,n) str ->
+  ("template<class T>
+  three_valued_type _"^monitor_name^"_"^n^" (T &trace, timespan &t) { return "^ cmp_str ^"; };
+  ") ^ str) cpp_monitor_lst "" )
+  ^
+  "
 #ifdef USE_MAP_SORT
   #include <string>
   #include <unordered_map>
@@ -339,58 +105,123 @@ let synth_cpp11 (out_file,out_dir) cluster_name monitor_name monitor_period form
   "^ Hashtbl.fold (fun x y str -> str^(Printf.sprintf "{%i,\"%s\"},\n  " y x)) (get_proposition_hashtbl helper) "" ^"};
 #endif
 
-  #endif //_"^ String.uppercase_ascii (monitor_name^"_compute") ^"_H_"^ string_of_int randomid ^"
+  #endif //"^ String.uppercase_ascii (monitor_name) ^"_H_
     " in
-
-
     
-    let code2 = "
-  #ifndef MONITOR_"^String.uppercase_ascii monitor_name^"_H
-  #define MONITOR_"^String.uppercase_ascii monitor_name^"_H
+    let monitor_name = insert_string name "monitor" '#' in
 
+    let code2 = "/* This file was automatically generated from rmtld3synth tool version
+"^ search_settings_string "version" helper ^". */
+
+  #ifndef "^String.uppercase_ascii monitor_name^"_H
+  #define "^String.uppercase_ascii monitor_name^"_H
+
+  #include \"reader.h\"
+  #include \"periodicmonitor.h\"
   #include \"rmtld3/reader.h\"
-  #include \"RTML_monitor.h\"
+  #include \""^String.capitalize_ascii (insert_string name "compute" '#')^".h\"
 
-  #include \""^monitor_name^"_compute.h\"
-  #include \""^ cluster_name ^".h\"
+  /* "^ string_of_int (search_settings_int "buffer_size" helper) ^", "^ get_event_fulltype(helper) ^" */
+  #define RTML_BUFFER0_SIZE "^ string_of_int (search_settings_int "buffer_size" helper) ^"
+  #define RTML_BUFFER0_TYPE "^ get_event_fulltype(helper) ^"
+  #define RTML_BUFFER0_SETUP()                                                   \\
+    RTML_buffer<RTML_BUFFER0_TYPE, RTML_BUFFER0_SIZE> __buffer_" ^ monitor_name ^";\\
+    int tzero = 0;
 
-  class "^String.capitalize_ascii monitor_name^" : public RTML_monitor {
+    #define RTML_BUFFER0_TRIGGER_PERIODIC_MONITORS()                             \\
+"
+    ^ ( List.fold_right (fun (_,n) str ->
+"\\
+RMTLD3_reader<                                                               \\
+RTML_reader<RTML_buffer<RTML_BUFFER0_TYPE, RTML_BUFFER0_SIZE>>, int>     \\
+__trace_" ^ monitor_name ^ "_" ^ n ^ " = RMTLD3_reader<                                                   \\
+    RTML_reader<RTML_buffer<RTML_BUFFER0_TYPE, RTML_BUFFER0_SIZE>>,      \\
+    int>(__buffer_" ^ monitor_name ^", tzero);                           \\
+\\
+"
+    ^ String.capitalize_ascii monitor_name^"_"^n^"<RMTLD3_reader<                                                          \\
+        RTML_reader<RTML_buffer<RTML_BUFFER0_TYPE, RTML_BUFFER0_SIZE>>, int>>    \\
+        rtm_mon" ^ n ^ "(" ^
+    ( try string_of_int (get_setting_int "rtm_period" helper)
+      with _ -> failwith "Set monitor period!"
+    ) ^ ", __trace_" ^ monitor_name ^ "_" ^ n ^ "); \\
+"
+    ^ str) cpp_monitor_lst "" )
+    ^ ( List.fold_right (fun (_,n) str ->
+"
+
+  template<class T>
+  class "^String.capitalize_ascii monitor_name^"_"^n^" : public RTML_monitor {
 
   private:
-    RMTLD3_reader< "^ get_event_type(helper) ^", "^ get_event_fulltype(helper) ^" > trace = RMTLD3_reader< "^ get_event_type(helper) ^", "^ get_event_fulltype(helper) ^" >( __buffer_"^ cluster_name ^".getBuffer(), "^ string_of_float (calculate_t_upper_bound formula) ^" );
-
-    environment env;
+    T &trace;
 
   protected:
     void run(){
 
-      three_valued_type _out = _"^monitor_name^"_compute(env,0);
-      DEBUG_RTMLD3(\"Veredict:%d\\n\", _out);
+      timespan tzero = 0;
+      three_valued_type _out = _"^(insert_string name "compute" '#')^"_"^n^"<T>(trace,tzero);
+      DEBUG_RTMLD3(\"Status:%d\\n\", _out);
     }
 
   public:
-    "^String.capitalize_ascii monitor_name^"(useconds_t p): RTML_monitor(p,SCHED_FIFO,50), env(std::make_pair (0, 0), &trace, __observation< "^ get_event_type(helper) ^", "^ get_event_fulltype(helper) ^" >) {}
-    "^String.capitalize_ascii monitor_name^"(useconds_t p, int sche, int prio): RTML_monitor(p,sche,prio), env(std::make_pair (0, 0), &trace, __observation< "^ get_event_type(helper) ^", "^ get_event_fulltype(helper) ^" >) {}
+    "^String.capitalize_ascii monitor_name^"_"^n^"(useconds_t p, T& trc): RTML_monitor(p,SCHED_FIFO,50), trace(trc) {}
+    "^String.capitalize_ascii monitor_name^"_"^n^"(useconds_t p, T& trc, int sche, int prio): RTML_monitor(p,sche,prio), trace(trc) {}
 
   };
+"
+^ str) cpp_monitor_lst "" ) ^
+"
+  #endif //"^String.uppercase_ascii monitor_name^"_H" in
+  
+    let monitor_name = insert_string name "instrument" '#' in
 
-  #endif //MONITOR_"^String.uppercase_ascii monitor_name^"_H" in
+    let code3 ="/* This file was automatically generated from rmtld3synth tool version
+  "^ search_settings_string "version" helper ^". */
+  
+  #ifndef "^ String.uppercase_ascii monitor_name ^"_H_
+  #define "^ String.uppercase_ascii monitor_name ^"_H_
+  
+  // definition of buffer symbols
 
+  #endif //"^ String.uppercase_ascii monitor_name ^"_H_" in
+    
+    try
+      let out_dir = get_setting_string "out_dir" helper in
+      
+      print_endline "Generated Output Files List:";
+      
+      let monitor_name = String.capitalize_ascii (insert_string name "compute" '#') in
 
-  if out_file <> "" || out_dir <> "" then
-    begin
-    let stream = open_out (out_dir^"/"^monitor_name^"_compute.h") in
-      Printf.fprintf stream "%s\n" code1;
-    close_out stream;
+      let stream = open_out (out_dir^"/"^monitor_name^".h") in
+        Printf.fprintf stream "%s\n" (beautify_cpp_code code1);
+      close_out stream;
 
-    let stream = open_out (out_dir^"/"^String.capitalize_ascii monitor_name^".h") in
-      Printf.fprintf stream "%s\n" code2;
-    close_out stream;
-    end
-  else
-    (* print to console *)
-    print_endline code1;
-    print_endline code2
+      print_endline (out_dir^"/"^monitor_name^".h");
+
+      let monitor_name = String.capitalize_ascii (insert_string name "monitor" '#') in
+
+      let stream = open_out (out_dir^"/"^monitor_name^".h") in
+        Printf.fprintf stream "%s\n" (beautify_cpp_code code2);
+      close_out stream;
+
+      print_endline (out_dir^"/"^String.capitalize_ascii monitor_name^".h");
+
+      let monitor_name = String.capitalize_ascii (insert_string name "instrument" '#') in
+
+      let stream = open_out (out_dir^"/"^monitor_name^".h") in
+        Printf.fprintf stream "%s\n" (beautify_cpp_code code3);
+      close_out stream;
+
+      print_endline (out_dir^"/"^monitor_name^".h")
+      
+    with Not_found ->
+        (* print to console *)
+        print_endline "Generated Output Header Files:";
+
+        print_endline (beautify_cpp_code code1);
+        print_endline (beautify_cpp_code code2);
+        print_endline (beautify_cpp_code code3)
 
   (* monitor dependent functions ends here *)
 ;;
@@ -443,83 +274,6 @@ in
 Printf.fprintf stream "%s\n" code;
 close_out stream;
 
-
-let stream = open_out (src_dir^"/Makefile") in
-let code =
-"
-.DEFAULT_GOAL := all
-
-ifndef RTMLIB_INCLUDE_DIR
-  $(error RTMLIB_INCLUDE_DIR is undefined)
-endif
-
-DIR = tests
-CXX = g++
-
-ifeq ($(OS),Windows_NT)
-  CXX_NAMES = x86_64-w64-mingw32-g++ i686-w64-mingw32-g++
-  CXX := $(foreach exec,$(CXX_NAMES),$(if $(shell which $(exec)),$(exec),))
-  ifeq ($(CXX),)
-    $(error \"No $(exec) in PATH\")
-  endif
-endif
-
-CXX := $(shell echo \"$(CXX)\" | cut -f 1 -d \" \")
-
-arm-monitor:
-\t if [ -z $NUTTX_OS_INCLUDE_DIR ]; then \\
-\t   echo \"Error: NUTTX_OS_INCLUDE_DIR is missing\"; \\
-\t else \\
-\t   if [ -z $CMSIS_INCLUDE_DIR ]; then \\
-\t     echo \"Error: CMSIS_INCLUDE_DIR is missing\"; \\
-\t   else \\
-\t     $(if $(shell which arm-none-eabi-g++),,$(error \"No arm-none-eabi-g++ in PATH\")) \\
-\t     arm-none-eabi-g++ \
--I$(NUTTX_OS_INCLUDE_DIR) \
--I$(NUTTX_OS_INCLUDE_DIR)/cxx \
--I$(CMSIS_INCLUDE_DIR) \
--I$(RTMLIB_INCLUDE_DIR) \
--fno-builtin-printf \
--fno-exceptions \
--fno-rtti \
--std=gnu++11 \
--mthumb \
--march=armv7-m \
--g \
--DARM_CM4_FP \
--D__NUTTX__ \
--DCONFIG_C99_BOOL8 \
--DCONFIG_WCHAR_BUILTIN \
--D__FILE_defined \
--Wframe-larger-than=1200 \
--fverbose-asm \
---verbose \
--c mon1.cpp; \\
-\t   fi \\
-\t fi
-
-x86-monitor:
-\t$(CXX) -Wall -g -O0 -std=c++11 -I$(RTMLIB_INCLUDE_DIR) -D__x86__ --verbose -c "^cluster_name^".cpp
-
-.PHONY: tests
-tests:
-\t make -C $(DIR)
-
-x86-mtest: x86-monitor tests
-\t ifndef RTMLIB_LIB_DIR \
-$(error RTMLIB_LIB_DIR is undefined) \
-endif
-\t g++ "^cluster_name^".o tests/tests.o -L$(RTMLIB_LIB_DIR) -lrtml -pthread -o "^cluster_name^"
-
-arm-mon: arm-monitor
-
-x86-mon: x86-monitor
-
-all:
-
-" in
-Printf.fprintf stream "%s\n" code;
-close_out stream;
 
 (* the buffers need to be managed according to its size and type; one buffer
    could be used for several monitors; a monitor is the synthesis of a formula

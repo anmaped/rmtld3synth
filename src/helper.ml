@@ -23,12 +23,15 @@ type counter_maps =
   | Proposition_map_reverse of (string * int ref * (int, string) t)
   | Counter_without_map of string * int ref
 
+type settings = Num of int | Txt of string | Sel of bool | Fm of Rmtld3.fm
+
 type helper =
-  string ref
-  * string ref
-  * int ref
-  * (global_int list * global_string list * monitor list)
-  * counter_maps list
+  string ref (* legacy *)
+  * string ref (* legacy *)
+  * int ref (* legacy *)
+  * (global_int list * global_string list * monitor list) (* legacy *)
+  * counter_maps list (* legacy *)
+  * (string, settings) Hashtbl.t (* new settings structure *)
 
 let verb_mode = ref 0
 
@@ -42,9 +45,54 @@ let default_counter_map =
   ; Counter_without_map ("counter_until", ref 0)
   ; Counter_without_map ("counter_duration", ref 0) ]
 
-let mk_helper = (ref "", ref "", ref 0, ([], [], []), default_counter_map)
+let mk_helper = 
+  let tbl = Hashtbl.create 50 in
+  let _ = Hashtbl.add tbl "init" (Sel(true)) in
+  (ref "", ref "", ref 0, ([], [], []), default_counter_map, tbl)
 
-let set_parameters p (a, b, c, _, e) = (a, b, c, p, e)
+(* new settings structure setters *)
+let set_setting name v (_, _, _, _, _, tbl) = 
+  Hashtbl.add tbl name v
+
+let get_setting_int name (_, _, _, _, _, tbl) =
+  match Hashtbl.find tbl name with
+  Num a -> a
+  | _ -> failwith "Error 'get_setting_int'!"
+
+let get_setting_string name (_, _, _, _, _, tbl) =
+  match Hashtbl.find tbl name with
+  Txt a -> a
+  | _ -> failwith "Error 'get_setting_string'!"
+
+let rec get_all_setting_string name (_, _, _, _, _, tbl) : string list =
+  let rec _get_all_setting_string lst =
+  match lst with
+    [] -> []
+  | Txt(a) :: b -> a :: (_get_all_setting_string b)
+  |  _ -> failwith "Error '_get_all_setting_string'!"
+  in List.rev (_get_all_setting_string (Hashtbl.find_all tbl name))
+
+let rec get_all_setting_formula name (_, _, _, _, _, tbl) : Rmtld3.fm list =
+  let rec _get_all_setting_formula lst =
+  match lst with
+    [] -> []
+  | Fm(a) :: b -> a :: (_get_all_setting_formula b)
+  |  _ -> failwith "Error '_get_all_setting_formula'!"
+  in List.rev (_get_all_setting_formula (Hashtbl.find_all tbl name))
+
+let print_setting a =
+  match a with
+    Num(v) -> print_string (string_of_int v)
+  | Txt(s) -> print_string ("'" ^ s ^ "'")
+  | Fm(f) -> print_plaintext_formula f
+  | Sel(b) -> print_string (string_of_bool b)
+
+let print_settings (_, _, _, _, _, tbl) =
+  Hashtbl.iter (fun a b -> print_string a; print_string " -> "; print_setting b; print_endline "" ) tbl
+
+let set_parameters p (a, b, c, _, e, tbl) = (a, b, c, p, e, tbl)
+
+let set_parameter_global_string p (a, b, c, (x,y,z), e, tbl) = (a, b, c, (x,p::y,z), e, tbl)
 
 let get_proposition_map id lst =
   let fnd =
@@ -89,23 +137,23 @@ let get_counter_without_map id lst =
 (*
   helper for monitor configuration of events
  *)
-let get_event_fulltype (t1, t2, _, _, _) = !t1 ^ "< " ^ !t2 ^ " >"
+let get_event_fulltype (t1, t2, _, _, _, _) = !t1 ^ "< " ^ !t2 ^ " >"
 
-let get_event_type (_, t2, _, _, _) = !t2
+let get_event_type (_, t2, _, _, _, _) = !t2
 
-let set_event_type type_event (t1, _, _, _, _) = t1 := type_event
+let set_event_type type_event (t1, _, _, _, _, _) = t1 := type_event
 
-let set_event_subtype sub_type_event (_, t2, _, _, _) = t2 := sub_type_event
+let set_event_subtype sub_type_event (_, t2, _, _, _, _) = t2 := sub_type_event
 
-let get_proposition_hashtbl (_, _, _, _, lst) =
+let get_proposition_hashtbl (_, _, _, _, lst, _) =
   let _, _, tbl = get_proposition_map "prop" lst in
   tbl
 
-let get_proposition_rev_hashtbl (_, _, _, _, lst) =
+let get_proposition_rev_hashtbl (_, _, _, _, lst, _) =
   let _, _, tbl = get_proposition_map_rev "prop" lst in
   tbl
 
-let get_proposition_counter (_, _, _, _, lst) =
+let get_proposition_counter (_, _, _, _, lst, _) =
   let _, count, _ = get_proposition_map "prop" lst in
   count := !count + 1 ;
   !count
@@ -118,29 +166,29 @@ let set_proposition_two_way_map p id helper =
   Hashtbl.add (get_proposition_hashtbl helper) p id ;
   Hashtbl.add (get_proposition_rev_hashtbl helper) id p
 
-let get_until_counter (_, _, _, _, lst) =
+let get_until_counter (_, _, _, _, lst, _) =
   let _, count = get_counter_without_map "counter_until" lst in
   count := !count + 1 ;
   !count
 
-let get_duration_counter (_, _, _, _, lst) =
+let get_duration_counter (_, _, _, _, lst, _) =
   let _, count = get_counter_without_map "counter_duration" lst in
   count := !count + 1 ;
   !count
 
-let get_inc_counter_test_cases (_, _, count, _, _) =
+let get_inc_counter_test_cases (_, _, count, _, _, _) =
   count := !count + 1 ;
   !count
 
-let get_counter_test_cases (_, _, count, _, _) = !count
+let get_counter_test_cases (_, _, count, _, _, _) = !count
 
-let get_settings_int (_, _, _, (a, _, _), _) = a
+let get_settings_int (_, _, _, (a, _, _), _, _) = a
 
-let get_settings_string (_, _, _, (_, b, _), _) = b
+let get_settings_string (_, _, _, (_, b, _), _, _) = b
 
-let get_settings_monitor (_, _, _, (_, _, c), _) = c
+let get_settings_monitor (_, _, _, (_, _, c), _, _) = c
 
-let set_counter_test_cases n (_, _, count, _, _) = count := n
+let set_counter_test_cases n (_, _, count, _, _, _) = count := n
 
 (* BEGIN helper for settings *)
 
@@ -164,6 +212,9 @@ let settings_from_file filename =
 
 (* gets settings from string *)
 let setting_from_string str = Sexp.of_string str
+
+let settings_from_string str = Sexp.scan_sexps (Stdlib.Lexing.from_string str)
+
 
 (* lets parsing configuration file into global_int and monitor type variables *)
 let settings sexpression =
@@ -302,3 +353,40 @@ let rec repeat_trace n pattern trace t tsize =
          (List.map (fun (a, (b, c)) -> (a, (b +. t, c +. t))) pattern))
       (t +. tsize) tsize
   else trace
+
+(* other auxiliar functions *)
+(* replace char with a string inside a string *)
+let insert_string str1 str2 ch =
+  let rec insert acc str =
+    match str with
+    | "" -> acc
+    | s ->
+      try
+        let index = String.index s ch in
+        let prefix = String.sub s 0 (index) in
+        let suffix = String.sub s (index + 1) (String.length s - index - 1) in
+        insert (acc ^ prefix ^ str2) suffix
+      with
+      | Not_found -> acc ^ s
+  in
+  insert "" str1
+
+(* beautify cpp code if clang-format is available *)
+let beautify_cpp_code code =
+  if Sys.command "command -v clang-format > /dev/null" <> 0
+    then (print_endline ("Warning: " ^ "clang-format is missing!"); code)
+  else
+    let (in_chan, out_chan, _) = Unix.open_process_full "clang-format -style=LLVM" [|""|] in
+    output_string out_chan code;
+    close_out out_chan;
+
+    let rec read_lines line =
+      try
+        let line = line ^ input_line in_chan ^ "\n" in
+        read_lines line
+      with
+      | End_of_file ->
+        line
+    in let out = read_lines "" in
+    close_in in_chan;
+    out

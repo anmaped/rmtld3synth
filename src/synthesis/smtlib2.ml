@@ -488,7 +488,7 @@ Term.forall
               (Term.const (Id.mk Id.Term "mt")))
             (
               (* one assumption *)
-              if not !assume_unary_sequence then f_equal (Term.apply (f_const_term "dval") [tm_call]) (f_minus (Term.apply (f_const_term "mapt") [f_const_term "mt"]) (Term.apply (f_const_term "mapt") [f_const_term "mtb"]) ) else f_true
+              if not !assume_unary_sequence then f_less (Term.apply (f_const_term "dval") [tm_call]) (f_minus (Term.apply (f_const_term "mapt") [f_const_term "mt"]) (Term.apply (f_const_term "mapt") [f_const_term "mtb"]) ) else f_true
             )
          )
          (Term.apply

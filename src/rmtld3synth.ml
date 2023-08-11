@@ -6,6 +6,11 @@ open Sexplib.Conv
 open Rmtld3
 open Helper
 open Synthesis
+open Interface
+open Interface.Rmdslparser
+
+
+let helper = mk_helper
 
 let config_file = ref ""
 
@@ -41,21 +46,13 @@ let trace_style = ref ""
 
 let gen_rmtld_formula = ref false
 
+let rtmlib2_period = ref 0
+
 let set_config_file file = config_file := file
-
-let set_formulas f = rmtld_formula := f
-
-let set_formulas_ltxeq f = rmtld_formula_ltxeq := f
-
-let set_exp_rmdsl f = expression_rmdsl := f
 
 let set_smt_formula f = smtlibv2_lang := true
 
 let set_simplify_formula f = simplify_formula := true
-
-let set_out_file f = out_file := f
-
-let set_out_dir f = out_dir := f
 
 let set_ocaml_language f = ocaml_lang := true
 
@@ -73,6 +70,45 @@ let set_trace_style f = trace_style := f
 
 let set_gen_rmtld_formula f = gen_rmtld_formula := true
 
+(* output settings *)
+let set_out_file v = out_file := v; (* legacy *) set_setting "out_file" (Txt(v)) helper
+let set_out_dir v = out_dir := v; (* legacy *) set_setting "out_dir" (Txt(v)) helper
+
+(* input settings *)
+let set_exp v = rmtld_formula := v; (* legacy *) set_setting "input_exp" (Fm(formula_of_sexp (Sexp.of_string v))) helper
+let set_exp_ltxeq v = rmtld_formula_ltxeq := v; set_setting "input_exp_ltxeq" (Fm(Texeqparser.texeqparser v)) helper
+let set_exp_rmdsl v = expression_rmdsl := v; set_setting "input_exp_rmdsl" (Txt(v)) helper
+
+(* rtm settings *)
+let set_rtm_period v = set_setting "rtm_period" (Num(v)) helper
+let set_rtm_buffer_size v = set_setting "rtm_buffer_size" (Num(v)) helper
+let set_rtm_min_inter_arrival_time v = set_setting "rtm_min_inter_arrival_time" (Num(v)) helper
+let set_rtm_max_period v = set_setting "rtm_max_period" (Num(v)) helper
+let set_rtm_event_type v = set_setting "rtm_event_type" (Txt(v)) helper
+let set_rtm_event_subtype v = set_setting "rtm_event_subtype" (Txt(v)) helper
+let set_rtm_monitor_name_prefix v = set_setting "rtm_monitor_name_prefix" (Txt(v)) helper
+
+(* general settings *)
+let set_gen_tests v = set_setting "gen_tests" (Sel(v)) helper
+
+(* default settings *)
+let default_settings helper =
+  let default_settings = "
+    (rtm_period 200000)
+    (rtm_buffer_size 100)
+    (rtm_min_inter_arrival_time 1)
+    (rtm_max_period 2000000)
+    (rtm_event_type Event)
+    (rtm_event_subtype proposition)
+    (rtm_monitor_name_prefix rtm_#_%)
+    (gen_tests false)
+  " in
+  (* convert settings *)
+  let s_num,s_str,s_fm = settings (settings_from_string default_settings) in
+  List.iter (fun (a,b) -> set_setting a (Num(b)) helper) s_num;
+  List.iter (fun (a,b) -> set_setting a (Txt(b)) helper) s_str;
+  ()
+
 open Batteries
 open Unix
 open Sexplib
@@ -88,7 +124,6 @@ open Synthesis.Ocaml
 
 (*open Rmtld3synth_tessla*)
 open Interface.Z3solver_
-open Helper
 
 let set_recursive_unrolling arg =
   (* check scope: auto or [0-9]+ *)
@@ -127,6 +162,7 @@ let synth_monitor fm =
     if c <> [] then c else if fm <> mfalse then [("mon0", 0, fm)] else []
   in
   let helper = set_parameters (a, b, c) mk_helper in
+  let helper = set_parameter_global_string ("version", Version.git) helper in
   let create_dir dir_name =
     try
       let state = Sys.is_directory dir_name in
@@ -215,7 +251,6 @@ let synth_monitor fm =
 
 (** Formulates and configures the synthesis of rmtld into smtlibv2. *)
 let synth_sat_problem formula =
-  let helper = mk_helper in
   (* settings *)
   if !Smtlib2.recursive_unrolling_depth = 0 then
     Smtlib2.recursive_unrolling_depth := int_of_float ( try calculate_t_upper_bound formula with Failure _ -> 25. ) ;
@@ -282,8 +317,6 @@ let synth_sat_problem formula =
     print_endline smtlib2_str )
 
 open Version
-open Interface
-open Interface.Rmdslparser
 open Helper
 
 (** rmtld3synth's command line interface *)
@@ -328,19 +361,41 @@ let _ =
       , " Sets the trace style\n\n Input:" )
     ; (* input models *)
       ( "--input-sexp"
-      , Arg.String set_formulas
+      , Arg.String set_exp
       , " Inputs sexp expression (RMTLD3 formula)" )
     ; ( "--input-latexeq"
-      , Arg.String set_formulas_ltxeq
+      , Arg.String set_exp_ltxeq
       , " Inputs latex equation expressions (RMTLD3 formula) (Experimental)" )
     ; ( "--input-rmdsl"
       , Arg.String set_exp_rmdsl
       , " Inputs rmdsl expressions for schedulability analysis (Experimental)"
       )
-    ; (* this flag is exclusively used only on monitoring synthesis *)
+    ; (* exclusively used for monitoring synthesis *)
       ( "--config-file"
       , Arg.String set_config_file
-      , " File containing synthesis settings\n\n Output:" )
+      , " File containing synthesis settings\n\n Sets (rtmlib2):" )
+    ; (* setup settings for rtm *)
+      ( "--set-monitor-period"
+      , Arg.Int set_rtm_period
+      , " Set monitoring period" )
+    ; ( "--set-buffer-size"
+      , Arg.Int set_rtm_buffer_size
+      , " Set buffer size" )
+    ; ( "--set-min-inter-time"
+      , Arg.Int set_rtm_min_inter_arrival_time
+      , " Set minimum inter arrival time" )
+    ; ( "--set-max-period"
+      , Arg.Int set_rtm_max_period
+      , " Set maximum period" )
+    ; ( "--set-event-type"
+      , Arg.String set_rtm_event_type
+      , " Set event type" )
+    ; ( "--set-event-subtype"
+      , Arg.String set_rtm_event_subtype
+      , " Set event subtype" )
+    ; ( "--set-monitor-name-prefix"
+      , Arg.String set_rtm_monitor_name_prefix
+      , " Set monitor name prefix\n\n Output:" )
     ; (*output models *)
       ( "--out-file"
       , Arg.String set_out_file
@@ -356,6 +411,9 @@ let _ =
             exit 0 )
       , " Version and SW information\n" ) ]
   in
+
+  default_settings helper;
+
   let usage_msg =
     "rmtld3synth flags [options] input [output]\n\n Flags for synthesis: "
   in
@@ -364,6 +422,7 @@ let _ =
     with
   | Arg.Help msg | Arg.Bad msg -> print_endline msg ) ;
   verb_m 2 (fun a -> print_endline (Version.git ^ "\n")) ;
+
   (* selects the type of the input formula *)
   let input_fm =
     (* rmtld_formula is undefined ? try rmtld_formula_ltxeq *)
