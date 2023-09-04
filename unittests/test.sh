@@ -24,8 +24,8 @@ mkdir -p $TEST_DIR/sat
 
 BINDIR=_build/install/default/bin
 export PATH=$PATH:$(pwd)/../_build/install/default/bin
-CMDGENOCAML="rmtld3synth --config-file "../config/default" --synth-ocaml"
-CMDGENCPP="rmtld3synth --config-file "../config/default" --synth-cpp11"
+CMDGENOCAML="rmtld3synth --synth-ocaml"
+CMDGENCPP="rmtld3synth --synth-cpp11"
 
 [ "$2" = "" ] || [ "$2" = "discrete" ] && {
 echo "UNROLLING_SETTINGS=\"--assume-unary-seq --rec-unrolling=auto\""
@@ -160,11 +160,11 @@ make -C $TEST_DIR/../_cluster/tests ;
 
 echo "Generating Test Units for Monitor Generation using Ocaml" ;
 
-$CMDGENOCAML --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" > $TEST_DIR/mon1.ml ;
+$CMDGENOCAML --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-file="$TEST_DIR/mon1.ml" ;
 
-$CMDGENOCAML --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" > $TEST_DIR/mon2.ml ;
+$CMDGENOCAML --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-file="$TEST_DIR/mon2.ml" ;
 
-$CMDGENOCAML --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" > $TEST_DIR/mon3.ml ;
+$CMDGENOCAML --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-file="$TEST_DIR/mon3.ml" ;
 
 
 
@@ -177,9 +177,9 @@ $CMDGENCPP --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \i
 $CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-src="$TEST_DIR/mon3" --verbose 2 > /dev/null 2>&1 ;
 
 # Add these specific makefile rules
-CPP_TO_BUILD="\tmake -C mon1 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n" ;
-CPP_TO_BUILD+="\tmake -C mon2 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n" ;
-CPP_TO_BUILD+="\tmake -C mon3 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n" ;
+#CPP_TO_BUILD="\tmake -C mon1 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib2/src x86-monitor\n" ;
+#CPP_TO_BUILD+="\tmake -C mon2 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib2/src x86-monitor\n" ;
+#CPP_TO_BUILD+="\tmake -C mon3 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib2/src x86-monitor\n" ;
 
 # Automatic generation of monitors from a set of formulas
 sample=10 # this sample can be changed
@@ -192,10 +192,10 @@ do
 done ;
 
 # Add auto-generated makefile rules
-for (( i=1; i<${arrayrmtldlength}+1; i++ ));
-do
-    CPP_TO_BUILD+="	make -C cpp/mon$i RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib x86-monitor\n"
-done ;
+#for (( i=1; i<${arrayrmtldlength}+1; i++ ));
+#do
+#    CPP_TO_BUILD+="	make -C cpp/mon$i RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib2/src x86-monitor\n"
+#done ;
 
 
 echo "Generating Unit tests for smtlibv2" ;
@@ -207,7 +207,7 @@ do
   REPP=${REP//b2/$sample}
   $CMDSAT_DEBUG --input-latexeq "$REPP" > $TEST_DIR/res$i.smt2
   $CMDSAT --trace-style "tinterval" --input-latexeq "$REPP" > $TEST_DIR/res$i.trace
-  $CMDGENOCAML --input-latexeq "$REPP" > $TEST_DIR/res$i.ml
+  $CMDGENOCAML --input-latexeq "$REPP" --out-file="$TEST_DIR/res$i.ml"
 done ;
 
 
@@ -226,6 +226,9 @@ CXX := $(shell echo "$(CXX)" | cut -f 1 -d " ")
 ' ;
 CXX_INC='$(CXX)' ;
 
+# -DRTMLIB_ENABLE_DEBUG_RMTLD3 -DRTMLIB_ENABLE_DEBUGV_RMTLD3 -DRTMLIB_DEBUG=3
+DEBUG='-DRTMLIB_ENABLE_DEBUG_RMTLD3 -DRTMLIB_DEBUG=0'
+
 echo -e "
 
 $CHECK_GCC
@@ -234,7 +237,7 @@ all:
 	dune build -p unittests @install
 	dune install -p unittests --prefix=./
 $CPP_TO_BUILD
-	$CXX_INC -Wall -Wextra -std=gnu++11 -D__x86__ -DUSE_UNSAFE_METHODS -DUSE_MAP_SORT -DUSE_DEBUG_RMTLD3 -DUSE_DEBUGV_RMTLD3XX -DDEBUG=0 -I$(pwd)/../rtmlib -pthread -lm $(pwd)/../rtmlib/RTML_monitor.cpp cpptest.cpp -o cpptest
+	$CXX_INC -Wall -Wextra -std=gnu++11 -DRTMLIB_ENABLE_MAP_SORT $DEBUG -I$(pwd)/../rtmlib2/src cpptest.cpp -o cpptest -pthread -latomic
 
 clean:
 	ocamlbuild -clean

@@ -232,7 +232,7 @@ and parse_latexeq_eq' (l: string list) (feed: intermediate_ltx_fm list) : interm
           | FIneq(a)         -> Flor(feed@[ FIneq(a)])
           | Always (a,b)     -> Flor(feed@[ Always(a,b)])
           | Eventually (a,b) -> Flor(feed@[ Eventually(a,b)])
-          | U (a,b,c)    -> Flor(feed@[ U(a,b,c)])
+          | U (a,b,c)        -> Flor(feed@[ U(a,b,c)])
           | FExists (a,b)    -> Flor(feed@[ FExists(a,b)])
           | Fland(a)         -> Flor(feed@[ Fland(a)])
           | FIsol(a)         -> Flor(feed@[ FIsol(a)])

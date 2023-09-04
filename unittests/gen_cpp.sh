@@ -6,47 +6,63 @@ cppgen="
 #include <string>
 #include <unordered_map>
 
-#include \"RTML_buffer.h\"
-#include \"RTML_monitor.h\"
-#include \"rmtld3/reader.h\"
-#include \"rmtld3/rmtld3.h\"
+#include <circularbuffer.h>
+#include <reader.h>
+#include <rmtld3/reader.h>
+#include <rmtld3/rmtld3.h>
 
 
 int count_until_iterations;
 
 int wait_time=1000000;
 
-RTML_buffer<int, 300> __buffer_mon1 __attribute__((used));
+typedef Event<int> event_t;
+typedef RTML_buffer<event_t, 1000> buffer_t;
+typedef RMTLD3_reader<RTML_reader<buffer_t>, int> trace_t;
 
 "
 for (( i=1; i<${arrayrmtldlength}+1; i++ ));
 do
-	cppgen+="
-namespace Test$i {
-#include \"cpp/mon$i/mon0_compute.h\"
-}
+	available_files=$(ls "$TEST_DIR/cpp/mon$i")
 
+	namespace="namespace Test$i {\n"
+
+	for j in $available_files
+	do
+		namespace+="#include \"cpp/mon$i/$j\"\n"
+		break # just includes the first file
+	done
+
+	namespace+="}\n"
+	
+	cppgen+="$(echo -e "$namespace")
 void test$i() {
+
 	std::list<std::pair<std::string,int>> trc =  { $( echo "$(dos2unix $TEST_DIR/cpp/res$i.trace; cat $TEST_DIR/cpp/res$i.trace)" | sed -e "s/)/}/g" -e "s/(/{/g" -e "s/;/,/g" ) };
-	std::list<std::pair<int,timespan>> enc_trc;
+	
+	buffer_t buf;
 
 	timespan delay_time = 0;
 	for (auto it = trc.begin(); it != trc.end(); ++it) {
-		delay_time = (timespan) (*it).second;
-		DEBUGV_RMTLD3(\"%d %s\n\",Test$i::_mapsorttostring[(*it).first.c_str()],(*it).first.c_str());
-		enc_trc.push_back ( std::make_pair (Test$i::_mapsorttostring[(*it).first], delay_time ) );
+		DEBUGV_RMTLD3(\"%d %s\n\",
+			Test$i::_mapsorttostring[(*it).first.c_str()],
+			(*it).first.c_str()
+		);
+		buf.push ( event_t(Test$i::_mapsorttostring[(*it).first], delay_time ) );
+		delay_time += (timespan) (*it).second;
 	}
 
-	RTML_writer< int > __writer = RTML_writer< int >( __buffer_mon1.getBuffer() );
-    __writer.unsafe_enqueue_n(enc_trc);
+	int tzero = 0.;
+	trace_t trace = trace_t(buf, tzero);
 
-    __buffer_mon1.debug();
+	trace.synchronize();
 
-    RMTLD3_reader< int, Event < int > > __reader = RMTLD3_reader< int, Event < int > >( __buffer_mon1.getBuffer(), 10. );
-	Test$i::environment env = Environment< int, Event < int > >(std::make_pair (0, 0), &__reader, __observation< int, Event < int > >);
-	three_valued_type _out = Test$i::_mon0_compute(env,0);
+    buf.debug();
+
+	timespan t = 0;
+	three_valued_type _out = Test$i::_rtm_compute_$(echo ${j} | cut -c 13- | rev | cut -c 3- | rev)_0<trace_t>(trace,t);
 	auto _out_readable = (_out == T_TRUE) ? \"\x1b[32m[true]\x1b[0m\" : ((_out == T_FALSE) ? \"\x1b[31m[false]\x1b[0m\" : \"\x1b[33m[unknown]\x1b[0m\" );
-	DEBUG_RTMLD3(\"$i) %s\n\", _out_readable );
+	DEBUG_RMTLD3(\"$i) %s\n\", _out_readable );
 }
 "
 done

@@ -1,0 +1,5 @@
+*.merlin
+_*/
+*_.ml
+version.ml
+Makefile

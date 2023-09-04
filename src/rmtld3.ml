@@ -29,16 +29,17 @@ type fm =
   | Until of time * fm * fm
   | Exists of var_id * fm
   | LessThan of tm * tm
-  | Until_leq of time * fm * fm
-  (* extensional operator *)
   | Until_eq of time * fm * fm
+  (* extensional operator *)
+  | Until_leq of time * fm * fm
 
 (* extensional operator *)
-(*        | Less_eq of tm * tm          (* extensional operator *)
-        | And of fm * fm              (* extensional operator *)
-        | Implies of fm * fm          (* extensional operator *)
-        | Greater of tm * tm          (* extensional operator *)
-        | Greater_eq of tm * tm       (* extensional operator *)
+(*
+  | Less_eq of tm * tm          (* extensional operator *)
+  | And of fm * fm              (* extensional operator *)
+  | Implies of fm * fm          (* extensional operator *)
+  | Greater of tm * tm          (* extensional operator *)
+  | Greater_eq of tm * tm       (* extensional operator *)
  *)
 and tm =
   | Constant of value
@@ -453,10 +454,10 @@ let print_latex_formula f = print_endline (slatex_of_rmtld_fm f)
 (* convert rmtld formulas to plain text *)
 let rec string_of_rmtld_tm rmtld_tm =
   match rmtld_tm with
-  | Constant value -> string_of_float value ^ " "
-  | Variable id -> id ^ " "
+  | Constant value -> string_of_float value
+  | Variable id -> id
   | Duration (trm, sf) ->
-      "int[" ^ string_of_rmtld_tm trm ^ "] (" ^ string_of_rmtld_fm sf ^ ") "
+      "int[" ^ string_of_rmtld_tm trm ^ "] (" ^ string_of_rmtld_fm sf ^ ")"
   | FPlus (eta1, eta2) ->
       "( " ^ string_of_rmtld_tm eta1 ^ " + " ^ string_of_rmtld_tm eta2 ^ ")"
   | FTimes (eta1, eta2) ->
@@ -466,18 +467,22 @@ and string_of_rmtld_fm rmtld_fm =
   match rmtld_fm with
   | True () -> "true"
   | Prop p -> p
-  | Not sf -> "~(" ^ string_of_rmtld_fm sf ^ ") "
+  | Not sf -> "~(" ^ string_of_rmtld_fm sf ^ ")"
   | Or (sf1, sf2) ->
       "(" ^ string_of_rmtld_fm sf1 ^ " or " ^ string_of_rmtld_fm sf2 ^ ")"
   | Until (pval, sf1, sf2) ->
-      "(" ^ string_of_rmtld_fm sf1 ^ " U_" ^ string_of_float pval ^ " "
-      ^ string_of_rmtld_fm sf2 ^ ")"
+    "(" ^ string_of_rmtld_fm sf1 ^ " U[" ^ string_of_float pval ^ "] "
+    ^ string_of_rmtld_fm sf2 ^ ")"
+  | Until_eq (pval, sf1, sf2) ->
+    "(" ^ string_of_rmtld_fm sf1 ^ " U[=" ^ string_of_float pval ^ "] "
+    ^ string_of_rmtld_fm sf2 ^ ")"
   | Exists (var, sf) -> "exists " ^ var ^ " (" ^ string_of_rmtld_fm sf ^ ")"
   | LessThan (tr1, tr2) ->
       "(" ^ string_of_rmtld_tm tr1 ^ " < " ^ string_of_rmtld_tm tr2 ^ ")"
   | a ->
       raise
-        (Failure ("Unsupported formula " ^ Sexp.to_string_hum (sexp_of_fm a)))
+        (Failure ("string_of_rmtld_fm: Unsupported formula "
+          ^ Sexp.to_string_hum (sexp_of_fm a)))
 
 (* print formulas and terms in plaintext *)
 let print_plaintext_formula f = print_string (string_of_rmtld_fm f)
@@ -721,26 +726,26 @@ let rec calculate_t_upper_bound (formula : rmtld3_fm) =
   | Prop _ -> 0.
   | Not sf -> calculate_t_upper_bound sf
   | Or (sf1, sf2) ->
-      Pervasives.max
+      Stdlib.max
         (calculate_t_upper_bound sf1)
         (calculate_t_upper_bound sf2)
   | Until (gamma, sf1, sf2) ->
       gamma
-      +. Pervasives.max
+      +. Stdlib.max
            (calculate_t_upper_bound sf1)
            (calculate_t_upper_bound sf2)
   | Until_eq (gamma, sf1, sf2) ->
       gamma
-      +. Pervasives.max
+      +. Stdlib.max
            (calculate_t_upper_bound sf1)
            (calculate_t_upper_bound sf2)
   | Until_leq (gamma, sf1, sf2) ->
       gamma
-      +. Pervasives.max
+      +. Stdlib.max
            (calculate_t_upper_bound sf1)
            (calculate_t_upper_bound sf2)
   | LessThan (tr1, tr2) ->
-      Pervasives.max
+      Stdlib.max
         (calculate_t_upper_bound_term tr1)
         (calculate_t_upper_bound_term tr2)
   | _ ->
@@ -758,10 +763,10 @@ and calculate_t_upper_bound_term term =
   | Duration (tr, fm) ->
         (calculate_t_upper_bound_term tr) +.
         (calculate_t_upper_bound fm)
-  | FPlus (tr1, tr2) -> Pervasives.max
+  | FPlus (tr1, tr2) -> Stdlib.max
         (calculate_t_upper_bound_term tr1)
         (calculate_t_upper_bound_term tr2)
-  | FTimes (tr1, tr2) -> Pervasives.max
+  | FTimes (tr1, tr2) -> Stdlib.max
         (calculate_t_upper_bound_term tr1)
         (calculate_t_upper_bound_term tr2)
   | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
