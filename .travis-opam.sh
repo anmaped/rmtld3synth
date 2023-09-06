@@ -14,6 +14,10 @@ get() {
 }
 
 get .travis-ocaml.sh
+#sed -i '' 's/brew update/brew install opam/' .travis-ocaml.sh
+sed -i '' 's/= \"osx\" /= \"osxx\" /' .travis-ocaml.sh
+
+
 sh .travis-ocaml.sh
 
 export OPAMYES=1

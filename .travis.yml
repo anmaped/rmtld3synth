@@ -1,5 +1,15 @@
 language: generic
 dist: xenial
+osx_image: xcode12.3
+
+before_script: |
+  function keep_alive() {
+    while true; do
+      echo -en "\a"
+      sleep 60
+    done
+  }
+  keep_alive &
 
 script:
   - wget https://raw.githubusercontent.com/anmaped/rmtld3synth/master/.travis-opam.sh
@@ -20,6 +30,7 @@ addons:
 
 env:
   - OCAML_VERSION=4.04 PACKAGE=rmtld3synth
+  - OCAML_VERSION=4.09 PACKAGE=rmtld3synth
   - OCAML_VERSION=4.14 PACKAGE=rmtld3synth
 
 os:
@@ -29,4 +40,6 @@ os:
 jobs:
   exclude:
   - env: OCAML_VERSION=4.04 PACKAGE=rmtld3synth
+    os: osx
+  - env: OCAML_VERSION=4.14 PACKAGE=rmtld3synth
     os: osx
