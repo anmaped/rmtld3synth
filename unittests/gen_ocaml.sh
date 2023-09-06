@@ -29,7 +29,7 @@ echo "
 (executable
   (name            unittests)
   (public_name     unittests)
-  (libraries       batteries sexplib ppx_sexp_conv)
+  (libraries       bigarray-compat batteries sexplib ppx_sexp_conv)
   (modules         Rmtld3 Unittests Mon1 Mon2 Mon3 $modules)
   (preprocess      (pps ppx_sexp_conv))
 )

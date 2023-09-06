@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name:         "rmtld3synth"
-version:      "0.3-dev"
+version:      "0.4-dev"
 maintainer:   "André Pedro <apedro.1@gmail.com>"
 authors:      "André Pedro <apedro.1@gmail.com>"
 homepage:     "https://github.com/anmaped/rmtld3synth"
@@ -13,6 +13,7 @@ description:  "Runtime Verification toolchain for generating monitors based on t
 depends: [
   "ocamlfind" {build}
   "dune" {build}
+  "bigarray-compat" {build}
   "batteries" {build}
   "sexplib" {build}
   "ppx_sexp_conv" {build}
@@ -27,4 +28,3 @@ build: [
 ]
 
 run-test: [make "tests"]
-

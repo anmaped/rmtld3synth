@@ -150,6 +150,11 @@ echo "Executing quick cpp test..." ;
 
 rmtld3synth-unittest ;
 
+sleep 10 ;
+
+cat $TEST_DIR/../_cluster/tests/unit_test_cases.h
+cat $TEST_DIR/../_cluster/tests/tests.cpp
+
 make -C $TEST_DIR/../_cluster/tests ;
 
 ./$TEST_DIR/../_cluster/tests/tests ;
@@ -176,11 +181,6 @@ $CMDGENCPP --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \i
 
 $CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-src="$TEST_DIR/mon3" --verbose 2 > /dev/null 2>&1 ;
 
-# Add these specific makefile rules
-#CPP_TO_BUILD="\tmake -C mon1 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib2/src x86-monitor\n" ;
-#CPP_TO_BUILD+="\tmake -C mon2 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib2/src x86-monitor\n" ;
-#CPP_TO_BUILD+="\tmake -C mon3 RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib2/src x86-monitor\n" ;
-
 # Automatic generation of monitors from a set of formulas
 sample=10 # this sample can be changed
 for (( i=1; i<${arrayrmtldlength}+1; i++ ));
@@ -190,13 +190,6 @@ do
   $CMDSAT --trace-style "tcum" --input-latexeq "$REPP" > $TEST_DIR/cpp/res$i.trace
   $CMDGENCPP --input-latexeq "$REPP" --out-src="$TEST_DIR/cpp/mon$i" > /dev/null 2>&1
 done ;
-
-# Add auto-generated makefile rules
-#for (( i=1; i<${arrayrmtldlength}+1; i++ ));
-#do
-#    CPP_TO_BUILD+="	make -C cpp/mon$i RTMLIB_INCLUDE_DIR=$(pwd)/../rtmlib2/src x86-monitor\n"
-#done ;
-
 
 echo "Generating Unit tests for smtlibv2" ;
 
@@ -236,7 +229,6 @@ $CHECK_GCC
 all:
 	dune build -p unittests @install
 	dune install -p unittests --prefix=./
-$CPP_TO_BUILD
 	$CXX_INC -Wall -Wextra -std=gnu++11 -DRTMLIB_ENABLE_MAP_SORT $DEBUG -I$(pwd)/../rtmlib2/src cpptest.cpp -o cpptest -pthread -latomic
 
 clean:
@@ -254,7 +246,7 @@ cp ../src/rmtld3.ml $TEST_DIR/rmtld3.ml ;
 
 printf "${WHITE}Compiling Ocaml and Cpp11 monitors...${NC}\n" ;
 
-make -C $TEST_DIR > /dev/null 2>&1 ;
+make -C $TEST_DIR ; #> /dev/null 2>&1 ;
 
 # show results from ocaml synthesis
 echo -e "\e[1m### result from ocaml synthesis\e[0m" ;

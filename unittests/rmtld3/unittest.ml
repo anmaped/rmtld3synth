@@ -10,8 +10,8 @@ let create_dir dir_name =
     if state then () else Unix.mkdir dir_name 0o777
   with _ -> Unix.mkdir dir_name 0o777
 
-let rmtld3_unit_test_case_generation trace formula computed_value computef
-    helper filename cluster_name n =
+let rmtld3_unit_test_case_generation trace formula computed_value cpp11_compute
+    helper cluster_name n =
   let id =
     if n > 1 then get_counter_test_cases helper
     else get_inc_counter_test_cases helper
@@ -23,7 +23,7 @@ let rmtld3_unit_test_case_generation trace formula computed_value computef
   in
   (* generate monitor from one formula as one lambda function *)
   let monitor_eval id =
-    let function_name, body = computef formula helper in
+    let function_name, body = cpp11_compute formula helper in
     body ^ "\n\ntemplate <class T>\nthree_valued_type _local_compute"
     ^ string_of_int id ^ "(T &trace, timespan &t) {\nreturn " ^ function_name
     ^ "; };"
@@ -46,8 +46,8 @@ let rmtld3_unit_test_case_generation trace formula computed_value computef
           ^ string_of_int (int_of_float t1)
           ^ ");\n\t__buffer_" ^ cluster_name ^ ".push(tmp_x);\n",
           count + 1 ))
-      ( monitor_eval id ^ "\n\nbool __attribute__ ((noinline)) __unit_test_"
-        ^ cluster_name ^ "_c" ^ string_of_int id ^ "_" ^ string_of_int n
+      ( monitor_eval id ^ "\n\ninline static bool __unit_test_" ^ cluster_name
+        ^ "_c" ^ string_of_int id ^ "_" ^ string_of_int n
         ^ " () {\nevent_t tmp_x;\nstatic buffer_t __buffer_" ^ cluster_name
         ^ ";\n",
         0 )
@@ -124,35 +124,15 @@ let rmtld3_unit_test_case_generation trace formula computed_value computef
     ^ string_of_three_valued computed_value
     ^ ";\n}\n\n"
   in
-  let oc = open_out_gen [ Open_creat; Open_text; Open_append ] 0o640 filename in
-  output_string oc (beautify_cpp_code code);
-  close_out oc;
-  ()
+  code
 
 exception TEST_FAIL of string
 
-let rmtld3_unit_test_generation () computef helper cluster_name _ =
-  let filename = cluster_name ^ "/tests/unit_test_cases.h" in
-  if Sys.file_exists filename then Sys.remove filename else ();
-  let oc = open_out filename in
-  output_string oc
-    ("\n\
-      #include <reader.h>\n\
-      #include <rmtld3/reader.h>\n\
-      #include <rmtld3/macros.h>\n\
-      #include <periodicmonitor.h>\n\
-      #include \"prop.h\"\n\n\
-      #ifdef __NUTTX__\n\
-      #include <nuttx/sched.h>\n\
-      #endif\n\n\
-      typedef " ^ get_event_fulltype helper
-   ^ " event_t;\n\
-      typedef RTML_buffer<event_t, 100> buffer_t;\n\
-      typedef RMTLD3_reader<RTML_reader<buffer_t>, int> trace_t;\n");
-  close_out oc;
-  let t_u = logical_environment in
+let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
   (* a logic environment for all tests *)
+  let t_u = logical_environment in
   let call_list = ref "" in
+  let call_code = ref "" in
   (* this function will generate the test case for a formula *)
   let pass_test_n expected_value lb trace formula n =
     let rec repeat model formula s =
@@ -181,8 +161,10 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
       let id = string_of_int (get_counter_test_cases helper) in
       Printf.printf "\x1b[32m[Sucess]\x1b[0m (%s) \n" (b3_to_string t_value);
       (* to generate C++ unit tests *)
-      rmtld3_unit_test_case_generation trace formula t_value computef helper
-        filename cluster_name n;
+      call_code :=
+        !call_code
+        ^ (rmtld3_unit_test_case_generation trace formula t_value cpp11_compute helper
+            cluster_name n);
       Printf.printf "count_until: %i, stack_deep:%i count_full:%d\n" !count
         (calculate_heap_cost formula)
         (calculate_cycle_cost formula trace);
@@ -196,12 +178,7 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
         ^ "_" ^ string_of_int n ^ "();";
       (* generate smt benchmark tests *)
       (* create directory *)
-      let oc =
-        open_out_gen
-          [ Open_creat; Open_text; Open_append ]
-          0o640
-          (cluster_name ^ "/" ^ id ^ ".smt2")
-      in
+      let oc = open_out (cluster_name ^ "/" ^ id ^ ".smt2") in
       (*let smtlibv2 = Sexp.to_string (sexp_of_formula formula) in*)
       let smtlibv2 = rmtld3synthsmt formula helper in
       output_string oc smtlibv2;
@@ -415,7 +392,8 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
                 Constant 2. )))
         trace_size
     done);
-  (* use cases generation test -- TO CHANGE TO CONFIG FILE *)
+  (* use cases generation test *)
+  (* TODO: modify with usecase1 config file instead! *)
   let m_or_fold list_formulas =
     List.fold_left (fun a b -> Or (b, a)) mfalse list_formulas
   in
@@ -453,20 +431,31 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
   in
   pass_test Unknown "usecase1" trc usecase1_formula;
 
-  (* <--- TO CHANGE TO CONFIG FILE *)
-
-  (* lets create a function to run all tests *)
-  let oc = open_out_gen [ Open_creat; Open_text; Open_append ] 0o640 filename in
+  let filename = cluster_name ^ "/tests/unit_test_cases.h" in
+  let oc = open_out filename in
   output_string oc
     (beautify_cpp_code
-       ("\nauto __run_unit_tests = []() {" ^ !call_list ^ "\n};"));
+       ("\n\
+         #include <reader.h>\n\
+         #include <rmtld3/reader.h>\n\
+         #include <rmtld3/macros.h>\n\
+         #include <periodicmonitor.h>\n\
+         #include \"prop.h\"\n\n\
+         #ifdef __NUTTX__\n\
+         #include <nuttx/sched.h>\n\
+         #endif\n\n\
+         typedef " ^ get_event_fulltype helper
+      ^ " event_t;\n\
+         typedef RTML_buffer<event_t, 100> buffer_t;\n\
+         typedef RMTLD3_reader<RTML_reader<buffer_t>, int> trace_t;\n" ^ !call_code
+      ^ "\ninline static void __run_unit_tests (void) {" ^ !call_list ^ "\n};"));
   close_out oc;
 
   let filename = cluster_name ^ "/tests/prop.h" in
   let oc = open_out filename in
   output_string oc
     (beautify_cpp_code
-       ("// Propositions\n  "
+       ("#include <rmtld3/rmtld3.h>\n// Propositions\n"
        ^ Hashtbl.fold
            (fun x y str ->
              str ^ Printf.sprintf "const proposition PROP_%i = %i;\n  " y y)
@@ -475,126 +464,42 @@ let rmtld3_unit_test_generation () computef helper cluster_name _ =
        ^ "\n"));
   close_out oc
 
-let test () cluster_name helper =
-  let concurrency_on = get_setting_string "gen_concurrency_tests" helper in
-  let unit_on = get_setting_string "gen_unit_tests" helper in
-  print_endline "Test generation for monitors is enabled!";
-  (* lets define the makefile *)
-  let stream = open_out (cluster_name ^ "/tests/Makefile") in
-  let code =
+let generate_auxiliar_files cluster_name helper =
+  (* makefile *)
+  let code1 =
     "\n\
      x86-test:\n\
      \t g++ -Wall -g -O0 -std=gnu++11 -I../../../rtmlib2/src \
      -DRTMLIB_ENABLE_DEBUG_RMTLD3 -DRTMLIB_ENABLE_DEBUGV_RMTLD3 --verbose \
-     tests.cpp -o tests -latomic\n"
+     tests.cpp -o tests -pthread -latomic\n"
   in
-  Printf.fprintf stream "%s\n" code;
-  close_out stream;
-  (* lets define the main test file for multi-thread procucer/consumer *)
-  (* each task consumes and produces certain amount of events; we use three dummy tasks *)
-  let stream = open_out (cluster_name ^ "/tests/tests.cpp") in
-  let consumer_lambda_function l =
-    List.fold_left
-      (fun a (b, _) ->
-        "\n\tauto consumer" ^ string_of_int b
-        ^ " = [](void *) -> void*\n\
-           \t{\n\
-           \t\tstatic RTEML_reader<int> __reader = RTEML_reader<int>(__buffer_"
-        ^ cluster_name
-        ^ ";\n\
-           \t\tEvent<int> tmpEvent;\n\n\
-           \t\tstd::pair<state_rd_t,Event<int> > rd_tuple = __reader.dequeue();\n\
-           \t\ttmpEvent = rd_tuple.second;\n\
-           \t\t::printf(\"Event_consumed: %lu, %d code: %d\\n\", \
-           tmpEvent.getTime(), tmpEvent.getData(), rd_tuple.first);\n\n\
-           \t\treturn NULL;\n\
-           \t};\n\
-           \t" ^ a)
-      "" l
-  in
-  let producer_lambda_function l =
-    List.fold_left
-      (fun a (b, _) ->
-        "\n\tauto producer" ^ string_of_int b
-        ^ " = [](void *) -> void*\n\
-           \t{\n\
-           \t\tstatic RTML_writer<int> __writer = RTML_writer<int>(__buffer_"
-        ^ cluster_name ^ ";\n\n\t\t__writer.enqueue(" ^ string_of_int b
-        ^ ");\n\n\t\t__buffer_" ^ cluster_name
-        ^ ".debug();\n\t\treturn NULL;\n\t};\n\t" ^ a)
-      "" l
-  in
-  Random.self_init ();
-  let rec gen_task_ids l size =
-    let id, _ = if List.length l = 0 then (0, 0) else List.hd l in
-    if size = List.length l then l
-    else gen_task_ids ((id + 1, (1 + Random.int 100) * 50000) :: l) size
-  in
-  let producers_ids = gen_task_ids [] 50 in
-  let consumers_ids = gen_task_ids [] 40 in
-  let code =
-    "\n\
-     #include <stdio.h>\n\
+  let oc = open_out (cluster_name ^ "/tests/Makefile") in
+  output_string oc code1;
+  close_out oc;
+  (* main file *)
+  let code2 =
+    "#include <stdio.h>\n\
      #include <unistd.h>\n\
-     #include \"task_compat.h\"\n\
+     #include <task_compat.h>\n\
      #include \"unit_test_cases.h\"\n\n\
-     int count_until_iterations;\n\n\
+     int count_until_iterations;\n\
      int main( int argc, const char* argv[] )\n\
      {\n\
-     \tprintf( \"RMTLD3 test for " ^ cluster_name
-    ^ "\\n\" );\n\t//__start_periodic_monitors();\n\t"
-    (* begins the test for concurrency if enabled *)
-    ^ (if concurrency_on = "true" then
-         "\n\t// basic enqueue and dequeue test case\n\t"
-         ^ producer_lambda_function producers_ids
-         ^ "\n\n\t"
-         ^ consumer_lambda_function consumers_ids
-         ^ "\n\n\t// lets create three producers\n\t"
-         ^ List.fold_left
-             (fun a (id, p) ->
-               "__attribute__ ((unused)) __task producer_" ^ string_of_int id
-               ^ " = __task(\"producer" ^ string_of_int id ^ "\", producer"
-               ^ string_of_int id
-               ^ ", sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, "
-               ^ string_of_int p ^ ");\n\t" ^ a)
-             "" producers_ids
-         ^ "\n\n\
-            \t// and two consumers\n\
-            \t/* we have two cases:\n\
-            \t * - consumer is faster than producer (it will cause no side \
-            efects)\n\
-            \t * - producer is faster than consumer (it will cause overwritten \
-            of buffer)\n\
-            \t */\n\n\
-            \t"
-         ^ List.fold_left
-             (fun a (id, p) ->
-               "__attribute__ ((unused)) __task consumer_" ^ string_of_int id
-               ^ " = __task(\"consumer" ^ string_of_int id ^ "\", consumer"
-               ^ string_of_int id
-               ^ ", sched_get_priority_max(SCHED_FIFO), SCHED_FIFO, "
-               ^ string_of_int p ^ ");\n\t" ^ a)
-             "" consumers_ids
-         ^ "\n\t"
-       else "")
-    ^ "\n\n\t"
-    (* begins the test for units if enabled *)
+     \tprintf( \"RMTLD3 test for " ^ cluster_name ^ "\\n\" );\n"
+    (* includes unittests *)
     ^ (if
-         unit_on = "true"
+         get_setting_string "gen_unit_tests" helper = "true"
          || get_setting_string "gen_paper_results" helper = "true"
-       then "\n\t// if unit tests on then do that\n\t__run_unit_tests();\n\t"
+       then "\t__run_unit_tests();\n"
        else "")
-    ^ (if concurrency_on = "true" then
-         " while(true) {sleep(1);}; // do sleep (delay) "
-       else "")
-    ^ "\n}\n\n"
+    ^ "\treturn 0;\n}"
   in
-  Printf.fprintf stream "%s\n" code;
-  close_out stream
+  let oc = open_out (cluster_name ^ "/tests/tests.cpp") in
+  output_string oc (beautify_cpp_code code2);
+  close_out oc
 
 let _ =
   (* ask test parameters *)
-  let out_dir = ref "." in
   let cluster_name = "_cluster" in
   let helper = mk_helper in
 
@@ -606,7 +511,6 @@ let _ =
      (rtm_event_type Event)\n\
      (rtm_event_subtype int)\n\
      (rtm_monitor_name_prefix rtm_#_%)\n\
-     (gen_concurrency_tests false)\n\
      (gen_unit_tests true)\n\
      (gen_paper_results false)"
   in
@@ -617,6 +521,9 @@ let _ =
 
   let module Conv_cpp11 = Translate (Synthesis.Cpp11) in
   create_dir cluster_name;
-  create_dir (!out_dir ^ "/" ^ cluster_name ^ "/tests");
-  test () cluster_name helper;
-  rmtld3_unit_test_generation () Conv_cpp11.synth helper cluster_name helper
+  create_dir (cluster_name ^ "/tests");
+  print_endline "Generating auxiliar files ...";
+  generate_auxiliar_files cluster_name helper;
+  print_endline "Generating cpp11 test files ...";
+  rmtld3_unit_test_generation cluster_name Conv_cpp11.synth helper;
+  print_endline "Generating cpp11 test files ... Finished!"

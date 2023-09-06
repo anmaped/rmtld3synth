@@ -357,7 +357,7 @@ let insert_string str1 str2 ch =
 
 (* beautify cpp code if clang-format is available *)
 let beautify_cpp_code code =
-  if Sys.command "command -v clang-format > /dev/null" <> 0 then (
+  if Sys.command "command -v clang-format" <> 0 then (
     print_endline ("Warning: " ^ "clang-format is missing!");
     code)
   else

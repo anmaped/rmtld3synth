@@ -1,30 +1,26 @@
-language: c
-sudo: required
-install:
-  - rm .travis-opam.sh
-  - wget https://raw.githubusercontent.com/anmaped/rmtld3synth/master/.travis-opam.sh
+language: generic
+dist: xenial
 
 script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc ; fi 
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++ ; fi
-  - bash -ex .travis-opam.sh
+  - wget https://raw.githubusercontent.com/anmaped/rmtld3synth/master/.travis-opam.sh
+  - BASE_REMOTE=git+https://github.com/ocaml/opam-repository.git bash -ex .travis-opam.sh
 
 addons:
   apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages: 
-    - gcc-5 
-    - g++-5
+    packages:
+    - git
+    - build-essential
+    - wget
+    - software-properties-common
+    - unzip
+    - m4
+    - python2.7
+    - libgmp-dev
+    - clang-format
 
 env:
-  - OCAML_VERSION=4.03 PACKAGE=rmtld3synth
   - OCAML_VERSION=4.04 PACKAGE=rmtld3synth
-  - OCAML_VERSION=4.05 PACKAGE=rmtld3synth
-  - OCAML_VERSION=4.06 PACKAGE=rmtld3synth
-  - OCAML_VERSION=4.07 PACKAGE=rmtld3synth
-  - OCAML_VERSION=4.08 PACKAGE=rmtld3synth
-  - OCAML_VERSION=4.09 PACKAGE=rmtld3synth
+  - OCAML_VERSION=4.14 PACKAGE=rmtld3synth
 
 os:
   - linux
@@ -32,12 +28,5 @@ os:
 
 jobs:
   exclude:
-  - env: OCAML_VERSION=4.03 PACKAGE=rmtld3synth
-    os: osx
   - env: OCAML_VERSION=4.04 PACKAGE=rmtld3synth
     os: osx
-  - env: OCAML_VERSION=4.05 PACKAGE=rmtld3synth
-    os: osx
-  - env: OCAML_VERSION=4.06 PACKAGE=rmtld3synth
-    os: osx
-
