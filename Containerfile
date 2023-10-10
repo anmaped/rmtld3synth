@@ -16,7 +16,7 @@ RUN \
 RUN apt update && apt install opam -y
 
 RUN opam init --disable-sandboxing -ya
-RUN opam switch create 4.07.0
+RUN opam switch create 4.14.1
 RUN opam pin add dolmen https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
 RUN opam pin add dolmen-export https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
 RUN opam install z3 -v -y
