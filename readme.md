@@ -24,9 +24,16 @@ For example, schedulability analysis of hard real-time systems is possible by sp
 
 The stable version is available for testing in the browser [Try it](https://anmaped.github.io/rmtld3synth).
 
+### Get started with Tarball binaries
+
+The latest release version is [0.4-alpha](../../releases/download/v0.4-alpha/).
+
 ### Get started with docker :whale:
 
-The latest docker image is available in [dockerhub](https://hub.docker.com/r/anmaped/rmtld3synth). To use it push the image and execute it.
+![example workflow](https://github.com/anmaped/rmtld3synth/actions/workflows/build-and-send-images.yml/badge.svg)
+
+
+The latest docker image is available in [dockerhub](https://hub.docker.com/r/anmaped/rmtld3synth). To use it pull the image and execute it.
 ```shell
  docker pull anmaped/rmtld3synth:latest # this will download the pre-built image from dockerhub
  docker run -it anmaped/rmtld3synth  # this will create and run the container
@@ -34,25 +41,23 @@ The latest docker image is available in [dockerhub](https://hub.docker.com/r/anm
 
 Now you can use the rmtld3synth command line interface.
 
-### Get started with Tarball binaries
+### Get started with rmtld3synth
 
-The latest release version is labeled as [0.4-alpha](../../releases/download/v0.4-alpha/).
-
-To initiate monitor generation, you can utilize the `rmtld3synth` tool via command line arguments. Here, we'll provide an example of how to accomplish this task by specifying a simple input formula and certain settings. To create a sample monitor, execute the following shell command:
+To initiate monitor generation, you can utilize the `rmtld3synth` tool via CLI. Here, we'll provide an example of how to do this task by specifying a simple input formula and certain settings. To create a sample monitor, execute the following shell command (assuming the tool is in the current shell environment):
 
 ```shell
- ./rmtld3synth --synth-cpp11 --input-latexeq "a \until_{<10} b" --out-src out
+rmtld3synth --synth-cpp11 --input-latexeq "a \until_{<10} b" --out-src out
 ```
 
 The `--synth-cpp11` flag directs `rmtld3synth` to build a C++11 monitor using the formula `a \until_{<10} b` and save the output in the `out` directory.
 
-At this point, you have a fully prepared monitor ready to be provided to GCC, LLVM, or other C/C++ compilers compatible with your chosen target architecture. In the current version, both C++ and Ocaml synthesis are fully supported, although Spark2014 support is not yet ready.
+At this point, you have a working monitor that can be provided to GCC, LLVM, or other C/C++ compiler. Both C++ and Ocaml synthesis flags are available, although SPARK support is planned for future versions.
 
-For further insights on instrumenting the monitors, please refer to the [Documentation](#documentation) section, which includes information on integrating the monitors into bare metal platforms using NuttX and FreeRTOS real-time operating systems. Alternatively, you can also discover illustrative examples in the [rtmlib2](https://github.com/anmaped/rtmlib/tree/master/examples) repository.
+For further insights on instrumenting the monitors, please refer to the illustrative examples in the [rtmlib2](https://github.com/anmaped/rtmlib/tree/master/examples) repository. Alternatively, you can also try the [Documentation](#documentation) section of rmtld3synth, which includes information on designing monitors for different targets, including bare metal, or with an OS like NuttX and FreeRTOS.
 
 ### Building from Git
 
-[![Build Status](https://app.travis-ci.com/anmaped/rmtld3synth.svg?branch=master)](https://app.travis-ci.com/anmaped/rmtld3synth)
+<!--[![Build Status](https://app.travis-ci.com/anmaped/rmtld3synth.svg?branch=master)](https://app.travis-ci.com/anmaped/rmtld3synth)-->
 
 #### To compile rmtld3synth for Linux and macOS using Opam and Ocaml version >= 4.04.0
 
