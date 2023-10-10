@@ -26,7 +26,7 @@ The stable version is available for testing in the browser [Try it](https://anma
 
 ### Get started with docker :whale:
 
-The latest docker image is available in [dockerhub](https://cloud.docker.com/u/anmaped/repository/docker/anmaped/rmtld3synth). To use it push the image and execute it.
+The latest docker image is available in [dockerhub](https://hub.docker.com/r/anmaped/rmtld3synth). To use it push the image and execute it.
 ```shell
  docker pull anmaped/rmtld3synth:latest # this will download the pre-built image from dockerhub
  docker run -it anmaped/rmtld3synth  # this will create and run the container

@@ -51,9 +51,10 @@ if $js_of_ocaml; then
     echo -e "js: version
 \tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml
 \tcp src/interface/mathkernel_call_dummy.ml src/interface/mathkernel_call_.ml
-\tcp src/interface/js_helper.ml src/interface/js_helper_.ml
-\tocamlbuild -use-ocamlfind -pkgs js_of_ocaml rmtld3synth.byte
-\tjs_of_ocaml +nat.js +weak.js _build/src/rmtld3synth.byte" >> Makefile
+\tcp src/js/helper.ml src/js/helper_.ml
+\topam install js_of_ocaml
+\tjs_of_ocaml _build/default/src/rmtld3synth.bc
+" >> Makefile
 fi
 
 if [ -n "$Z3_VERSION" ] && [ $z3_solver ]; then

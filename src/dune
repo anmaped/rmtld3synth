@@ -5,6 +5,7 @@
   (libraries       rmtld3synth.synthesis)
   (modules         Rmtld3synth Version)
   (flags           (-cclib -lstdc++) )
+  (modes           byte exe)
 )
 
 (library

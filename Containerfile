@@ -1,8 +1,7 @@
 FROM debian:12
 
 RUN \
-  apt update && apt upgrade -y && \
-  apt install -y \
+  apt update && apt install -y \
   build-essential \
   software-properties-common \
   git \
@@ -11,9 +10,8 @@ RUN \
   libgmp-dev \
   m4 \
   python3 \
-  python3-distutils
-
-RUN apt update && apt install opam -y
+  python3-distutils \
+  opam
 
 RUN opam init --disable-sandboxing -ya
 RUN opam switch create 4.14.1
