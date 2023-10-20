@@ -2,11 +2,11 @@
    Synthesis from RMTLD3 to Ocaml
 *)
 
-open Batteries
 open List
 open Str
 open Rmtld3
 open Helper
+
 
 let has_tm_dur = ref false
 let has_fm_uless = ref false
@@ -481,7 +481,7 @@ let synth_ocaml_unittests () =
 
     (* binomial(n+(m-1), (m-1)) * 2^n *)
     let g_val = [ 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10 ] in
-    let g_val2 = map (fun a -> Int.pow 2 a - 1) (tl g_val) in
+    let g_val2 = map (fun a -> pow 2 a - 1) (tl g_val) in
     let lst1 = [ 1; 2; 3; 4; 5; 6; 7; 8 ] in
     iter
       (fun a ->

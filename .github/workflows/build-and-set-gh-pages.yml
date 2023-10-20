@@ -1,0 +1,44 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches:
+      - v0.4
+
+jobs:
+  set_gh_pages:
+    name: Build and Set gh-pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: run anmaped/rmtld3synth image
+        run: |
+          docker run --rm \
+          --entrypoint /bin/bash \
+          -v ${PWD}:/workspace/source:z  \
+          docker.io/anmaped/rmtld3synth:v0.4 \
+          -c 'cp -r /workspace/source /localsource && cd /localsource && \
+          eval $(opam env) && \
+          ./configure --js_of_ocaml --without-z3-solver && make js && \
+          mkdir -p /workspace/source/public && \
+          cp _build/default/src/rmtld3synth.js /workspace/source/public &&
+          cp doc/page/index.html /workspace/source/public &&
+          cp doc/page/style.css /workspace/source/public'
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        # If you're changing the branch from main,
+        # also change the `main` in `refs/heads/main`
+        # below accordingly.
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public

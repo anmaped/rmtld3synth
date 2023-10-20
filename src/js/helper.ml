@@ -1,8 +1,9 @@
 (* js_helper *)
-open Batteries
 open Js_of_ocaml
 
 module Sys = struct
+  let explode s = s |> String.to_seq |> List.of_seq
+
   let rec console_arg_split s cm b =
     match s with
     | [] -> [ cm ]
@@ -16,14 +17,14 @@ module Sys = struct
   let getenv x = List.assoc x Js_of_ocaml.Url.Current.arguments
 
   let argv =
-    Array.of_list (console_arg_split (String.explode (getenv "argv")) "" 0)
+    Array.of_list (console_arg_split (explode (getenv "argv")) "" 0)
 
   let executable_name = argv.(0)
   let file_exists c = false
   let remove c = ()
   let time c = 0.
   let is_directory c = false
-  let command x = 0
+  let command x = 1
 end
 
 let output_buffer_ = Buffer.create 1000
@@ -31,7 +32,7 @@ let output_buffer_ = Buffer.create 1000
 let flush x =
   let module J = Js_of_ocaml.Js.Unsafe in
   let () =
-    J.call (J.variable "postMessage") (J.variable "self")
+    J.call (Js_of_ocaml.Js.Unsafe.pure_js_expr "postMessage") (Js_of_ocaml.Js.Unsafe.pure_js_expr "self")
       [| J.inject (Js_of_ocaml.Js.string (Buffer.contents output_buffer_)) |]
   in
   Buffer.clear output_buffer_

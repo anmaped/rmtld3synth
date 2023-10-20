@@ -1,6 +1,5 @@
 
 open List
-open Batteries
 
 open Sexplib
 open Sexplib.Conv
@@ -11,7 +10,7 @@ open Helper
 (* parsing latex equations *)
 
 let matches s =
-  let chars = String.explode s in
+  let chars = explode s in
   fun c -> List.mem c chars;;
 
 let space = matches " \t\n\r"
@@ -74,8 +73,8 @@ and intermediate_ltx_fm =
 type intermediate_ltx_tm_list = intermediate_ltx_tm list [@@deriving sexp]
 type intermediate_ltx_fm_list = intermediate_ltx_fm list [@@deriving sexp]
 
-let chk_alphanum a = List.for_all alphanumeric (String.explode a)
-let chk_num a = List.for_all numeric (String.explode a)
+let chk_alphanum a = List.for_all alphanumeric (explode a)
+let chk_num a = List.for_all numeric (explode a)
 
 let propagate feed =
     match feed with
@@ -514,8 +513,8 @@ let s1 = "
 let s2 = "a=\\int^{\\var} \\psi_1 \\land \\alwaysless \\left(
 \\left( f_{\\beta,\\alpha}\\left(a\\right) < (\\frac{3}{4} + 10) - 10 \\right) \\rightarrow \\left(\\eventuallyless_{\\var + \\var_2} \\ \\psi_d\\right) \\right)"
 
-let test2_input = lex (String.explode s1)
-let test3_input = lex (String.explode s2)
+let test2_input = lex (explode s1)
+let test3_input = lex (explode s2)
 
 let texeq_unit_tests () =
   print_endline "\nlexer 1:\n"; print_endline (Sexp.to_string_hum ( sexp_of_tokens test2_input ));
@@ -527,7 +526,7 @@ let texeq_unit_tests () =
 let texeqparser str =
   begin
     verb_m 1 (fun _ -> print_endline ("Latexeq input: "^str^"\n"););
-    let rsl = (parse_latexeq_eq (lex (String.explode str)) [])
+    let rsl = (parse_latexeq_eq (lex (explode str)) [])
     in
     verb_m 2 (fun _ ->
       print_endline (Sexp.to_string_hum (sexp_of_intermediate_ltx_fm rsl) ) ;

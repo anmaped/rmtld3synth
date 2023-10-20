@@ -92,7 +92,6 @@ let default_settings helper =
   List.iter (fun (a, b) -> set_setting a (Txt b) helper) s_str;
   ()
 
-open Batteries
 open Unix
 open Sexplib
 open Sexplib.Conv
@@ -244,7 +243,7 @@ let synth_sat_problem formula =
         else
           print_endline (Sexp.to_string (sexp_of_trace_untimed scheduler_trace));
         ())));
-  if String.exists !out_file ".smt2" then (
+  if (*String.exists !out_file ".smt2"*) false (* TODO *) then (
     let stream = open_out !out_file in
     Printf.fprintf stream "%s\n" smtlib2_str;
     close_out stream;

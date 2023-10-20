@@ -1,6 +1,5 @@
 (* Interface for Z3 smt solver *)
 
-open Batteries
 open Z3
 open Z3.SMT
 open Z3.Solver
@@ -164,5 +163,5 @@ let get_scheduler ctx model helper =
             ^ find_proposition_rev_hashtbl (int_of_string exp_value) helper )
       ) ;
       find_proposition_rev_hashtbl (int_of_string exp_value) helper :: b )
-    (List.of_enum (0 -- size))
+    (of_enum 0 size)
     []

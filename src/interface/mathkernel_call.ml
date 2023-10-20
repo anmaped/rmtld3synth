@@ -1,5 +1,4 @@
 
-open Batteries
 open Unix
 
 open Helper
@@ -24,7 +23,7 @@ let mk_writeln s =
   if !initialized then
   begin
     output_string (snd (!mk_proc)) (s ^ "\n");
-    BatIO.flush (snd (!mk_proc))
+    flush (snd (!mk_proc))
   end
   else
     print_endline s
@@ -79,7 +78,7 @@ let mk_handshake () =
       mk_writeln "$Version";
       let answer = mk_readln () in
       if answer <> "" then
-        verb_m 1 (fun _ -> print_endline ("Mathematica has been initialized sucessfully with version "^(BatString.strip answer)^".");)
+        verb_m 1 (fun _ -> print_endline ("Mathematica has been initialized sucessfully with version "^(String.trim answer)^".");)
       else raise (Failure ("Mathematica has not been initialized properly."));
     end
 

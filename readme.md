@@ -14,8 +14,9 @@ For example, schedulability analysis of hard real-time systems is possible by sp
 # Contents
 
 - Usage options:
-  - [Online demonstrator using js_of_ocaml](#online-demonstrator-using-js_of_ocaml)
-  - [Tarball binaries for Windows](#tarball-binaries-for-windows)
+  - [Online Web Demonstrator](#get-started-with-the-online-demonstrator-camel)
+  - [Tarball Binaries for Windows](#get-started-with-tarball-binaries)
+  - [Container Images](#get-started-with-docker-whale)
   - [Building from Git](#building-from-git)
 - [Documentation](#documentation)
 - [License](#license)
@@ -35,25 +36,30 @@ The latest release version is [0.4-alpha](../../releases/download/v0.4-alpha/).
 
 The latest docker image is available in [dockerhub](https://hub.docker.com/r/anmaped/rmtld3synth). To use it pull the image and execute it.
 ```shell
- docker pull anmaped/rmtld3synth:latest # this will download the pre-built image from dockerhub
- docker run -it anmaped/rmtld3synth  # this will create and run the container
+docker pull anmaped/rmtld3synth:latest # this will download the pre-built image from dockerhub
+docker run -it anmaped/rmtld3synth  # this will create and run the container
 ```
 
 Now you can use the rmtld3synth command line interface.
 
 ### Get started with rmtld3synth
 
-To initiate monitor generation, you can utilize the `rmtld3synth` tool via CLI. Here, we'll provide an example of how to do this task by specifying a simple input formula and certain settings. To create a sample monitor, execute the following shell command (assuming the tool is in the current shell environment):
+To initiate monitor generation, you can utilize the `rmtld3synth` tool via the command line interface (CLI). Next, let's introduce an example of how to achieve this generation by specifying a straightforward input formula and specific settings.
+
+ To create a sample monitor, execute the following shell command (assuming the tool is in the current shell environment):
 
 ```shell
 rmtld3synth --synth-cpp11 --input-latexeq "a \until_{<10} b" --out-src out
 ```
 
-The `--synth-cpp11` flag directs `rmtld3synth` to build a C++11 monitor using the formula `a \until_{<10} b` and save the output in the `out` directory.
+The `--synth-cpp11` flag sets `rmtld3synth` to build a C++11 monitor using the formula `a \until_{<10} b` and save the output in the `out` directory.
 
 At this point, you have a working monitor that can be provided to GCC, LLVM, or other C/C++ compiler. Both C++ and Ocaml synthesis flags are available, although SPARK support is planned for future versions.
 
-For further insights on instrumenting the monitors, please refer to the illustrative examples in the [rtmlib2](https://github.com/anmaped/rtmlib/tree/master/examples) repository. Alternatively, you can also try the [Documentation](#documentation) section of rmtld3synth, which includes information on designing monitors for different targets, including bare metal, or with an OS like NuttX and FreeRTOS.
+For further insights on instrumenting the monitors, please refer to the illustrative examples in the [rtmlib2](https://github.com/anmaped/rtmlib/tree/master/examples) repository.
+Alternatively, you may explore the [Documentation](#documentation) section of rmtld3synth. This resource provides valuable insights into creating monitors for various targets such as bare metal or operating systems like NuttX and FreeRTOS.
+
+
 
 ### Building from Git
 
@@ -66,24 +72,24 @@ To build rmtld3synth for Linux and macOS using Opam and a minimum Ocaml version 
 1. Pin rmtld3synth as an `opam` package and set the Ocaml compiler to version `>= 4.04.0`. All necessary dependencies will be installed automatically.
 
 ```shell
- opam pin add rmtld3synth https://github.com/anmaped/rmtld3synth.git
+opam pin add rmtld3synth https://github.com/anmaped/rmtld3synth.git
 ```
 
 2. Compile the Z3 solver and its corresponding ML bindings with the following commands:
 
 ```shell
- opam install z3 -v
+opam install z3 -v
 ```
 
 Alternatively, you can compile and install Z3 from sources with the following command:
 
 ```shell
- git clone https://github.com/Z3Prover/z3.git
- cd z3
- python scripts/mk_make.py --ml
- cd build
- make
- sudo make install
+git clone https://github.com/Z3Prover/z3.git
+cd z3
+python scripts/mk_make.py --ml
+cd build
+make
+sudo make install
 ```
 
 Please ensure that you have at least Python version 2.7 and `g++-5` installed on your system.
@@ -94,14 +100,14 @@ Please ensure that you have at least Python version 2.7 and `g++-5` installed on
 Get [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/) and switch the Ocaml compiler to version `>= 4.04.0``.
 
 ```shell
- opam switch 4.04.0+mingw64
- eval `opam config env`
+opam switch 4.04.0+mingw64
+eval `opam config env`
 ```
 
 In case you have not properly installed the flexdll, download the new flexdll [here](http://alain.frisch.fr/flexdll/flexdll-bin-0.35.zip), and decompress the archive in the current directory (PWD) with the folder name `flexdll-bin-0.35``.
 
 ```shell
- export PATH=$(PWD)/flexdll-bin-0.35:$PATH
+export PATH=$(PWD)/flexdll-bin-0.35:$PATH
 ```
 
 Then, you have to pin the rmtld3synth package as described on `compile rmtld3synth for Linux and OS X ` section to conclude the compilation.
@@ -112,7 +118,7 @@ To compile z3 using Cygwin you should use the mingw32 or mingw64 tools, otherwis
 If the correct version of GCC is not found when executing `mk_make.py`, modify the flags `CXX` and `AR` as needed. For instance:
 
 ```shell
- CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar python scripts/mk_make.py --ml
+CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar python scripts/mk_make.py --ml
 ```
 
 Ensure also that libz3 is properly installed in the current environment.

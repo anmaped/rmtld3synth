@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml+xml; charset=UTF-8" />
+<title>rmtld3synth web demonstrator</title>
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.spa.css" />
+<link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.common.css" />
+<link rel="dx-theme" data-theme="generic.light" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.light.css" />
+<script src="https://cdn3.devexpress.com/jslib/17.1.8/js/dx.all.js"></script>
+<link rel="stylesheet" type ="text/css" href ="styles.css" />
+
+<script type="text/javascript">
+<!--
+var worker;
+function go () {
+  var output=document.getElementById ("output");
+  var argv = encodeURIComponent(document.getElementById ("input").value);
+  if (worker) {
+    worker.terminate();
+  }
+  worker = new Worker ("rmtld3synth.js?argv="+argv);
+  document.getElementById ("output").value="";
+  worker.onmessage = function (m) {
+    if (typeof m.data == 'string') {
+    if (m.data == "\0\n") {
+        output.scrollTop = output.scrollHeight
+    } else {
+        output.value+=m.data;
+    }
+    }
+  }
+
+  worker.onerror = function (m) {
+    if (typeof m.message == 'string') {
+    if (m.message == "\0\n") {
+        output.scrollTop = output.scrollHeight
+    } else {
+        output.value+=m.message;
+    }
+    }
+  }
+}
+
+$(function(){
+    var dxMenu = $("#menu").dxMenu({
+        dataSource: menuData,
+        hideSubmenuOnMouseLeave: false,
+        displayExpr: "name",
+        onItemClick: function (data) {
+            var item = data.itemData;
+            if(item.cmd) {
+              document.getElementById ("input").value= item.cmd;
+              textAreaAdjust(document.getElementById ("input"));
+              go()
+
+            }
+        }
+    }).dxMenu("instance");
+    
+    var showSubmenuModes = [{
+        name: "onHover",
+        delay: { show: 0, hide: 500 }
+    }, {
+        name: "onClick",
+        delay: { show: 0, hide: 300 }
+    }];
+    
+    $("#show-submenu-mode").dxSelectBox({
+        items: showSubmenuModes,
+        value: showSubmenuModes[1],
+        displayExpr: "name",
+        onValueChanged: function(data) {
+            dxMenu.option("showFirstSubmenuMode", data.value);
+        }
+    });
+    
+    $("#orientation").dxSelectBox({
+        items: ["horizontal", "vertical"],
+        value: "horizontal",
+        onValueChanged: function(data) {
+            dxMenu.option("orientation", data.value);
+        }
+    });
+    
+    $("#submenu-direction").dxSelectBox({
+        items: ["auto", "rightOrBottom", "leftOrTop"],
+        value: "auto",
+        onValueChanged: function(data) {
+            dxMenu.option("submenuDirection", data.value);
+        }
+    });
+    
+    $("#mouse-leave").dxCheckBox({
+        value: false,
+        text: "Hide Submenu on Mouse Leave",
+        onValueChanged: function(data) {
+            dxMenu.option("hideSubmenuOnMouseLeave", data.value);
+        }
+    });
+});
+
+var menuData = [{
+    id: "1",
+    name: "Monitor Synthesis",
+    items: [{
+        id: "1_1",
+        name: "Ocaml",
+        items: [{
+            id: "1_1_1",
+            name: "Simple Monitor",
+            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4\" --verbose 2"
+        },
+        {
+            id: "1_1_2",
+            name: "Simple Duration Monitor",
+            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
+        },
+        {
+            id: "1_1_3",
+            name: "Bounded Invariant",
+            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
+        }]
+    }, {
+        id: "1_2",
+        name: "Cpp11",
+        items: [{
+            id: "1_2_1",
+            name: "Simple Monitor",
+            cmd: "./rmtld3synth --synth-cpp11 --input-latexeq \"(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4\" --verbose 2"
+        }, {
+            id: "1_2_2",
+            name: "Simple Duration Monitor",
+            cmd: "./rmtld3synth --synth-cpp11 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
+        }]
+    },
+     {
+        id: "1_3",
+        name: "Autopilot Case Study",
+        items: [{
+            id: "1_3_1",
+            name: "Use Case 1",
+            cmd: './rmtld3synth --synth-cpp11 --input-sexp \"(Or \n\
+  (Not \n\
+    (Or \n\
+      (Not \n\
+        (Not \n\
+          (Or (LessThan (Duration (Constant 1000000) (Prop N)) (Constant 0)) \n\
+            (LessThan (Constant 0) (Duration (Constant 1000000) (Prop N)))))) \n\
+      (Not \n\
+        (Not \n\
+          (Or \n\
+            (Not \n\
+              (Or \n\
+                (LessThan (Constant 0) \n\
+                  (Duration (Constant 1000000) (Prop B))) \n\
+                (Not \n\
+                  (Or \n\
+                    (LessThan (Constant 0) \n\
+                      (Duration (Constant 1000000) (Prop B))) \n\
+                    (LessThan (Constant 1000000) \n\
+                      (Duration (Constant 0) (Prop B))))))) \n\
+            (Not \n\
+              (LessThan (Duration (Constant 1000000) (Prop B)) \n\
+                (Constant 5000000)))))))) \n\
+  (Or (Prop A) (Not (Or (Prop NOSYMBOL) (Not (Prop NOSYMBOL))))))\" --verbose 2'
+        }/*, {
+            id: "1_3_2",
+            name: "Use Case 2",
+            cmd: "./rmtld3synth "
+        }*/]
+    }]
+}, {
+    id: "2",
+    name: "SMT Synthesis",
+    items: [{
+        id: "2_1",
+        name: "Empirical",
+        items: [{
+            id: "2_1_1",
+            name: "Simple Temporal",
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
+        },
+        {
+            id: "2_1_2",
+            name: "Simple Temporal (recursively unrolled)",
+            cmd: "./rmtld3synth --synth-smtlibv2 --rec-unrolling 10 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
+        },
+        {
+            id: "2_1_3",
+            name: "Bounded Duration",
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
+        },
+        {
+            id: "2_1_4",
+            name: "Bounded Invariant",
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
+        },
+        {
+            id: "2_1_5",
+            name: "Simple Temporal with Bounded Duration",
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2\" --verbose 2"
+        }]
+    }, {
+        id: "2_2",
+        name: "Scheduling",
+        items: [{
+            id: "2_2_1",
+            name: "Simple Single processor",
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}\" --verbose 2"
+        },
+        {
+            id: "2_2_2",
+            name: "Advanced Single processor",
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}\" --verbose 2"
+        }/*, {
+            id: "2_2_3",
+            name: "Simple multi-processor",
+            cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1\" --verbose 2"
+        }*/]
+    }]
+}];
+
+function textAreaAdjust(o) {
+  o.style.height = "1px";
+  o.style.height = (5+o.scrollHeight)+"px";
+}
+
+function clearfld (el) {
+  el.value = "";
+}
+//-->
+</script>
+
+</head>
+
+<body onload=go()  class="dx-viewport">
+<h1 style="margin-left: 5px">rmtld3synth web demonstrator</h1>
+
+<div class="dx-viewport demo-container">
+        <div class="form">
+            <div>
+                
+                <div id="menu"></div>
+                <div id="product-details" class="hidden">
+                    <img src="" />
+                    <div class="name"></div>
+                </div>
+            </div>
+        </div>
+
+<div style="width:100%;height:80%">
+<label for="explanationone">Type a command</label>
+<textarea id="input" rows="2" cols="60" onclick="textAreaAdjust(this)" onkeyup="textAreaAdjust(this);go()" onchange="textAreaAdjust(this);" style="width:98%">./rmtld3synth --synth-ocaml --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --verbose 2</textarea>
+</br>
+<label for="explanationtwo">Please see the results</label>
+<textarea id="output" rows="0" cols="60" style="width:98%;height:80%" readonly onload=go()>
+Your browser does not seem to support Webworkers.
+Try Firefox, Chrome or IE10+. 
+</textarea>
+</div>
+
+</div>
+
+</body>
+
+</html>

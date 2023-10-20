@@ -1,11 +1,9 @@
-
 open Rmtld3
-open Batteries
 open Sexplib
 open Sexplib.Conv
 
-
 open Helper
+
 
 let recursive_unrolling = ref false
 let solver = ref ""
@@ -120,7 +118,7 @@ let evalfold_param t gamma id =
 		(
 			let cartesian l l' = List.concat (List.map (fun e -> List.map (fun e' -> (e,e')) l') l) in
 			(* unrooling the recursion just in case (speedup) *)
-			let lst_all_comb = cartesian (List.of_enum (0--(gamma + t))) (List.of_enum (0--(gamma + t)))
+			let lst_all_comb = cartesian (of_enum 0 (gamma + t)) (of_enum 0 (gamma + t))
 			in List.fold_left (fun a (x,i) -> a^"\n"^(
 				if x > i then
 					"(assert (= (evalb" ^ id ^ " trc "^ string_of_int x ^" "^ string_of_int i ^" (evalfold" ^ id ^ " (- "^ string_of_int x ^" 1) "^ string_of_int i ^" )) (evalfold" ^ id ^ " "^ string_of_int x ^" "^ string_of_int i ^" ) ) )"
@@ -236,7 +234,7 @@ let evalfold_param t gamma id =
 		(
 			let cartesian l l' = List.concat (List.map (fun e -> List.map (fun e' -> (e,e')) l') l) in
 			(* unrooling the recursion just in case (speedup) *)
-			let lst_all_comb = cartesian (List.of_enum (0--((int_of_string dt) + t))) (List.of_enum (0--((int_of_string dt) + t)))
+			let lst_all_comb = cartesian (of_enum 0 ((int_of_string dt) + t)) (of_enum 0 ((int_of_string dt) + t))
 			in List.fold_left (fun a (x,i) -> a^"\n"^(
 				if x > i then
 					"(assert (= (evaleta"^ id ^" "^ string_of_int x ^" "^ string_of_int i ^") (+ (evaleta"^ id ^" (- "^ string_of_int x ^" 1) "^ string_of_int i ^") (indicator"^ id ^" trc "^ string_of_int x ^") )) ) "

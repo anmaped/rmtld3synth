@@ -8,7 +8,6 @@
  *
  *)
 
-open Batteries
 open List
 open Sexplib
 open Sexplib.Std

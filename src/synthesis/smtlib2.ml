@@ -1,9 +1,9 @@
-open Batteries
 open Sexplib
 open Sexplib.Conv
 open Dolmen
 open Rmtld3
 open Helper
+
 
 type body = Term.t * Statement.t list
 
@@ -128,7 +128,7 @@ let evalfold_param id =
 
     if !recursive_unrolling then (
       (* unrooling the recursion just in case (speedup) *)
-      let enumeration = List.of_enum (0 -- !recursive_unrolling_depth) in
+      let enumeration = of_enum 0 !recursive_unrolling_depth in
       let lst_all_comb = cartesian enumeration enumeration in
       (* (assert (forall ((x Time) (i Time)) (implies (not (and (and (<= 0 x)  (<= x max_depth) ) (and (<= 0 i)  (<= i max_depth) ) ) )  (= (evalfold!id x i) FVTRUE ) )  ) ) *)
       (* this assert closes the unroll search space with upper and lower bound for freevariables x and i *)
@@ -324,7 +324,7 @@ Term.forall
         (Term.const (Id.mk Id.Term "Duration")) ;
       if !recursive_unrolling then (
         (* unrooling the recursion just in case (speedup) *)
-        let enumeration = List.of_enum (0 -- !recursive_unrolling_depth) in
+        let enumeration = of_enum 0 !recursive_unrolling_depth in
         let lst_all_comb = cartesian enumeration enumeration in
         (* (assert (forall ((x Time) (i Time)) (implies (not (and (and (<= 0 x)  (<= x max_depth) ) (and (<= 0 i)  (<= i max_depth) ) ) )  (= evaleta!id x i) dnone ) )  ) ) *)
         (* this assert closes the unroll search space with upper and lower bound for freevariables x and i *)
@@ -1124,7 +1124,7 @@ let synth_smtlib_common_trace () =
 
   if !recursive_unrolling then (
       (* unrooling the recursion just in case (speedup) *)
-      let enumeration = List.of_enum (0 -- !recursive_unrolling_depth) in
+      let enumeration = of_enum 0 !recursive_unrolling_depth in
       (*let lst_all_comb = cartesian enumeration enumeration in*)
       List.fold_left
           (fun _ i -> if 0 < i then

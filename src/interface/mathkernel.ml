@@ -9,7 +9,7 @@
 (* ------------------------------------------------------------------------- *)
 
 open List
-open Batteries
+open Str
 open Sexplib
 open Sexplib.Conv
 
@@ -18,7 +18,7 @@ open Helper
 
 
 let matches s =
-  let chars = String.explode s in
+  let chars = explode s in
   fun c -> List.mem c chars;;
 
 let space = matches " \t\n\r"
@@ -43,8 +43,8 @@ let rec lex inp =
 
 
 (* Tests for lexer.
-   	lex (String.explode "2*((var_1 + x') + 11)");;
-   	lex (String.explode "if (*p1-- == *p2++) then f() else g()");;
+   	lex (explode "2*((var_1 + x') + 11)");;
+   	lex (explode "if (*p1-- == *p2++) then f() else g()");;
 *)
 
 type tokens = string list [@@deriving sexp]
@@ -183,7 +183,7 @@ and parse_m_tm' l =
         let i = int_of_string x in
         (Int i, r)
       with
-      | _ -> if List.for_all alphanumeric (String.explode x) then (Var x, r)
+      | _ -> if List.for_all alphanumeric (explode x) then (Var x, r)
         else raise (Failure ("bad expression: " ^ (String.concat " " l)))
     )
 
@@ -207,13 +207,13 @@ let parse_m_fm l =
     ops Plus and Times are not forced to be binary.  To force this,
     further apply the composition (m_tm_of_mt_tm o mt_tm_of_m_tm). *)
 
-let m_tm_of_str s = parse_m_tm (lex (String.explode s))
+let m_tm_of_str s = parse_m_tm (lex (explode s))
 
 (* Given a string representation of a Mathematica formula, construct a
    Mathematica parse tree of type m_fm. The above notes on
    m_tm_of_str apply. *)
 
-let m_fm_of_str s = parse_m_fm (lex (String.explode s))
+let m_fm_of_str s = parse_m_fm (lex (explode s))
 
 
 (* Convert a Mathematica term tree into a string representation

@@ -47,20 +47,20 @@ fi
 cat Makefile.in >>Makefile
 
 if $js_of_ocaml; then
-#   interface/mathkernel_call_.ml
+# js_of_ocaml parameters: --disable genprim --debug-info
     echo -e "js: version setup
 \tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml
 \tcp src/interface/mathkernel_call_dummy.ml src/interface/mathkernel_call_.ml
 \tcp src/js/helper.ml src/js/helper_.ml
 \topam install js_of_ocaml -y
 \tdune build --profile release src/rmtld3synth.bc
-\tjs_of_ocaml _build/default/src/rmtld3synth.bc
+\tjs_of_ocaml +base/runtime.js _build/default/src/rmtld3synth.bc
 " >> Makefile
 
     echo -e "(library
   (name            js)
   (public_name     rmtld3synth.js)
-  (libraries       sexplib ppx_sexp_conv batteries js_of_ocaml)
+  (libraries       sexplib ppx_sexp_conv js_of_ocaml)
   (modules         Helper_)
   (preprocess      (pps ppx_sexp_conv))
 )

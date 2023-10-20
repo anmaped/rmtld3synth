@@ -386,3 +386,26 @@ let get_event_fulltype helper =
   get_event_type helper ^ "< "
   ^ get_setting_string "rtm_event_subtype" helper
   ^ " >"
+
+(*
+  auxiliar functions
+ *)
+let explode s = s |> String.to_seq |> List.of_seq
+
+let rec of_enum_ a b c = if a >= b then List.rev (a::c) else of_enum_ (a+1) b (a::c)
+
+let rec of_enum a b = of_enum_ a b []
+
+let is_even n = 
+  n mod 2 = 0
+
+let pow base exponent =
+  if exponent < 0 then invalid_arg "exponent can not be negative" else
+  let rec aux accumulator base = function
+    | 0 -> accumulator
+    | 1 -> base * accumulator
+    | e when is_even e -> aux accumulator (base * base) (e / 2)
+    | e -> aux (base * accumulator) (base * base) ((e - 1) / 2) in
+  aux 1 base exponent
+
+let (%) f g x = fun x -> f(g x)

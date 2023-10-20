@@ -2,8 +2,6 @@
    Synthesis from RMTLD3 to cpp11
 *)
 
-open Batteries
-open Unix
 open Sexplib
 open Sexplib.Conv
 open Rmtld3
