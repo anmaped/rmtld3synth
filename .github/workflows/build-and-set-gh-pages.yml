@@ -1,14 +1,9 @@
 name: GitHub Pages
 
-#on:
-#  push:
-#    branches:
-#      - master
-
 on:
   push:
     branches:
-      - v0.4
+      - master
 
 jobs:
   set_gh_pages:
@@ -30,7 +25,8 @@ jobs:
           -v ${PWD}:/workspace/source:z  \
           docker.io/anmaped/rmtld3synth:v0.4 \
           -c 'cp -r /workspace/source /localsource && cd /localsource && \
-          ./configure --js_of_ocaml --without-z3-solver && opam exec make js && \
+          eval $(opam env) && \
+          ./configure --js_of_ocaml --without-z3-solver && make js && \
           mkdir -p /workspace/source/public && \
           cp _build/default/src/rmtld3synth.js /workspace/source/public &&
           cp doc/page/index.html /workspace/source/public &&

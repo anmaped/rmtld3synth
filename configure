@@ -48,13 +48,13 @@ cat Makefile.in >>Makefile
 
 if $js_of_ocaml; then
 # js_of_ocaml parameters: --disable genprim --debug-info
-    echo -e "js: version setup
+    echo -e "js: version
 \tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml
 \tcp src/interface/mathkernel_call_dummy.ml src/interface/mathkernel_call_.ml
 \tcp src/js/helper.ml src/js/helper_.ml
 \topam install js_of_ocaml -y
 \tdune build --profile release src/rmtld3synth.bc
-\tjs_of_ocaml +base/runtime.js _build/default/src/rmtld3synth.bc
+\tjs_of_ocaml --disable genprim --debug-info +base/runtime.js _build/default/src/rmtld3synth.bc
 " >> Makefile
 
     echo -e "(library
@@ -67,7 +67,7 @@ if $js_of_ocaml; then
 " > src/js/dune
 fi
 
-if [ -n "$Z3_VERSION" ] && [ $z3_solver ]; then
+if [ -n "$Z3_VERSION" ] && [ "x$z3_solver" == "xtrue" ]; then
     echo "Z3 Version Found: $Z3_VERSION";
 
     if `vercmp "$Z3_VERSION" "4.7.1" "<="`; then
@@ -80,7 +80,8 @@ if [ -n "$Z3_VERSION" ] && [ $z3_solver ]; then
 
 else
    echo -e "\nz3: 
-\tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml" >> Makefile 
+\tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml" >> Makefile
+   sed -i 's/z3//' src/interface/dune
 fi
 
 echo 'configuration complete, type make to build.'
