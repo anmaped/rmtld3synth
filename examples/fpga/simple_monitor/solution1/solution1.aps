@@ -8,7 +8,7 @@
     <config>
         <schedule model="demo"/>
         <config_sdx target="none"/>
-        <config_export format="" rtl="" use_netlist="" vivado_optimization_level="2" vivado_phys_opt="place" vivado_report_level="0"/>
+        <config_export format="ip_catalog" rtl="verilog" use_netlist="" vivado_optimization_level="2" vivado_phys_opt="place" vivado_report_level="0"/>
     </config>
     <UIConfigurations>
         <UIAutosynConf hideTrivialOp="true" isBasedOnBoard="false" isSolutionDirty="true" isStopAskAgain="false" showDetailDesignViewer="false">
@@ -42,7 +42,7 @@
             </RTLs>
         </UIAutoSimConf>
     </UIConfigurations>
-    <ExportDesign askAgain="true" evaluate="false" flow="false" flowChoice="syn" formatName="ip_catalog" rtl="verilog" rtlButton="false" rtlCombo="verilog">
+    <ExportDesign askAgain="true" evaluate="false" flow="false" flowChoice="syn" formatName="ip_catalog" rtl="verilog" rtlButton="true" rtlCombo="verilog">
         <Format formatName="ip_catalog"/>
         <Format formatName="sysgen"/>
         <Format formatName="sysgen_ise"/>
@@ -50,7 +50,7 @@
         <Format formatName="pcore" use_netlist="none"/>
     </ExportDesign>
     <Simulation>
-        <SimFlow askAgain="true" clangSanitizer="false" compile="false" compileChoice="gcc" disableDeadlockDetect="false" dumpTrace="none" name="cosim" optimizeCompile="false" reduce_diskspace="false" setup="false" toolName="Auto" waveDebug="false">
+        <SimFlow askAgain="true" clangSanitizer="false" compile="false" compileChoice="gcc" disableDeadlockDetect="false" dumpTrace="all" name="cosim" optimizeCompile="false" reduce_diskspace="false" setup="false" toolName="Auto" waveDebug="false">
             <Rtl active="false" name="systemc"/>
             <Rtl active="true" name="verilog"/>
             <Rtl active="false" name="vhdl"/>
@@ -70,7 +70,7 @@
         <library name="DefaultPlatform" value="xilinx/artix7/artix7_fpv6"/>
     </libraryList>
     <clockList>
-        <clock name="default" default="false" uncertainty="12.5%" period="5"/>
+        <clock default="false" name="default" uncertainty="12.5%" period="5"/>
     </clockList>
 </solution>
 
