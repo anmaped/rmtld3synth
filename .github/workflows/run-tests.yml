@@ -1,0 +1,31 @@
+name: Run Unit Tests
+
+on:
+  workflow_run:
+    workflows: ["Publish Docker image"]
+    branches: [v0.4]
+    types:
+      - completed
+
+jobs:
+  run_tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: run anmaped/rmtld3synth image
+        run: |
+          docker run --rm \
+          --entrypoint /bin/bash \
+          -v ${PWD}:/workspace/source:z  \
+          docker.io/anmaped/rmtld3synth:v0.4 \
+          -c 'cp -r /workspace/source /localsource && cd /localsource && \
+          eval $(opam env) && \
+          ./configure && make && make tests'
