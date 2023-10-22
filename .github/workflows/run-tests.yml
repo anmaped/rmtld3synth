@@ -2,8 +2,10 @@ name: Run Unit Tests
 
 on:
   workflow_run:
-    workflows: ["Publish Docker image"]
-    branches: [v0.4]
+    workflows:
+      - Publish Docker image
+    branches:
+      - v0.4
     types:
       - completed
 
@@ -19,6 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: run anmaped/rmtld3synth image
         run: |
