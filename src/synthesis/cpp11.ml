@@ -90,18 +90,30 @@ let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
      Until (=): A Until (=a) B <-> Always(<a) A and Eventually(=a) B *OR*
      Until (=): A Until (=a) B <-> Always(<a) A and Always(=a) B
   *)
-  ( "[](T &trace, timespan &t){\n    auto x = always_less<T, Eval_always_"
+  ( "[](T &trace, timespan &t){\n    auto x = always_less<T, Eval_always_a_"
     ^ string_of_int id ^ "<T>, "
     ^ string_of_int (int_of_float gamma)
-    ^ ">(trace, t);\n    auto y = always_equal<T, Eval_always_"
+    ^ ">(trace, t);\n    auto y = always_equal<T, Eval_always_b_"
     ^ string_of_int id ^ "<T>, "
     ^ string_of_int (int_of_float gamma)
     ^ ">(trace, t);\n    return b3_and(x,y);\n  }(trace, t)\n  ",
-    a ^ b ^ "template <typename T> class Eval_always_" ^ string_of_int id
+    a ^ b ^ "template <typename T> class Eval_always_a_" ^ string_of_int id
     ^ " {\n\
       \  public:\n\
       \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
       \      auto sf = " ^ sf1
+    ^ ";\n\
+      \      return sf;\n\
+      \    };\n\
+      \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+      \      return T_UNKNOWN;\n\
+      \    };\n\
+      \  };\n\
+      template <typename T> class Eval_always_b_" ^ string_of_int id
+    ^ " {\n\
+      \  public:\n\
+      \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+      \      auto sf = " ^ sf2
     ^ ";\n\
       \      return sf;\n\
       \    };\n\

@@ -31,7 +31,7 @@ The latest release version is [0.4-alpha](../../releases/download/v0.4-alpha/).
 
 ### Get started with docker :whale:
 
-![example workflow](https://github.com/anmaped/rmtld3synth/actions/workflows/build-and-send-images.yml/badge.svg)
+![build workflow](https://github.com/anmaped/rmtld3synth/actions/workflows/build-and-send-images.yml/badge.svg)
 
 
 The latest docker image is available in [dockerhub](https://hub.docker.com/r/anmaped/rmtld3synth). To use it pull the image and execute it.
@@ -60,8 +60,9 @@ For further insights on instrumenting the monitors, please refer to the illustra
 Alternatively, you may explore the [Documentation](#documentation) section of rmtld3synth. This resource provides valuable insights into creating monitors for various targets such as bare metal or operating systems like NuttX and FreeRTOS.
 
 
-
 ### Building from Git
+
+![run tests workflow](https://github.com/anmaped/rmtld3synth/actions/workflows/run-tests.yml/badge.svg)
 
 <!--[![Build Status](https://app.travis-ci.com/anmaped/rmtld3synth.svg?branch=master)](https://app.travis-ci.com/anmaped/rmtld3synth)-->
 

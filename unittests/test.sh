@@ -57,10 +57,17 @@ CMDSAT="$CMDSAT_NO_TRACE --get-trace"
 
 declare -a arrayrmtld=(
   "p"
-  "P \lor \not p"
+  "p \lor \not p"
   "p \until_{<5} q"
   "p \until_{=5} q"
+  "(\always_{<5} p) \land (\eventually_{=5} q)"
 #  "p \until_{\leq 5} q"
+  "(p \until_{<5} q) \lor (p \until_{=5} q)"
+  "\not ( (p \lor \not p) \until_{=5} \not q )"
+  "\eventually_{=5} q"
+  "\always_{=5} q"
+  "(\always_{=5} p) \land (\always_{=3} q) \land (\always_{=7} z)"
+  "\always_{=4} p \land (\always_{=4} q )"
   "\always_{<6} a \land (\eventually_{<7} b )"
   "\eventually_{<6} a \land (\eventually_{<2} (\always_{<3} b ))"
   "\always_{<6} a \land (\eventually_{<5} ((\neg b) \until_{=4} b ) )"
@@ -152,12 +159,14 @@ rmtld3synth-unittest ;
 
 sleep 10 ;
 
-cat $TEST_DIR/../_cluster/tests/unit_test_cases.h
-cat $TEST_DIR/../_cluster/tests/tests.cpp
+#cat $TEST_DIR/../_cluster/tests/unit_test_cases.h
+#cat $TEST_DIR/../_cluster/tests/tests.cpp
 
 make -C $TEST_DIR/../_cluster/tests ;
 
 ./$TEST_DIR/../_cluster/tests/tests ;
+
+sleep 10 ;
 
 }
 

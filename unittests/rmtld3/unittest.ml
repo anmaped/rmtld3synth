@@ -201,6 +201,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
         ("B", (4., 5.));
         ("A", (5., 6.));
         ("C", (6., 7.));
+        ("E", (7., 9.));
       ]
     in
     let test2_trace =
@@ -224,6 +225,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
         ("A", (5., 6.));
         ("A", (6., 9.));
         ("B", (9., 20.));
+        ("E", (20., 21.));
       ]
     in
     (* basic tests set *)
@@ -246,7 +248,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
       (Not (Until (3., Prop "C", Prop "B")));
     pass_test True "(A U B)     " test1_trace (Until (3., Prop "A", Prop "B"));
     pass_test True "~(F 6 C)    " test1_trace (Not (meventually 6. (Prop "C")));
-    pass_test True "~(F 5 C)  " test1_trace (Not (meventually 5. (Prop "C")));
+    pass_test True "~(F 5 C)    " test1_trace (Not (meventually 5. (Prop "C")));
     pass_test True "F 7.0(0)1 C " test1_trace
       (meventually (7. +. (epsilon_float *. 3.)) (Prop "C"));
     pass_test True "F_2.0(0)1 ~A" test1_trace
@@ -466,11 +468,11 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
 
 let generate_auxiliar_files cluster_name helper =
   (* makefile *)
-  let code1 =
+  let code1 = (* -DRTMLIB_ENABLE_DEBUG_RMTLD3 -DRTMLIB_ENABLE_DEBUGV_RMTLD3 *)
     "\n\
      x86-test:\n\
      \t g++ -Wall -g -O0 -std=gnu++11 -I../../../rtmlib2/src \
-     -DRTMLIB_ENABLE_DEBUG_RMTLD3 -DRTMLIB_ENABLE_DEBUGV_RMTLD3 --verbose \
+     -DRTMLIB_ENABLE_DEBUG_RMTLD3 --verbose \
      tests.cpp -o tests -pthread -latomic\n"
   in
   let oc = open_out (cluster_name ^ "/tests/Makefile") in
