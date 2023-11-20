@@ -186,6 +186,8 @@ let synth_cpp11 compute helper =
       \  #include <rmtld3/rmtld3.h>\n\
       \  #include <rmtld3/macros.h>\n\
       \  \n\
+      \  #define RTM_TIME_UNIT " ^ get_setting_string "rtm_monitor_time_unit" helper ^ "\n\
+      \  \n\
       \  // Propositions\n\
       \  "
     ^ Hashtbl.fold

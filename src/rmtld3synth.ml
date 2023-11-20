@@ -70,6 +70,12 @@ let set_rtm_event_subtype v = set_setting "rtm_event_subtype" (Txt v) helper
 
 let set_rtm_monitor_name_prefix v =
   set_setting "rtm_monitor_name_prefix" (Txt v) helper
+let set_rtm_monitor_time_unit v =
+  (* check if ns,us,ms,s *)
+  if (v = "ns" || v = "us" || v = "ms" || v = "s") then
+    set_setting "rtm_monitor_time_unit" (Txt v) helper
+  else
+    failwith("check if time units are ns, us, ms, s.")
 
 (* general settings *)
 let set_gen_tests v = set_setting "gen_tests" (Sel v) helper
@@ -84,6 +90,7 @@ let default_settings helper =
      (rtm_event_type Event)\n\
      (rtm_event_subtype proposition)\n\
      (rtm_monitor_name_prefix rtm_#_%)\n\
+     (rtm_monitor_time_unit s)\n\
      (gen_tests false)"
   in
   (* convert settings *)
@@ -334,7 +341,10 @@ let _ =
         " Set event subtype" );
       ( "--set-monitor-name-prefix",
         Arg.String set_rtm_monitor_name_prefix,
-        " Set monitor name prefix\n\n Output:" );
+        " Set monitor name prefix" );
+      ( "--set-monitor-time-unit",
+        Arg.String set_rtm_monitor_time_unit,
+        " Set monitor time units\n\n Output:" );
       (*output models *)
       ( "--out-file",
         Arg.String set_out_file,

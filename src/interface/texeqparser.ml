@@ -16,8 +16,8 @@ let matches s =
 let space = matches " \t\n\r"
 and punctuation = matches "()[]{},"
 and symbolic = matches "\\^_"
-and numeric = matches "0123456789"
-and alphanumeric = matches "abcdefghijklmnopqrstuvwxyz'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";;
+and numeric = matches "0123456789#"
+and alphanumeric = matches "abcdefghijklmnopqrstuvwxyz'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#";;
 
 let rec lexwhile prop inp =
   match inp with
@@ -175,7 +175,7 @@ and parse_latexeq_tm' (l: string list) (feed: intermediate_ltx_tm list) : interm
     (* we need to know if ")" is from equations or terms then return (feed, l) *)
 
   | x :: r when chk_num x      -> (* feed is discarded *)
-    parse_latexeq_tm' r [TVal(int_of_string x)]
+    parse_latexeq_tm' r [TVal(int_of_string (String.map (fun c -> if c = '#' then '_' else c) x))]
 
   | x :: r when chk_alphanum x ->
     parse_latexeq_tm' r [TVar((x))]
