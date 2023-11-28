@@ -8,6 +8,7 @@ open Helper
 open Synthesis
 open Interface
 open Interface.Rmdslparser
+open Dsl_parser
 
 let helper = mk_helper
 let rmtld_formula = ref ""

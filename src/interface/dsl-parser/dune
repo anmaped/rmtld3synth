@@ -1,0 +1,19 @@
+(executable
+  (name test)
+  (flags -w A-4-70)
+  (libraries menhirLib rmtld3synth.interface.dsl)
+  (modules SemanticCheck Test)
+  (modes exe)
+)
+
+; Language library definition
+(library
+  (name           dsl_parser)
+  (public_name    rmtld3synth.interface.dsl)
+  (libraries      menhirLib)
+  (modules        Lexer Parser Ast unitActionsParser parserMessages)
+  (modules_without_implementation ast)
+)
+
+; Common include
+(include dune.common)

@@ -1,0 +1,782 @@
+main: WITHIN
+##
+## Ends in an error in state: 0.
+##
+## main' -> . main [ # ]
+##
+## The known suffix of the stack is as follows:
+##
+##
+
+Please check the input expression!
+
+main: RISE WITHIN
+##
+## Ends in an error in state: 2.
+##
+## temporal -> RISE . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## RISE
+##
+
+Please check the input expression!
+
+main: LPAR WITHIN
+##
+## Ends in an error in state: 5.
+##
+## atom -> LPAR . formula RPAR [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LPAR
+##
+
+Please check the input expression!
+
+main: PREV WITHIN
+##
+## Ends in an error in state: 6.
+##
+## temporal -> PREV . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## PREV
+##
+
+Please check the input expression!
+
+main: DURATION WITHIN
+##
+## Ends in an error in state: 8.
+##
+## term -> DURATION . OF formula IN interval [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION
+##
+
+Please check the input expression!
+
+main: DURATION OF WITHIN
+##
+## Ends in an error in state: 9.
+##
+## term -> DURATION OF . formula IN interval [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF
+##
+
+Please check the input expression!
+
+main: PAST WITHIN
+##
+## Ends in an error in state: 10.
+##
+## temporal -> PAST . EVENTUALLY atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## PAST
+##
+
+Please check the input expression!
+
+main: PAST EVENTUALLY WITHIN
+##
+## Ends in an error in state: 11.
+##
+## temporal -> PAST EVENTUALLY . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## PAST EVENTUALLY
+##
+
+Please check the input expression!
+
+main: NUM WITHIN
+##
+## Ends in an error in state: 13.
+##
+## atom -> term . LESS term [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+## term -> term . PLUS term_atom [ TIMES PLUS LESS ]
+## term -> term . TIMES term_atom [ TIMES PLUS LESS ]
+##
+## The known suffix of the stack is as follows:
+## term
+##
+
+Please check the input expression!
+
+main: NUM TIMES WITHIN
+##
+## Ends in an error in state: 14.
+##
+## term -> term TIMES . term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term TIMES
+##
+
+Please check the input expression!
+
+main: NUM PLUS WITHIN
+##
+## Ends in an error in state: 16.
+##
+## term -> term PLUS . term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term PLUS
+##
+
+Please check the input expression!
+
+main: NUM LESS WITHIN
+##
+## Ends in an error in state: 18.
+##
+## atom -> term LESS . term [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term LESS
+##
+
+Please check the input expression!
+
+main: NUM LESS NUM TWODOTS
+##
+## Ends in an error in state: 19.
+##
+## atom -> term LESS term . [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+## term -> term . PLUS term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR IN IMPLIES EOF AND ]
+## term -> term . TIMES term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term LESS term
+##
+
+Please check the input expression!
+
+main: PAST EVENTUALLY FALSE UNTIL
+##
+## Ends in an error in state: 20.
+##
+## temporal -> PAST EVENTUALLY atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## PAST EVENTUALLY atom
+##
+
+Please check the input expression!
+
+main: PAST EVENTUALLY FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 21.
+##
+## temporal -> PAST EVENTUALLY atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## PAST EVENTUALLY atom WITHIN
+##
+
+Please check the input expression!
+
+main: ALWAYS FALSE WITHIN LESSOREQUAL WITHIN
+##
+## Ends in an error in state: 23.
+##
+## time -> LESSOREQUAL . TIME [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LESSOREQUAL
+##
+
+Please check the input expression!
+
+main: ALWAYS FALSE WITHIN LESS WITHIN
+##
+## Ends in an error in state: 25.
+##
+## time -> LESS . TIME [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LESS
+##
+
+Please check the input expression!
+
+main: ALWAYS FALSE WITHIN EQUAL WITHIN
+##
+## Ends in an error in state: 27.
+##
+## time -> EQUAL . TIME [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## EQUAL
+##
+
+Please check the input expression!
+
+main: NEXT WITHIN
+##
+## Ends in an error in state: 30.
+##
+## temporal -> NEXT . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## NEXT
+##
+
+Please check the input expression!
+
+main: NEXT FALSE UNTIL
+##
+## Ends in an error in state: 31.
+##
+## temporal -> NEXT atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## NEXT atom
+##
+
+Please check the input expression!
+
+main: NEXT FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 32.
+##
+## temporal -> NEXT atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## NEXT atom WITHIN
+##
+
+Please check the input expression!
+
+main: LPAR HISTORICALLY WITHIN
+##
+## Ends in an error in state: 34.
+##
+## temporal -> HISTORICALLY . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## HISTORICALLY
+##
+
+Please check the input expression!
+
+main: HISTORICALLY FALSE UNTIL
+##
+## Ends in an error in state: 35.
+##
+## temporal -> HISTORICALLY atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## HISTORICALLY atom
+##
+
+Please check the input expression!
+
+main: HISTORICALLY FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 36.
+##
+## temporal -> HISTORICALLY atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## HISTORICALLY atom WITHIN
+##
+
+Please check the input expression!
+
+main: FALL WITHIN
+##
+## Ends in an error in state: 38.
+##
+## temporal -> FALL . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## FALL
+##
+
+Please check the input expression!
+
+main: FALL FALSE UNTIL
+##
+## Ends in an error in state: 39.
+##
+## temporal -> FALL atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## FALL atom
+##
+
+Please check the input expression!
+
+main: FALL FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 40.
+##
+## temporal -> FALL atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## FALL atom WITHIN
+##
+
+Please check the input expression!
+
+main: EVENTUALLY WITHIN
+##
+## Ends in an error in state: 42.
+##
+## temporal -> EVENTUALLY . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## EVENTUALLY
+##
+
+Please check the input expression!
+
+main: EVENTUALLY FALSE UNTIL
+##
+## Ends in an error in state: 43.
+##
+## temporal -> EVENTUALLY atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## EVENTUALLY atom
+##
+
+Please check the input expression!
+
+main: EVENTUALLY FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 44.
+##
+## temporal -> EVENTUALLY atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## EVENTUALLY atom WITHIN
+##
+
+Please check the input expression!
+
+main: LPAR ALWAYS WITHIN
+##
+## Ends in an error in state: 46.
+##
+## temporal -> ALWAYS . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## ALWAYS
+##
+
+Please check the input expression!
+
+main: ALWAYS FALSE UNTIL
+##
+## Ends in an error in state: 47.
+##
+## temporal -> ALWAYS atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## ALWAYS atom
+##
+
+Please check the input expression!
+
+main: ALWAYS FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 48.
+##
+## temporal -> ALWAYS atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## ALWAYS atom WITHIN
+##
+
+Please check the input expression!
+
+main: FALSE TWODOTS
+##
+## Ends in an error in state: 50.
+##
+## conjunction -> temporal . [ RPAR OR IN IMPLIES EOF AND ]
+## temporal -> temporal . UNTIL atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+## temporal -> temporal . SINCE atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal
+##
+
+Please check the input expression!
+
+main: FALSE UNTIL WITHIN
+##
+## Ends in an error in state: 51.
+##
+## temporal -> temporal UNTIL . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal UNTIL
+##
+
+Please check the input expression!
+
+main: FALSE UNTIL FALSE UNTIL
+##
+## Ends in an error in state: 52.
+##
+## temporal -> temporal UNTIL atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal UNTIL atom
+##
+
+Please check the input expression!
+
+main: FALSE UNTIL FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 53.
+##
+## temporal -> temporal UNTIL atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal UNTIL atom WITHIN
+##
+
+Please check the input expression!
+
+main: FALSE SINCE WITHIN
+##
+## Ends in an error in state: 55.
+##
+## temporal -> temporal SINCE . atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal SINCE
+##
+
+Please check the input expression!
+
+main: FALSE SINCE FALSE UNTIL
+##
+## Ends in an error in state: 56.
+##
+## temporal -> temporal SINCE atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal SINCE atom
+##
+
+Please check the input expression!
+
+main: FALSE SINCE FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 57.
+##
+## temporal -> temporal SINCE atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal SINCE atom WITHIN
+##
+
+Please check the input expression!
+
+main: FALSE IMPLIES WITHIN
+##
+## Ends in an error in state: 60.
+##
+## implies -> implies IMPLIES . disjunction [ RPAR IN IMPLIES EOF ]
+##
+## The known suffix of the stack is as follows:
+## implies IMPLIES
+##
+
+Please check the input expression!
+
+main: FALSE OR WITHIN
+##
+## Ends in an error in state: 62.
+##
+## disjunction -> disjunction OR . conjunction [ RPAR OR IN IMPLIES EOF ]
+##
+## The known suffix of the stack is as follows:
+## disjunction OR
+##
+
+Please check the input expression!
+
+main: FALSE AND WITHIN
+##
+## Ends in an error in state: 64.
+##
+## conjunction -> conjunction AND . temporal [ RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## conjunction AND
+##
+
+Please check the input expression!
+
+main: FALSE AND FALSE TWODOTS
+##
+## Ends in an error in state: 65.
+##
+## conjunction -> conjunction AND temporal . [ RPAR OR IN IMPLIES EOF AND ]
+## temporal -> temporal . UNTIL atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+## temporal -> temporal . SINCE atom WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## conjunction AND temporal
+##
+
+Please check the input expression!
+
+main: DURATION OF FALSE RPAR
+##
+## Ends in an error in state: 68.
+##
+## term -> DURATION OF formula . IN interval [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 50, spurious reduction of production conjunction -> temporal
+## In state 67, spurious reduction of production disjunction -> conjunction
+## In state 79, spurious reduction of production implies -> disjunction
+## In state 59, spurious reduction of production formula -> implies
+##
+
+Please check the input expression!
+
+main: DURATION OF FALSE IN WITHIN
+##
+## Ends in an error in state: 69.
+##
+## term -> DURATION OF formula IN . interval [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula IN
+##
+
+Please check the input expression!
+
+main: DURATION OF FALSE IN LSQPAR WITHIN
+##
+## Ends in an error in state: 70.
+##
+## interval -> LSQPAR . term_atom COMMA term_atom RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LSQPAR
+##
+
+Please check the input expression!
+
+main: DURATION OF FALSE IN LSQPAR NUM WITHIN
+##
+## Ends in an error in state: 71.
+##
+## interval -> LSQPAR term_atom . COMMA term_atom RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LSQPAR term_atom
+##
+
+Please check the input expression!
+
+main: DURATION OF FALSE IN LSQPAR NUM COMMA WITHIN
+##
+## Ends in an error in state: 72.
+##
+## interval -> LSQPAR term_atom COMMA . term_atom RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LSQPAR term_atom COMMA
+##
+
+Please check the input expression!
+
+main: DURATION OF FALSE IN LSQPAR NUM COMMA NUM WITHIN
+##
+## Ends in an error in state: 73.
+##
+## interval -> LSQPAR term_atom COMMA term_atom . RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LSQPAR term_atom COMMA term_atom
+##
+
+Please check the input expression!
+
+main: DURATION OF FALSE IN NUM WITHIN
+##
+## Ends in an error in state: 75.
+##
+## interval -> term_atom . DOTS term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term_atom
+##
+
+Please check the input expression!
+
+main: DURATION OF FALSE IN NUM DOTS WITHIN
+##
+## Ends in an error in state: 76.
+##
+## interval -> term_atom DOTS . term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESS IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term_atom DOTS
+##
+
+Please check the input expression!
+
+main: PREV FALSE UNTIL
+##
+## Ends in an error in state: 80.
+##
+## temporal -> PREV atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## PREV atom
+##
+
+Please check the input expression!
+
+main: PREV FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 81.
+##
+## temporal -> PREV atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## PREV atom WITHIN
+##
+
+Please check the input expression!
+
+main: LPAR FALSE IN
+##
+## Ends in an error in state: 83.
+##
+## atom -> LPAR formula . RPAR [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LPAR formula
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 50, spurious reduction of production conjunction -> temporal
+## In state 67, spurious reduction of production disjunction -> conjunction
+## In state 79, spurious reduction of production implies -> disjunction
+## In state 59, spurious reduction of production formula -> implies
+##
+
+Please check the input expression!
+
+main: RISE FALSE UNTIL
+##
+## Ends in an error in state: 85.
+##
+## temporal -> RISE atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## RISE atom
+##
+
+Please check the input expression!
+
+main: RISE FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 86.
+##
+## temporal -> RISE atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## RISE atom WITHIN
+##
+
+Please check the input expression!
+
+main: HISTORICALLY WITHIN
+##
+## Ends in an error in state: 88.
+##
+## scope -> HISTORICALLY . TWODOTS formula [ EOF ]
+## temporal -> HISTORICALLY . atom WITHIN time [ UNTIL SINCE OR IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## HISTORICALLY
+##
+
+Please check the input expression!
+
+main: HISTORICALLY TWODOTS WITHIN
+##
+## Ends in an error in state: 89.
+##
+## scope -> HISTORICALLY TWODOTS . formula [ EOF ]
+##
+## The known suffix of the stack is as follows:
+## HISTORICALLY TWODOTS
+##
+
+Please check the input expression!
+
+main: ALWAYS WITHIN
+##
+## Ends in an error in state: 91.
+##
+## scope -> ALWAYS . TWODOTS formula [ EOF ]
+## temporal -> ALWAYS . atom WITHIN time [ UNTIL SINCE OR IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## ALWAYS
+##
+
+Please check the input expression!
+
+main: ALWAYS TWODOTS WITHIN
+##
+## Ends in an error in state: 92.
+##
+## scope -> ALWAYS TWODOTS . formula [ EOF ]
+##
+## The known suffix of the stack is as follows:
+## ALWAYS TWODOTS
+##
+
+Please check the input expression!
+
+main: FALSE RPAR
+##
+## Ends in an error in state: 94.
+##
+## main -> scope . EOF [ # ]
+##
+## The known suffix of the stack is as follows:
+## scope
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 50, spurious reduction of production conjunction -> temporal
+## In state 67, spurious reduction of production disjunction -> conjunction
+## In state 79, spurious reduction of production implies -> disjunction
+## In state 59, spurious reduction of production formula -> implies
+## In state 97, spurious reduction of production scope -> formula
+##
+
+Please check the input expression!
+

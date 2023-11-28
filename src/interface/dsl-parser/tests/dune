@@ -1,0 +1,76 @@
+(rule
+  (with-outputs-to test01.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test01.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test01.exp test01.out))
+)
+
+(rule
+  (with-outputs-to test02.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test02.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test02.exp test02.out))
+)
+
+(rule
+  (with-outputs-to test03.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test03.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test03.exp test03.out))
+)
+
+(rule
+  (with-outputs-to test04.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test04.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test04.exp test04.out))
+)
+
+(rule
+  (with-outputs-to test05.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test05.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test05.exp test05.out))
+)
+
+(rule
+  (with-outputs-to test06.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test06.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test06.exp test06.out))
+)
+
+(rule
+  (with-outputs-to test07.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test07.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test07.exp test07.out))
+)

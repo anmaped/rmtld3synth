@@ -9,6 +9,7 @@ all: compile install
 
 compile: setup
 	dune build --profile release @install
+	dune build --profile release @test
 
 setup: version z3
 	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
