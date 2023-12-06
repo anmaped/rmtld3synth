@@ -136,7 +136,7 @@ let synth_cpp11 compute helper =
 
   let expressions = get_all_setting_formula "input_exp" helper in
   let expressions =
-    expressions @ get_all_setting_formula "input_exp_dsls" helper
+    expressions @ get_all_setting_formula "input_exp_dsl" helper
   in
   let expressions =
     expressions @ get_all_setting_formula "input_exp_ltxeq" helper
