@@ -15,7 +15,9 @@ rule token = parse
 | '*' { TIMES }
 | "&&" { AND }
 | '<' { LESS }
+| '>' { GREATER }
 | "<=" {LESSOREQUAL }
+| ">=" { GREATEROREQUAL }
 | "=" { EQUAL }
 | ':' { TWODOTS }
 | ',' { COMMA }

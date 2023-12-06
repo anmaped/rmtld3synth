@@ -21,8 +21,8 @@
 %token IMPLIES
 %token AND
 %token OR
-%token LESS
-%token LESSOREQUAL
+%token LESS GREATER
+%token LESSOREQUAL GREATEROREQUAL
 %token EQUAL
 
 %token PLUS
@@ -92,6 +92,9 @@ time:
 atom:
 | LPAR r = formula RPAR { r }
 | a = term LESS b = term { LessThan(a,b) }
+| a = term GREATER b = term { GreaterThan(a,b) }
+| a = term LESSOREQUAL b = term { GreaterOrEqualThan(a,b) }
+| a = term GREATEROREQUAL b = term { GreaterThan(a,b) }
 | TRUE { True }
 | FALSE { False }
 | c = NAME { Prop c }

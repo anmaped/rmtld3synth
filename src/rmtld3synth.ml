@@ -8,7 +8,7 @@ open Helper
 open Synthesis
 open Interface
 open Interface.Rmdslparser
-open Dsl_parser
+open Dsl
 
 let helper = mk_helper
 let rmtld_formula = ref ""
@@ -49,6 +49,10 @@ let set_exp v =
   rmtld_formula := v;
   (* legacy *)
   set_setting "input_exp" (Fm (formula_of_sexp (Sexp.of_string v))) helper
+
+let set_exp_dsl v =
+  set_setting "input_exp_dsl" (Fm ( 
+    Dsl.Load.parse_string v |> Dsl.TranslateToRmtld3.conv_fm )) helper
 
 let set_exp_ltxeq v =
   rmtld_formula_ltxeq := v;
@@ -318,6 +322,9 @@ let _ =
       ( "--input-sexp",
         Arg.String set_exp,
         " Inputs sexp expression (RMTLD3 formula)" );
+      ( "--input-dsl",
+        Arg.String set_exp_dsl,
+        " Inputs dsl expression (RMTLD3 formula)" );
       ( "--input-latexeq",
         Arg.String set_exp_ltxeq,
         " Inputs latex equation expressions (RMTLD3 formula) (Experimental)" );

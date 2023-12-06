@@ -1,6 +1,5 @@
 open Lexing
 open Printf
-open Dsl_parser
 
 module E = MenhirLib.ErrorReports
 module L = MenhirLib.LexerUtil

@@ -4,7 +4,7 @@ $ echo "true" | ./test.exe
 
 *)
 
-open Dsl_parser
+open Dsl
 open Ast
 
 let print_u = function
@@ -40,6 +40,9 @@ and print_fm = function
 | And (a,b) -> "(" ^ (print_fm a) ^ "&&" ^ (print_fm b) ^ ")"
 | Implies (a,b) -> "(" ^ (print_fm a) ^ "->" ^ (print_fm b) ^ ")"
 | LessThan (a,b) -> print_tm a ^ "<" ^ print_tm b
+| LessOrEqualThan (a,b) -> print_tm a ^ "<=" ^ print_tm b
+| GreaterThan (a,b) -> print_tm b ^ "<" ^ print_tm a
+| GreaterOrEqualThan (a,b) -> print_tm b ^ "<=" ^ print_tm a
 | Until (k,a,b) -> "(" ^ print_fm a ^ " U" ^ print_kind k ^ " " ^ print_fm b ^ ")"
 | Since (k,a,b) -> "(" ^ print_fm a ^ " S" ^ print_kind k ^ " " ^ print_fm b ^ ")"
 | Rise (k,f) -> "rise" ^ print_kind k ^ " " ^ print_fm f
@@ -53,12 +56,7 @@ and print_fm = function
 
 open Printf
 
-(* função Main *)
-let () =
-  let s = read_line () in
-  (*let r = Parser.main Lexer.token (Lexing.from_string s) in
-  print_endline (print_fm r);*)
-
+let parse s =
   (* Run the parser. *)
   match Parser.main Lexer.token (Lexing.from_string s) with
   | v ->
@@ -74,6 +72,14 @@ let () =
   | exception Parser.Error ->
     (* A syntax error has occurred. *)
     SemanticCheck.attempt2 "stdin" s
+
+(* função Main *)
+let () =
+  let s = read_line () in
+  (*let r = Parser.main Lexer.token (Lexing.from_string s) in
+  print_endline (print_fm r);*)
+
+  parse s
 
 
   

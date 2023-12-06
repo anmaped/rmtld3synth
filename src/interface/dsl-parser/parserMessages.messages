@@ -132,6 +132,32 @@ main: NUM PLUS WITHIN
 
 Please check the input expression!
 
+main: NUM LESSOREQUAL WITHIN
+##
+## Ends in an error in state: 18.
+##
+## atom -> term LESSOREQUAL . term [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term LESSOREQUAL
+##
+
+Please check the input expression!
+
+main: NUM LESSOREQUAL NUM TWODOTS
+##
+## Ends in an error in state: 19.
+##
+## atom -> term LESSOREQUAL term . [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+## term -> term . PLUS term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR IN IMPLIES EOF AND ]
+## term -> term . TIMES term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term LESSOREQUAL term
+##
+
+Please check the input expression!
+
 main: NUM LESS WITHIN
 ##
 ## Ends in an error in state: 18.
@@ -154,6 +180,58 @@ main: NUM LESS NUM TWODOTS
 ##
 ## The known suffix of the stack is as follows:
 ## term LESS term
+##
+
+Please check the input expression!
+
+main: NUM GREATEROREQUAL WITHIN
+##
+## Ends in an error in state: 22.
+##
+## atom -> term GREATEROREQUAL . term [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term GREATEROREQUAL
+##
+
+Please check the input expression!
+
+main: NUM GREATEROREQUAL NUM TWODOTS
+##
+## Ends in an error in state: 23.
+##
+## atom -> term GREATEROREQUAL term . [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+## term -> term . PLUS term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR IN IMPLIES EOF AND ]
+## term -> term . TIMES term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term GREATEROREQUAL term
+##
+
+Please check the input expression!
+
+main: NUM GREATER WITHIN
+##
+## Ends in an error in state: 24.
+##
+## atom -> term GREATER . term [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term GREATER
+##
+
+Please check the input expression!
+
+main: NUM GREATER NUM TWODOTS
+##
+## Ends in an error in state: 25.
+##
+## atom -> term GREATER term . [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+## term -> term . PLUS term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR IN IMPLIES EOF AND ]
+## term -> term . TIMES term_atom [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term GREATER term
 ##
 
 Please check the input expression!

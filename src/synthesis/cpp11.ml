@@ -136,8 +136,13 @@ let synth_cpp11 compute helper =
 
   let expressions = get_all_setting_formula "input_exp" helper in
   let expressions =
+    expressions @ get_all_setting_formula "input_exp_dsls" helper
+  in
+  let expressions =
     expressions @ get_all_setting_formula "input_exp_ltxeq" helper
   in
+
+  if expressions = [] then ( print_endline "no formula is available."; exit 1 );
 
   (* let expressions = expressions @ get_all_setting_formula "input_exp_rmdsl" helper in *)
   print_endline "Expression(s) selected to encode:";

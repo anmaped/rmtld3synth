@@ -17,6 +17,9 @@ type fm =
   | Until of kind * fm * fm
   | Since of kind * fm * fm
   | LessThan of tm * tm
+  | LessOrEqualThan of tm * tm
+  | GreaterThan of tm * tm
+  | GreaterOrEqualThan of tm * tm
   | Next of kind * fm (* shorthand *)
   | Prev of kind * fm (* shorthand *)
   | Fall of kind * fm (* shorthand *)
