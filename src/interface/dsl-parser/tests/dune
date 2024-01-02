@@ -74,3 +74,752 @@
   (alias test)
   (action (diff test07.exp test07.out))
 )
+
+(rule
+(with-outputs-to error00.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error00.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error00.exp error00.out))
+)
+
+(rule
+(with-outputs-to error02.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error02.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error02.exp error02.out))
+)
+
+(rule
+(with-outputs-to error05.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error05.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error05.exp error05.out))
+)
+
+(rule
+(with-outputs-to error06.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error06.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error06.exp error06.out))
+)
+
+(rule
+(with-outputs-to error08.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error08.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error08.exp error08.out))
+)
+
+(rule
+(with-outputs-to error09.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error09.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error09.exp error09.out))
+)
+
+(rule
+(with-outputs-to error10.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error10.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error10.exp error10.out))
+)
+
+(rule
+(with-outputs-to error11.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error11.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error11.exp error11.out))
+)
+
+(rule
+(with-outputs-to error13.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error13.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error13.exp error13.out))
+)
+
+(rule
+(with-outputs-to error14.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error14.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error14.exp error14.out))
+)
+
+(rule
+(with-outputs-to error16.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error16.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error16.exp error16.out))
+)
+
+(rule
+(with-outputs-to error18.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error18.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error18.exp error18.out))
+)
+
+(rule
+(with-outputs-to error19.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error19.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error19.exp error19.out))
+)
+
+(rule
+(with-outputs-to error20.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error20.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error20.exp error20.out))
+)
+
+(rule
+(with-outputs-to error21.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error21.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error21.exp error21.out))
+)
+
+(rule
+(with-outputs-to error22.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error22.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error22.exp error22.out))
+)
+
+(rule
+(with-outputs-to error23.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error23.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error23.exp error23.out))
+)
+
+(rule
+(with-outputs-to error24.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error24.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error24.exp error24.out))
+)
+
+(rule
+(with-outputs-to error25.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error25.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error25.exp error25.out))
+)
+
+(rule
+(with-outputs-to error26.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error26.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error26.exp error26.out))
+)
+
+(rule
+(with-outputs-to error27.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error27.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error27.exp error27.out))
+)
+
+(rule
+(with-outputs-to error29.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error29.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error29.exp error29.out))
+)
+
+(rule
+(with-outputs-to error31.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error31.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error31.exp error31.out))
+)
+
+(rule
+(with-outputs-to error33.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error33.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error33.exp error33.out))
+)
+
+(rule
+(with-outputs-to error36.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error36.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error36.exp error36.out))
+)
+
+(rule
+(with-outputs-to error37.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error37.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error37.exp error37.out))
+)
+
+(rule
+(with-outputs-to error38.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error38.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error38.exp error38.out))
+)
+
+(rule
+(with-outputs-to error40.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error40.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error40.exp error40.out))
+)
+
+(rule
+(with-outputs-to error41.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error41.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error41.exp error41.out))
+)
+
+(rule
+(with-outputs-to error42.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error42.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error42.exp error42.out))
+)
+
+(rule
+(with-outputs-to error44.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error44.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error44.exp error44.out))
+)
+
+(rule
+(with-outputs-to error45.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error45.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error45.exp error45.out))
+)
+
+(rule
+(with-outputs-to error46.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error46.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error46.exp error46.out))
+)
+
+(rule
+(with-outputs-to error48.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error48.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error48.exp error48.out))
+)
+
+(rule
+(with-outputs-to error49.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error49.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error49.exp error49.out))
+)
+
+(rule
+(with-outputs-to error50.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error50.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error50.exp error50.out))
+)
+
+(rule
+(with-outputs-to error52.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error52.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error52.exp error52.out))
+)
+
+(rule
+(with-outputs-to error53.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error53.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error53.exp error53.out))
+)
+
+(rule
+(with-outputs-to error54.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error54.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error54.exp error54.out))
+)
+
+(rule
+(with-outputs-to error56.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error56.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error56.exp error56.out))
+)
+
+(rule
+(with-outputs-to error57.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error57.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error57.exp error57.out))
+)
+
+(rule
+(with-outputs-to error58.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error58.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error58.exp error58.out))
+)
+
+(rule
+(with-outputs-to error59.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error59.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error59.exp error59.out))
+)
+
+(rule
+(with-outputs-to error61.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error61.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error61.exp error61.out))
+)
+
+(rule
+(with-outputs-to error62.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error62.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error62.exp error62.out))
+)
+
+(rule
+(with-outputs-to error63.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error63.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error63.exp error63.out))
+)
+
+(rule
+(with-outputs-to error66.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error66.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error66.exp error66.out))
+)
+
+(rule
+(with-outputs-to error68.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error68.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error68.exp error68.out))
+)
+
+(rule
+(with-outputs-to error70.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error70.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error70.exp error70.out))
+)
+
+(rule
+(with-outputs-to error71.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error71.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error71.exp error71.out))
+)
+
+(rule
+(with-outputs-to error74.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error74.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error74.exp error74.out))
+)
+
+(rule
+(with-outputs-to error75.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error75.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error75.exp error75.out))
+)
+
+(rule
+(with-outputs-to error76.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error76.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error76.exp error76.out))
+)
+
+(rule
+(with-outputs-to error77.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error77.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error77.exp error77.out))
+)
+
+(rule
+(with-outputs-to error78.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error78.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error78.exp error78.out))
+)
+
+(rule
+(with-outputs-to error79.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error79.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error79.exp error79.out))
+)
+
+(rule
+(with-outputs-to error81.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error81.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error81.exp error81.out))
+)
+
+(rule
+(with-outputs-to error82.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error82.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error82.exp error82.out))
+)
+
+(rule
+(with-outputs-to error86.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error86.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error86.exp error86.out))
+)
+
+(rule
+(with-outputs-to error87.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error87.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error87.exp error87.out))
+)
+
+(rule
+(with-outputs-to error89.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error89.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error89.exp error89.out))
+)
+
+(rule
+(with-outputs-to error91.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error91.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error91.exp error91.out))
+)
+
+(rule
+(with-outputs-to error92.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error92.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error92.exp error92.out))
+)
+
+(rule
+(with-outputs-to error94.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error94.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error94.exp error94.out))
+)
+
+(rule
+(with-outputs-to error95.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error95.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error95.exp error95.out))
+)
+
+(rule
+(with-outputs-to error97.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error97.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error97.exp error97.out))
+)
+
+(rule
+(with-outputs-to error98.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error98.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error98.exp error98.out))
+)
+
+(rule
+(with-outputs-to error100.out
+(with-accepted-exit-codes 0
+(run bash -c "cat %{dep:error100.in} | %{exe:../test.exe}")
+)))
+
+(rule
+(alias test)
+(action (diff error100.exp error100.out))
+)
+
