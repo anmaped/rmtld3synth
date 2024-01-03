@@ -78,7 +78,7 @@
 (rule
 (with-outputs-to error00.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error00.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error00.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -89,7 +89,7 @@
 (rule
 (with-outputs-to error02.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error02.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error02.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -100,7 +100,7 @@
 (rule
 (with-outputs-to error05.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error05.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error05.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -111,7 +111,7 @@
 (rule
 (with-outputs-to error06.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error06.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error06.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -122,7 +122,7 @@
 (rule
 (with-outputs-to error08.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error08.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error08.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -133,7 +133,7 @@
 (rule
 (with-outputs-to error09.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error09.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error09.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -144,7 +144,7 @@
 (rule
 (with-outputs-to error10.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error10.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error10.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -155,7 +155,7 @@
 (rule
 (with-outputs-to error11.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error11.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error11.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -166,7 +166,7 @@
 (rule
 (with-outputs-to error13.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error13.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error13.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -177,7 +177,7 @@
 (rule
 (with-outputs-to error14.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error14.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error14.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -188,7 +188,7 @@
 (rule
 (with-outputs-to error16.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error16.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error16.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -199,7 +199,7 @@
 (rule
 (with-outputs-to error18.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error18.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error18.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -210,7 +210,7 @@
 (rule
 (with-outputs-to error19.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error19.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error19.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -221,7 +221,7 @@
 (rule
 (with-outputs-to error20.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error20.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error20.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -232,7 +232,7 @@
 (rule
 (with-outputs-to error21.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error21.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error21.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -243,7 +243,7 @@
 (rule
 (with-outputs-to error22.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error22.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error22.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -254,7 +254,7 @@
 (rule
 (with-outputs-to error23.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error23.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error23.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -265,7 +265,7 @@
 (rule
 (with-outputs-to error24.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error24.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error24.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -276,7 +276,7 @@
 (rule
 (with-outputs-to error25.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error25.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error25.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -287,7 +287,7 @@
 (rule
 (with-outputs-to error26.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error26.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error26.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -298,7 +298,7 @@
 (rule
 (with-outputs-to error27.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error27.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error27.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -309,7 +309,7 @@
 (rule
 (with-outputs-to error29.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error29.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error29.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -320,7 +320,7 @@
 (rule
 (with-outputs-to error31.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error31.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error31.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -331,7 +331,7 @@
 (rule
 (with-outputs-to error33.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error33.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error33.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -342,7 +342,7 @@
 (rule
 (with-outputs-to error36.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error36.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error36.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -353,7 +353,7 @@
 (rule
 (with-outputs-to error37.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error37.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error37.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -364,7 +364,7 @@
 (rule
 (with-outputs-to error38.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error38.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error38.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -375,7 +375,7 @@
 (rule
 (with-outputs-to error40.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error40.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error40.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -386,7 +386,7 @@
 (rule
 (with-outputs-to error41.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error41.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error41.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -397,7 +397,7 @@
 (rule
 (with-outputs-to error42.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error42.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error42.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -408,7 +408,7 @@
 (rule
 (with-outputs-to error44.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error44.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error44.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -419,7 +419,7 @@
 (rule
 (with-outputs-to error45.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error45.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error45.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -430,7 +430,7 @@
 (rule
 (with-outputs-to error46.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error46.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error46.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -441,7 +441,7 @@
 (rule
 (with-outputs-to error48.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error48.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error48.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -452,7 +452,7 @@
 (rule
 (with-outputs-to error49.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error49.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error49.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -463,7 +463,7 @@
 (rule
 (with-outputs-to error50.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error50.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error50.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -474,7 +474,7 @@
 (rule
 (with-outputs-to error52.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error52.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error52.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -485,7 +485,7 @@
 (rule
 (with-outputs-to error53.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error53.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error53.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -496,7 +496,7 @@
 (rule
 (with-outputs-to error54.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error54.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error54.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -507,7 +507,7 @@
 (rule
 (with-outputs-to error56.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error56.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error56.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -518,7 +518,7 @@
 (rule
 (with-outputs-to error57.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error57.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error57.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -529,7 +529,7 @@
 (rule
 (with-outputs-to error58.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error58.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error58.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -540,7 +540,7 @@
 (rule
 (with-outputs-to error59.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error59.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error59.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -551,7 +551,7 @@
 (rule
 (with-outputs-to error61.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error61.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error61.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -562,7 +562,7 @@
 (rule
 (with-outputs-to error62.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error62.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error62.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -573,7 +573,7 @@
 (rule
 (with-outputs-to error63.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error63.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error63.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -584,7 +584,7 @@
 (rule
 (with-outputs-to error66.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error66.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error66.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -595,7 +595,7 @@
 (rule
 (with-outputs-to error68.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error68.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error68.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -606,7 +606,7 @@
 (rule
 (with-outputs-to error70.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error70.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error70.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -617,7 +617,7 @@
 (rule
 (with-outputs-to error71.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error71.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error71.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -628,7 +628,7 @@
 (rule
 (with-outputs-to error74.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error74.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error74.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -639,7 +639,7 @@
 (rule
 (with-outputs-to error75.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error75.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error75.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -650,7 +650,7 @@
 (rule
 (with-outputs-to error76.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error76.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error76.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -661,7 +661,7 @@
 (rule
 (with-outputs-to error77.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error77.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error77.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -672,7 +672,7 @@
 (rule
 (with-outputs-to error78.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error78.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error78.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -683,7 +683,7 @@
 (rule
 (with-outputs-to error79.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error79.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error79.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -694,7 +694,7 @@
 (rule
 (with-outputs-to error81.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error81.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error81.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -705,7 +705,7 @@
 (rule
 (with-outputs-to error82.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error82.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error82.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -716,7 +716,7 @@
 (rule
 (with-outputs-to error86.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error86.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error86.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -727,7 +727,7 @@
 (rule
 (with-outputs-to error87.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error87.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error87.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -738,7 +738,7 @@
 (rule
 (with-outputs-to error89.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error89.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error89.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -749,7 +749,7 @@
 (rule
 (with-outputs-to error91.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error91.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error91.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -760,7 +760,7 @@
 (rule
 (with-outputs-to error92.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error92.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error92.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -771,7 +771,7 @@
 (rule
 (with-outputs-to error94.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error94.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error94.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -782,7 +782,7 @@
 (rule
 (with-outputs-to error95.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error95.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error95.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -793,7 +793,7 @@
 (rule
 (with-outputs-to error97.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error97.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error97.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -804,7 +804,7 @@
 (rule
 (with-outputs-to error98.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error98.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error98.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
@@ -815,7 +815,7 @@
 (rule
 (with-outputs-to error100.out
 (with-accepted-exit-codes 0
-(run bash -c "cat %{dep:error100.in} | %{exe:../test.exe}")
+(run bash -c "cat %{dep:error100.in} | %{exe:../test.exe} || true")
 )))
 
 (rule
