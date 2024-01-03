@@ -73,7 +73,7 @@ let fail text buffer (checkpoint : _ I.checkpoint) =
   let indication = sprintf "Syntax error %s.\n" (E.show (show text) buffer) in
   (* Fetch an error message from the database. *)
   let message = ParserMessages.message (state checkpoint) in
-  print_endline (string_of_int (state checkpoint));
+  (*print_endline (string_of_int (state checkpoint));*)
   (* Expand away the $i keywords that might appear in the message. *)
   let message = E.expand (get text checkpoint) message in
   (* Show these three components. *)
