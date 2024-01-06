@@ -48,7 +48,7 @@ let synth_tm_times (cmptr1, a) (cmptr2, b) helper =
  * compute formulas
  *)
 let synth_fm_true helper = ("T_TRUE", "")
-let synth_fm_p p helper = ("prop<T>(trace, PROP_" ^ string_of_int p ^ ", t)", "")
+let synth_fm_p p helper = ("prop<T>(trace, PROP_" ^ ( Hashtbl.find (get_proposition_rev_hashtbl helper) p  (*string_of_int p*) ) ^ ", t)", "")
 
 let synth_fm_not (cmpfm, a) helper =
   ( "[](T &trace, timespan &t){\nauto x = " ^ cmpfm
@@ -195,12 +195,12 @@ let synth_cpp11 compute helper =
       \  \n\
       \  // Propositions\n\
       \  "
-    ^ Hashtbl.fold
+    ^ Printf.sprintf "enum prop {" ^ Hashtbl.fold
         (fun x y str ->
-          str ^ Printf.sprintf "const proposition PROP_%i = %i;\n  " y y)
+          str ^ Printf.sprintf "PROP_%s = %i, " x y)
         (get_proposition_hashtbl helper)
         ""
-    ^ "\n  "
+    ^ "}; \n  "
     ^ List.fold_right
         (fun ((function_call, body), n) str ->
           body
@@ -218,7 +218,7 @@ let synth_cpp11 compute helper =
       \  std::unordered_map<std::string, int> _mapsorttostring = {\n\
       \  "
     ^ Hashtbl.fold
-        (fun x y str -> str ^ Printf.sprintf "{\"%s\",%i},\n  " x y)
+        (fun x y str -> str ^ Printf.sprintf "{\"%s\",PROP_%s},\n  " x x)
         (get_proposition_hashtbl helper)
         ""
     ^ "};\n\n\
@@ -226,7 +226,7 @@ let synth_cpp11 compute helper =
       \  std::unordered_map<int, std::string> _mapsorttoint = {\n\
       \  "
     ^ Hashtbl.fold
-        (fun x y str -> str ^ Printf.sprintf "{%i,\"%s\"},\n  " y x)
+        (fun x y str -> str ^ Printf.sprintf "{PROP_%s,\"%s\"},\n  " x x)
         (get_proposition_hashtbl helper)
         ""
     ^ "};\n#endif\n\n  #endif //"

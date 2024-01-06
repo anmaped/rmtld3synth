@@ -273,7 +273,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
     *)
     pass_test False "(A U_10 B) U_10 (A U_10 *)" test3_trace
       (Until
-         (10., Until (10., Prop "A", Prop "B"), Until (10., Prop "A", Prop "*")));
+         (10., Until (10., Prop "A", Prop "B"), Until (10., Prop "A", Prop "STAR")));
     (* 5*(2*(x-7)+2*(x-6)+2*(x-5)+2*(x-4)+2*(x-3)+2*(x-2)+2*(x-1)+2*x)+4*x
        * is simplified to 84x-280 where x is the length of the trace
     *)
@@ -288,7 +288,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
            Until
              ( 10.,
                Until (10., Prop "A", Prop "B"),
-               Until (10., Prop "A", Prop "*") ) ));
+               Until (10., Prop "A", Prop "STAR") ) ));
     pass_test False
       "((A U_10 B) U_10 (A U_10 *) U_10 ((A U_10 B) U_10 A U_10 *)" test3_trace
       (Until
@@ -297,7 +297,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
              ( 10.,
                Until (10., Prop "A", Prop "B"),
                Until (10., Prop "A", Prop "B") ),
-           Prop "*" ))
+           Prop "STAR" ))
     (*
 	* NEW test [TODO]
 	(((3.528682  < int[int[0.643269 ] (E ) ] ((E  or E )) ) or ((E  U_3.204527 E ) o
@@ -460,7 +460,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
        ("#include <rmtld3/rmtld3.h>\n// Propositions\n"
        ^ Hashtbl.fold
            (fun x y str ->
-             str ^ Printf.sprintf "const proposition PROP_%i = %i;\n  " y y)
+             str ^ Printf.sprintf "const proposition PROP_%s = %i;\n  " x y)
            (get_proposition_hashtbl helper)
            ""
        ^ "\n"));

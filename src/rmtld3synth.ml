@@ -93,7 +93,7 @@ let default_settings helper =
      (rtm_min_inter_arrival_time 1)\n\
      (rtm_max_period 2000000)\n\
      (rtm_event_type Event)\n\
-     (rtm_event_subtype proposition)\n\
+     (rtm_event_subtype prop)\n\
      (rtm_monitor_name_prefix rtm_#_%)\n\
      (rtm_monitor_time_unit s)\n\
      (gen_tests false)"
