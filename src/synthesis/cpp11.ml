@@ -48,7 +48,12 @@ let synth_tm_times (cmptr1, a) (cmptr2, b) helper =
  * compute formulas
  *)
 let synth_fm_true helper = ("T_TRUE", "")
-let synth_fm_p p helper = ("prop<T>(trace, PROP_" ^ ( Hashtbl.find (get_proposition_rev_hashtbl helper) p  (*string_of_int p*) ) ^ ", t)", "")
+
+let synth_fm_p p helper =
+  ( "prop<T>(trace, PROP_"
+    ^ Hashtbl.find (get_proposition_rev_hashtbl helper) p 
+    ^ ", t)",
+    "" )
 
 let synth_fm_not (cmpfm, a) helper =
   ( "[](T &trace, timespan &t){\nauto x = " ^ cmpfm
@@ -109,7 +114,7 @@ let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
       \      return T_UNKNOWN;\n\
       \    };\n\
       \  };\n\
-      template <typename T> class Eval_always_b_" ^ string_of_int id
+       template <typename T> class Eval_always_b_" ^ string_of_int id
     ^ " {\n\
       \  public:\n\
       \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
@@ -142,7 +147,9 @@ let synth_cpp11 compute helper =
     expressions @ get_all_setting_formula "input_exp_ltxeq" helper
   in
 
-  if expressions = [] then ( print_endline "no formula is available."; exit 1 );
+  if expressions = [] then (
+    print_endline "no formula is available.";
+    exit 1);
 
   (* let expressions = expressions @ get_all_setting_formula "input_exp_rmdsl" helper in *)
   print_endline "Expression(s) selected to encode:";
@@ -178,7 +185,7 @@ let synth_cpp11 compute helper =
     "/* This file was automatically generated from rmtld3synth tool version\n"
     ^ get_setting_string "version" helper
     ^ ".\n\nSettings:\n"
-    ^ (get_string_of_settings helper)
+    ^ get_string_of_settings helper
     ^ "\nFormula(s):\n"
     ^ List.fold_left
         (fun b exp -> b ^ "- " ^ string_of_rmtld_fm exp ^ "\n")
@@ -191,13 +198,12 @@ let synth_cpp11 compute helper =
       \  #include <rmtld3/rmtld3.h>\n\
       \  #include <rmtld3/macros.h>\n\
       \  \n\
-      \  #define RTM_TIME_UNIT " ^ get_setting_string "rtm_monitor_time_unit" helper ^ "\n\
-      \  \n\
-      \  // Propositions\n\
-      \  "
-    ^ Printf.sprintf "enum prop {" ^ Hashtbl.fold
-        (fun x y str ->
-          str ^ Printf.sprintf "PROP_%s = %i, " x y)
+      \  #define RTM_TIME_UNIT "
+    ^ get_setting_string "rtm_monitor_time_unit" helper
+    ^ "\n  \n  // Propositions\n  "
+    ^ Printf.sprintf "enum prop {"
+    ^ Hashtbl.fold
+        (fun x y str -> str ^ Printf.sprintf "PROP_%s = %i, " x y)
         (get_proposition_hashtbl helper)
         ""
     ^ "}; \n  "
@@ -326,7 +332,40 @@ let synth_cpp11 compute helper =
     ^ String.uppercase_ascii monitor_name
     ^ "_H_\n  #define "
     ^ String.uppercase_ascii monitor_name
-    ^ "_H_\n  \n  // definition of buffer symbols\n\n  #endif //"
+    ^ "_H_\n\n"
+    ^ "\n\
+      \      #include <writer.h>\n\
+      \  #include <rmtld3/rmtld3.h>\n\n\
+       template<typename T, T& buffer>\n\
+       class Writer_"
+    ^ String.uppercase_ascii monitor_name
+    ^ " {\n\n  public:"
+    ^ Printf.sprintf "enum prop {"
+    ^ Hashtbl.fold
+        (fun x y str -> str ^ Printf.sprintf "%s = %i, " x y)
+        (get_proposition_hashtbl helper)
+        ""
+    ^ "};\n\n    typedef " ^ get_event_fulltype helper
+    ^ " buffer_t;\n\n\
+      \    typename T::error_t push(prop s, timespan t) {\n\
+      \      typename T::event_t e = typename T::event_t(s,t);\n\
+      \      return w.push(e);\n\
+      \    };\n\n\
+      \  private:\n\
+      \    RTML_writer<T> w = RTML_writer<T>(buffer);\n\n\
+       };\n\n\
+       // buffer will be assigned at ld step\n\
+       extern RTML_buffer<Event<proposition>, "
+    ^ string_of_int (get_setting_int "rtm_buffer_size" helper)
+    ^ "> __buffer_"
+    ^ insert_string name "monitor" '#'
+    ^ ";\n\nusing Writer_" ^ insert_string name "" '#' ^ " = Writer_"
+    ^ String.uppercase_ascii monitor_name
+    ^ "<RTML_buffer<Event<proposition>, "
+    ^ string_of_int (get_setting_int "rtm_buffer_size" helper)
+    ^ ">,__buffer_"
+    ^ insert_string name "monitor" '#'
+    ^ ">;\n\n    " ^ " #endif //"
     ^ String.uppercase_ascii monitor_name
     ^ "_H_"
   in
