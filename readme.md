@@ -27,7 +27,7 @@ The stable version is available for testing in the browser [Try it](https://anma
 
 ### Get started with Tarball binaries
 
-The latest release version is [0.4-alpha](../../releases/download/v0.4-alpha/).
+The latest release version is [0.4-alpha](../../releases/tag/v0.4-alpha/).
 
 ### Get started with docker :whale:
 
@@ -127,7 +127,7 @@ If the libz3 is not found then use the copy command to copy the `z3/build/libz3.
 
 #### Instructions to use rtmlib2
 
-The current version is [v2.0.1](../../releases/download/v2.0.1/).
+The current version is [v2.0.1](https://github.com/anmaped/rtmlib/tags).
 
 The rtmlib2 is a support library for embedding runtime monitors written in CPP11.
 
