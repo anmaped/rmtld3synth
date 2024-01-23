@@ -10,7 +10,7 @@ rule token = parse
 | "true" { TRUE }
 | "false" { FALSE }
 | "->" { IMPLIES }
-| '-' { MINUS }
+(*| '-' { MINUS }*)
 | '+' { PLUS }
 | '*' { TIMES }
 | "&&" { AND }
@@ -39,7 +39,7 @@ rule token = parse
 | [ 'A'-'Z' 'a'-'z']+ as s { NAME s }
 | [ '0'-'9' ]+ as t (("s" | "ms" | "us" | "ns") as u) { TIME (t,u) }
 | [ '0'-'9' '.']+ as n { NUM n }
-| '_' { EMPTY }
+(*| '_' { EMPTY }*)
 | '|' '|' { OR }
 | '(' { LPAR }
 | ')' { RPAR }

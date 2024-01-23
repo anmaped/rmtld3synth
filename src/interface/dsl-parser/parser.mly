@@ -25,10 +25,7 @@
 %token LESSOREQUAL GREATEROREQUAL
 %token EQUAL
 
-%token PLUS
-%token TIMES
-%token MINUS
-%token EMPTY
+%token PLUS TIMES
 
 %token WITHIN
 %token UNTIL
@@ -40,6 +37,8 @@
 %token DURATION IN COMMA
 %token DOTS OF
 
+%left PLUS
+%left TIMES
 
 %start main
 %type <Ast.fm> main
@@ -101,15 +100,16 @@ atom:
 
 term:
   | DURATION OF f = formula IN i = interval { Duration(i,f) }
-  | a = term PLUS b = term_atom { FPlus(a,b) }
-  | a = term TIMES b = term_atom { FTimes(a,b) }
-  | r = term_atom { r }
+  | a = term PLUS b = term { FPlus(a,b) } (* benign conflicts here ... *)
+  | a = term TIMES b = term { FTimes(a,b) } (* benign conflicts here ... *)
+  | LPAR a = term RPAR { a }
+  | r = term_atom { r } 
 
-interval:
+%inline interval:
   | LSQPAR a = term_atom COMMA b = term_atom  RSQPAR { Interval(a,b) }
   | a = term_atom DOTS b = term_atom { Interval(a,b) }
 
-term_atom:
+%inline term_atom:
   | c = NUM { Constant( float_of_string c) }
 
 %%

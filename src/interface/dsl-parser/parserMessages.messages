@@ -124,6 +124,32 @@ main: NUM TIMES WITHIN
 
 Missing term after the '*' operator. The correct exp. is: <T> "*" <T>
 
+main: NUM GREATER LPAR WITHIN
+##
+## Ends in an error in state: 14.
+##
+## term -> LPAR . term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LPAR
+##
+
+Ill-formed expression.
+
+main: NUM GREATER LPAR NUM WITHIN
+##
+## Ends in an error in state: 15.
+##
+## term -> term . PLUS term [ TIMES RPAR PLUS ]
+## term -> term . TIMES term [ TIMES RPAR PLUS ]
+## term -> LPAR term . RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## LPAR term
+##
+
+Ill-formed expression.
+
 main: NUM PLUS WITHIN
 ##
 ## Ends in an error in state: 16.
@@ -135,6 +161,20 @@ main: NUM PLUS WITHIN
 ##
 
 Missing term after the '+' operator. The correct exp. is: <T> "+" <T>
+
+main: NUM PLUS NUM TWODOTS
+##
+## Ends in an error in state: 17.
+##
+## term -> term . PLUS term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term PLUS term . [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term . TIMES term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term PLUS term
+##
+
+Ill-formed expression.
 
 main: NUM LESSOREQUAL WITHIN
 ##
@@ -746,6 +786,24 @@ main: PREV FALSE WITHIN WITHIN
 ##
 
 The exp. is incomplete. The correct exp. is: "previous" <F> "within" <C>
+
+main: LPAR NUM WITHIN
+##
+## Ends in an error in state: 91.
+##
+## atom -> term . LESS term [ UNTIL SINCE RPAR OR IMPLIES AND ]
+## atom -> term . GREATER term [ UNTIL SINCE RPAR OR IMPLIES AND ]
+## atom -> term . LESSOREQUAL term [ UNTIL SINCE RPAR OR IMPLIES AND ]
+## atom -> term . GREATEROREQUAL term [ UNTIL SINCE RPAR OR IMPLIES AND ]
+## term -> term . PLUS term [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . TIMES term [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> LPAR term . RPAR [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+##
+## The known suffix of the stack is as follows:
+## LPAR term
+##
+
+Ill-formed expression.
 
 main: LPAR FALSE IN
 ##
