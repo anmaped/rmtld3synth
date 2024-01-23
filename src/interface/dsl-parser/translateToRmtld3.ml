@@ -19,6 +19,7 @@ let conv_kind = function
 
 let rec conv_tm : tm -> Rmtld3.tm = function
 | Constant (x) -> Constant (x)
+| C (t,u) -> Constant ( ((conv_time t) |> float_of_int) /. ((conv_u u) |> float_of_int) )
 | FPlus (a,b) -> FPlus (conv_tm a, conv_tm b)
 | FTimes (a,b) -> FTimes(conv_tm a, conv_tm b)
 | Duration (i,f) -> Duration (conv_interval i, conv_fm f)

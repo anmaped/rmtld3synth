@@ -111,5 +111,6 @@ term:
 
 %inline term_atom:
   | c = NUM { Constant( float_of_string c) }
+  | t = TIME { Constant( float_of_string (fst t)) }
 
 %%

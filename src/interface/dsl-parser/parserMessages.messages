@@ -715,6 +715,32 @@ main: DURATION OF FALSE IN LSQPAR NUM WITHIN
 
 The exp. is incomplete. The correct exp. is: "duration of" <F> "in" "[" <I> "," <I> "]"
 
+main: DURATION OF FALSE IN TIME WITHIN
+##
+## Ends in an error in state: 79.
+##
+## term -> DURATION OF formula IN TIME . DOTS NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> DURATION OF formula IN TIME . DOTS TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula IN TIME
+##
+
+Ill-formed expression.
+
+main: DURATION OF FALSE IN TIME DOTS WITHIN
+##
+## Ends in an error in state: 80.
+##
+## term -> DURATION OF formula IN TIME DOTS . NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> DURATION OF formula IN TIME DOTS . TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula IN TIME DOTS
+##
+
+Ill-formed expression.
+
 main: DURATION OF FALSE IN LSQPAR NUM COMMA WITHIN
 ##
 ## Ends in an error in state: 78.
@@ -763,6 +789,56 @@ main: DURATION OF FALSE IN NUM DOTS WITHIN
 
 The exp. is incomplete. The correct exp. is: "duration of" <F> "in" <I> ".." <I>
 
+main: DURATION OF FALSE IN LSQPAR TIME WITHIN
+##
+## Ends in an error in state: 88.
+##
+## term -> DURATION OF formula IN LSQPAR TIME . COMMA NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> DURATION OF formula IN LSQPAR TIME . COMMA TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula IN LSQPAR TIME
+##
+
+Ill-formed expression.
+
+main: DURATION OF FALSE IN LSQPAR TIME COMMA WITHIN
+##
+## Ends in an error in state: 89.
+##
+## term -> DURATION OF formula IN LSQPAR TIME COMMA . NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> DURATION OF formula IN LSQPAR TIME COMMA . TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula IN LSQPAR TIME COMMA
+##
+
+Ill-formed expression.
+
+main: DURATION OF FALSE IN LSQPAR TIME COMMA TIME WITHIN
+##
+## Ends in an error in state: 90.
+##
+## term -> DURATION OF formula IN LSQPAR TIME COMMA TIME . RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula IN LSQPAR TIME COMMA TIME
+##
+
+Ill-formed expression.
+
+main: DURATION OF FALSE IN LSQPAR TIME COMMA NUM WITHIN
+##
+## Ends in an error in state: 92.
+##
+## term -> DURATION OF formula IN LSQPAR TIME COMMA NUM . RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula IN LSQPAR TIME COMMA NUM
+##
+
+Ill-formed expression.
+
 main: PREV FALSE UNTIL
 ##
 ## Ends in an error in state: 86.
@@ -786,6 +862,18 @@ main: PREV FALSE WITHIN WITHIN
 ##
 
 The exp. is incomplete. The correct exp. is: "previous" <F> "within" <C>
+
+main: DURATION OF FALSE IN LSQPAR NUM COMMA TIME WITHIN
+##
+## Ends in an error in state: 96.
+##
+## term -> DURATION OF formula IN LSQPAR NUM COMMA TIME . RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## DURATION OF formula IN LSQPAR NUM COMMA TIME
+##
+
+Ill-formed expression.
 
 main: LPAR NUM WITHIN
 ##

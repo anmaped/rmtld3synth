@@ -34,6 +34,7 @@ and interval =
 
 and tm =
   | Constant of value
+  | C of time * units
   | FPlus of tm * tm
   | FTimes of tm * tm
   | Duration of interval * fm
