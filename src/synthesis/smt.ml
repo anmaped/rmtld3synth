@@ -172,28 +172,6 @@ let evalfold_param t gamma id =
 )
 	" in
 
-(*
-  synthesis of U<=
-*)
-    let compute_until_lessequal id t gamma (comp1, comp1_append) (comp2, comp2_append) =
-		let evalb id comp1 comp2 = "
-(define-fun evalb" ^ id ^ "  ( (mk Trace) (mt Time) (mtb Time) (v Fourvalue) ) Fourvalue
-	(ite (= v FVSYMBOL) (evali "^ comp1 ^" "^ comp2 ^" ) v )
-)
-		" in
-
-		let evalfold id = evalfold_param t gamma id in
-
-		let evalc id = "
-(define-fun evalc" ^ id ^ " ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
-	(mk-pair (<= trc_size " ^ (string_of_int (gamma + t)) ^ ") (evalfold" ^ id ^ " mt mtb ))
-)
-		" in comp1_append ^ comp2_append ^ (evalb id comp1 comp2) ^ (evalfold id) ^ (evalc id) ^ "
-(define-fun computeUlesseq" ^ id ^ "  ((mt Time) (mtb Time)) Threevalue
-	(mapb3 (evalc" ^ id ^ " mt mtb))
-)
-	" in
-
 
 (*
   synthesis of U=
@@ -299,20 +277,6 @@ and synth_smtlib_fm t formula helper =
     								"(computeUless!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt )"
     							  ,
 							    	(compute_until_less
-							    		("!"^(string_of_int idx))
-							    		t
-							    		(int_of_float gamma)
-							    		(sf1_out1, sf1_out2)
-							    		(sf2_out1, sf2_out2)
-							    	)
-								 )
-	| Until_leq (gamma,sf1,sf2)-> let idx = get_until_counter helper in
-    							 let sf1_out1, sf1_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf1 helper) in
-    							 let sf2_out1, sf2_out2 = (synth_smtlib_fm (t + (int_of_float gamma)) sf2 helper) in
-    	 					     (
-    								"(computeUlesseq!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int (int_of_float gamma)) ^") mt )"
-    							  ,
-							    	(compute_until_lessequal
 							    		("!"^(string_of_int idx))
 							    		t
 							    		(int_of_float gamma)

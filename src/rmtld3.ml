@@ -29,17 +29,6 @@ type fm =
   | Exists of var_id * fm
   | LessThan of tm * tm
   | Until_eq of time * fm * fm
-  (* extensional operator *)
-  | Until_leq of time * fm * fm
-
-(* extensional operator *)
-(*
-  | Less_eq of tm * tm          (* extensional operator *)
-  | And of fm * fm              (* extensional operator *)
-  | Implies of fm * fm          (* extensional operator *)
-  | Greater of tm * tm          (* extensional operator *)
-  | Greater_eq of tm * tm       (* extensional operator *)
- *)
 and tm =
   | Constant of value
   | Variable of var_id
@@ -64,11 +53,13 @@ let mand_list lst = List.fold_left (fun a b -> mand a b) (hd lst) (tl lst)
 
 let mimplies phi1 phi2 = Or (Not phi1, phi2)
 
+let until_leq t phi1 phi2 = Or( Until_eq(t, phi1, phi2), Until(t, phi1, phi2) )
+
 let meventually t phi = Until (t, mtrue, phi)
 
 let meventually_eq t phi = Until_eq (t, mtrue, phi)
 
-let meventually_leq t phi = Until_leq (t, mtrue, phi)
+let meventually_leq t phi = until_leq t mtrue phi
 
 let malways t phi = Not (meventually t (Not phi))
 
@@ -734,11 +725,6 @@ let rec calculate_t_upper_bound (formula : rmtld3_fm) =
            (calculate_t_upper_bound sf1)
            (calculate_t_upper_bound sf2)
   | Until_eq (gamma, sf1, sf2) ->
-      gamma
-      +. Stdlib.max
-           (calculate_t_upper_bound sf1)
-           (calculate_t_upper_bound sf2)
-  | Until_leq (gamma, sf1, sf2) ->
       gamma
       +. Stdlib.max
            (calculate_t_upper_bound sf1)

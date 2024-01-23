@@ -154,7 +154,6 @@ let rec prop_list_of_fm' (fm: rmtld3_fm) : rmtld3_fm list =
   | Or (sf1, sf2)               -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
   | Until (gamma, sf1, sf2)     -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
   | Until_eq (gamma, sf1, sf2)  -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
-  | Until_leq (gamma, sf1, sf2) -> (prop_list_of_fm' sf1)@(prop_list_of_fm' sf2)
   | LessThan (tr1,tr2)          -> []
   | a                           -> raise (Failure ("Unsupported formula " ^ Sexp.to_string_hum (sexp_of_fm a)) )
 

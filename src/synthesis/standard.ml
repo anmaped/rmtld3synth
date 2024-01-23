@@ -31,7 +31,6 @@ module type Translate_sig = sig
 
   val synth_fm_ueq : value -> body -> body -> helper -> body
 
-  val synth_fm_ulesseq : value -> body -> body -> helper -> body
 end
 
 module Translate (T : Translate_sig) = struct
@@ -71,10 +70,6 @@ module Translate (T : Translate_sig) = struct
         if gamma > 0. then
           T.synth_fm_ueq gamma (synth sf1 helper) (synth sf2 helper) helper
         else raise (Failure "Gamma of U= operator is negative")
-    | Until_leq (gamma, sf1, sf2) ->
-        if gamma > 0. then
-          T.synth_fm_ulesseq gamma (synth sf1 helper) (synth sf2 helper) helper
-        else raise (Failure "Gamma of U<= operator is negative")
     | LessThan (tr1, tr2) ->
         T.synth_fm_less (synth_term tr1 helper) (synth_term tr2 helper) helper
     | _ ->

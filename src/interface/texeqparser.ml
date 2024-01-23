@@ -479,7 +479,7 @@ and rmtld3_fm_of_intermediate_ltx_fm ifm : rmtld3_fm =
       Until_eq(gamma, rmtld3_fm_of_intermediate_ltx_fm fm1, rmtld3_fm_of_intermediate_ltx_fm fm2)
 
   | U(POp(Leq(),[TVal(a)]),fm1,fm2) ->let gamma = float_of_int a in
-      Until_leq(gamma, rmtld3_fm_of_intermediate_ltx_fm fm1, rmtld3_fm_of_intermediate_ltx_fm fm2)
+      until_leq gamma (rmtld3_fm_of_intermediate_ltx_fm fm1) (rmtld3_fm_of_intermediate_ltx_fm fm2)
 
   | FExists(TVar(a), fm) -> Exists(a, rmtld3_fm_of_intermediate_ltx_fm fm)
 

@@ -786,15 +786,6 @@ let synth_fm_ueq gamma sf1 sf2 helper =
   (* synth_fm_ueq is equal to synth_fm_aw_eq /\ synth_fm_ev_eq *)
   (f_tvand x x2, y @ y2)
 
-(*
-  synthesis of U<=
-*)
-let synth_fm_ulesseq gamma sf1 sf2 helper =
-  let x, y = synth_fm_uless gamma sf1 sf2 helper in
-  let x2, y2 = synth_fm_ev_eq gamma sf2 helper in
-  (* synth_fm_ulesseq is equal to synth_fm_uless \/ synth_fm_ev_eq *)
-  (f_tvor x x2, y @ y2)
-
 
 let synth_smtlib_header () =
   let common_header () = set_info lst ":smt-lib-version" "2.6" in

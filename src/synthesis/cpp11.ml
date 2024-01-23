@@ -128,12 +128,6 @@ let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
       \  };\n\
       \  " )
 
-let synth_fm_ulesseq gamma (sf1, a) (sf2, b) helper =
-  synth_fm_or
-    (synth_fm_ueq gamma (sf1, a) (sf2, b) helper)
-    (synth_fm_uless gamma (sf1, a) (sf2, b) helper)
-    helper
-
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11 compute helper =
   print_endline "Current Configuration:";
