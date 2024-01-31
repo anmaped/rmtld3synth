@@ -17,6 +17,7 @@
 %token RPAR RSQPAR
 %token EOF
 %token TWODOTS
+%token NEGATION
 
 %token IMPLIES
 %token AND
@@ -97,6 +98,7 @@ atom:
 | TRUE { True }
 | FALSE { False }
 | c = NAME { Prop c }
+| NEGATION f = atom { Not(f) }
 
 term:
   | DURATION OF f = formula IN i = interval { Duration(i,f) }

@@ -11,6 +11,7 @@ rule token = parse
 | "false" { FALSE }
 | "->" { IMPLIES }
 (*| '-' { MINUS }*)
+| "~" { NEGATION } 
 | '+' { PLUS }
 | '*' { TIMES }
 | "&&" { AND }

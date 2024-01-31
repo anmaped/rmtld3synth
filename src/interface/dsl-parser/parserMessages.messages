@@ -22,6 +22,18 @@ main: RISE WITHIN
 
 The rest of rise exp. is missing. The correct exp. is: "rise" <F> "within" <C>
 
+main: NEGATION WITHIN
+##
+## Ends in an error in state: 5.
+##
+## atom -> NEGATION . atom [ WITHIN UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## NEGATION
+##
+
+Ill-formed expression.
+
 main: LPAR WITHIN
 ##
 ## Ends in an error in state: 5.
