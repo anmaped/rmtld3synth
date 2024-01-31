@@ -56,7 +56,7 @@ let set_exp_dsl v =
 
 let set_exp_ltxeq v =
   rmtld_formula_ltxeq := v;
-  set_setting "input_exp_ltxeq" (Fm (Texeqparser.texeqparser v)) helper
+  set_setting "input_exp_ltxeq" (Fm (Tex.Texeqparser.texeqparser v)) helper
 
 let set_exp_rmdsl v =
   expression_rmdsl := v;
@@ -387,7 +387,7 @@ let _ =
       formula_of_sexp (Sexp.of_string !rmtld_formula))
     else if !rmtld_formula_ltxeq <> "" then (
       verb (fun _ -> print_endline "Latex Eq parsing enabled.");
-      Texeqparser.texeqparser !rmtld_formula_ltxeq)
+      Tex.Texeqparser.texeqparser !rmtld_formula_ltxeq)
     else (* there is no imput formula *)
       mfalse
   in

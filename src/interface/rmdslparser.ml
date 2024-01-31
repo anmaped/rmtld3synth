@@ -4,7 +4,7 @@ open List
 open Sexplib
 open Sexplib.Conv
 
-open Texeqparser
+open Tex.Texeqparser
 open Rmtld3
 open Helper
 
@@ -114,7 +114,7 @@ let rec rmdsl_rs_parser' (l: tokens) (feed: rmdsl_rs) : rmdsl_rs * tokens =
 let rmdsl_rs_parser lx = fst (rmdsl_rs_parser' lx (Emp()))
 
 let rmdslparser str =
-  let rs = rmdsl_rs_parser (Texeqparser.lex (explode str)) in
+  let rs = rmdsl_rs_parser (Tex.Texeqparser.lex (explode str)) in
   verb (fun _ ->
     print_endline ("Rmdsl input: "^str^"\n");
     print_endline "--------------------------------------------------------------------------------\n";

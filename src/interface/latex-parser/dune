@@ -1,0 +1,17 @@
+(executable
+  (name test)
+  (flags -w A-4-70)
+  (libraries rmtld3synth.interface.tex sexplib)
+  (modules Test)
+  (modes exe)
+  (preprocess      (pps ppx_sexp_conv))
+)
+
+; Language library definition
+(library
+  (name           tex)
+  (public_name    rmtld3synth.interface.tex)
+  (libraries      rmtld3synth.rmtld3 rmtld3synth.helper)
+  (modules        Texeqparser)
+  (preprocess      (pps ppx_sexp_conv))
+)
