@@ -24,6 +24,7 @@ let print_kind = function
 
 let rec print_tm = function
 | Constant x -> string_of_float x
+| C (t,u) -> (print_time t) ^ (print_u u)
 | FPlus (a,b) -> print_tm a ^ "+" ^ print_tm b
 | FTimes (a,b) -> print_tm a ^ "*" ^ print_tm b
 | Duration (i,f) -> "∫" ^ print_interval i ^ " " ^ print_fm f

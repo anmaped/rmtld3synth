@@ -51,7 +51,7 @@ let synth_fm_true helper = ("T_TRUE", "")
 
 let synth_fm_p p helper =
   ( "prop<T>(trace, PROP_"
-    ^ Hashtbl.find (get_proposition_rev_hashtbl helper) p 
+    ^ Hashtbl.find (get_proposition_rev_hashtbl helper) p
     ^ ", t)",
     "" )
 
@@ -70,77 +70,18 @@ let synth_fm_less (cmptr1, a) (cmptr2, b) helper =
     ^ ";\nreturn b3_lessthan(x, y);\n}(trace,t)",
     a ^ b )
 
-let synth_fm_uless gamma (sf1, a) (sf2, b) helper =
-  (* detect case when false U< f2 and f1=false *)
-  if (sf1,a) = synth_fm_not (synth_fm_true helper) helper then
-    (
-      print_endline "next operator is being simplified ...";
-      (* get new id *)
-      let id = get_until_counter helper in
-      ("always_equal<T, Eval_always_b_"
-      ^ string_of_int id ^ "<T>, "
-      ^ string_of_int (int_of_float gamma)
-      ^ ">","
-        template <typename T> class Eval_always_b_" ^ string_of_int id
-        ^ " {\n\
-          \  public:\n\
-          \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
-          \      auto sf = " ^ sf2
-        ^ ";\n\
-          \      return sf;\n\
-          \    };\n\
-          \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
-          \      return T_UNKNOWN;\n\
-          \    };\n\
-          \  };\n\
-          \  " )
-
-    )
-  else
+let convert_to_always sf2 gamma id helper =
+  print_endline
+    ("The next operator 'false U[" ^ string_of_float gamma
+   ^ "] fm' is converted to 'Always[="
+    ^ string_of_int (int_of_float gamma)
+    ^ "] fm' since cpp11 synthesis is enabled.");
   (* get new id *)
   let id = get_until_counter helper in
-  ( "until_less<T, Eval_until_less_" ^ string_of_int id ^ "<T>, "
+  ( "always_equal<T, Eval_always_b_" ^ string_of_int id ^ "<T>, "
     ^ string_of_int (int_of_float gamma)
-    ^ ">(trace, t)",
-    a ^ b ^ "\n  template <typename T> class Eval_until_less_"
-    ^ string_of_int id
-    ^ " {\n\
-      \  public:\n\
-      \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
-      \      auto sf = " ^ sf1
-    ^ ";\n\
-      \      return sf;\n\
-      \    };\n\
-      \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
-      \      auto sf = " ^ sf2 ^ ";\n      return sf;\n    };\n  };\n" )
-
-let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
-  (* get new id *)
-  let id = get_until_counter helper in
-  (*
-     Until (=): A Until (=a) B <-> Always(<a) A and Eventually(=a) B *OR*
-     Until (=): A Until (=a) B <-> Always(<a) A and Always(=a) B
-  *)
-  ( "[](T &trace, timespan &t){\n    auto x = always_less<T, Eval_always_a_"
-    ^ string_of_int id ^ "<T>, "
-    ^ string_of_int (int_of_float gamma)
-    ^ ">(trace, t);\n    auto y = always_equal<T, Eval_always_b_"
-    ^ string_of_int id ^ "<T>, "
-    ^ string_of_int (int_of_float gamma)
-    ^ ">(trace, t);\n    return b3_and(x,y);\n  }(trace, t)\n  ",
-    a ^ b ^ "template <typename T> class Eval_always_a_" ^ string_of_int id
-    ^ " {\n\
-      \  public:\n\
-      \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
-      \      auto sf = " ^ sf1
-    ^ ";\n\
-      \      return sf;\n\
-      \    };\n\
-      \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
-      \      return T_UNKNOWN;\n\
-      \    };\n\
-      \  };\n\
-       template <typename T> class Eval_always_b_" ^ string_of_int id
+    ^ ">",
+    "\n      template <typename T> class Eval_always_b_" ^ string_of_int id
     ^ " {\n\
       \  public:\n\
       \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
@@ -153,6 +94,72 @@ let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
       \    };\n\
       \  };\n\
       \  " )
+
+let synth_fm_uless gamma (sf1, a) (sf2, b) helper =
+  (* get new id *)
+  let id = get_until_counter helper in
+  (* detect case when false U< f2 and f1=false *)
+  if (sf1, a) = synth_fm_not (synth_fm_true helper) helper then
+    convert_to_always sf2 gamma id helper
+  else
+    ( "until_less<T, Eval_until_less_" ^ string_of_int id ^ "<T>, "
+      ^ string_of_int (int_of_float gamma)
+      ^ ">(trace, t)",
+      a ^ b ^ "\n  template <typename T> class Eval_until_less_"
+      ^ string_of_int id
+      ^ " {\n\
+        \  public:\n\
+        \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+        \      auto sf = " ^ sf1
+      ^ ";\n\
+        \      return sf;\n\
+        \    };\n\
+        \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+        \      auto sf = " ^ sf2 ^ ";\n      return sf;\n    };\n  };\n" )
+
+let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
+  (* get new id *)
+  let id = get_until_counter helper in
+  (* detect case when false U= f2 and f1=false *)
+  if (sf1, a) = synth_fm_not (synth_fm_true helper) helper then
+    convert_to_always sf2 gamma id helper
+  else
+    (*
+     Until (=): A Until (=a) B <-> Always(<a) A and Eventually(=a) B *OR*
+     Until (=): A Until (=a) B <-> Always(<a) A and Always(=a) B
+  *)
+    ( "[](T &trace, timespan &t){\n    auto x = always_less<T, Eval_always_a_"
+      ^ string_of_int id ^ "<T>, "
+      ^ string_of_int (int_of_float gamma)
+      ^ ">(trace, t);\n    auto y = always_equal<T, Eval_always_b_"
+      ^ string_of_int id ^ "<T>, "
+      ^ string_of_int (int_of_float gamma)
+      ^ ">(trace, t);\n    return b3_and(x,y);\n  }(trace, t)\n  ",
+      a ^ b ^ "template <typename T> class Eval_always_a_" ^ string_of_int id
+      ^ " {\n\
+        \  public:\n\
+        \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+        \      auto sf = " ^ sf1
+      ^ ";\n\
+        \      return sf;\n\
+        \    };\n\
+        \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+        \      return T_UNKNOWN;\n\
+        \    };\n\
+        \  };\n\
+         template <typename T> class Eval_always_b_" ^ string_of_int id
+      ^ " {\n\
+        \  public:\n\
+        \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+        \      auto sf = " ^ sf2
+      ^ ";\n\
+        \      return sf;\n\
+        \    };\n\
+        \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+        \      return T_UNKNOWN;\n\
+        \    };\n\
+        \  };\n\
+        \  " )
 
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11 compute helper =

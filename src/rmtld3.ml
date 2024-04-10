@@ -469,10 +469,10 @@ and string_of_rmtld_fm rmtld_fm =
   | Exists (var, sf) -> "exists " ^ var ^ " (" ^ string_of_rmtld_fm sf ^ ")"
   | LessThan (tr1, tr2) ->
       "(" ^ string_of_rmtld_tm tr1 ^ " < " ^ string_of_rmtld_tm tr2 ^ ")"
-  | a ->
+  (*| a ->
       raise
         (Failure ("string_of_rmtld_fm: Unsupported formula "
-          ^ Sexp.to_string_hum (sexp_of_fm a)))
+          ^ Sexp.to_string_hum (sexp_of_fm a)))*)
 
 (* print formulas and terms in plaintext *)
 let print_plaintext_formula f = print_string (string_of_rmtld_fm f)
