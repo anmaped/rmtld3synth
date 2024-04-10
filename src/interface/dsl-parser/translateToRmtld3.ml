@@ -46,8 +46,10 @@ and conv_fm : fm -> Rmtld3.fm = function
 (*| Since (k,a,b) -> Since (conv_kind k,conv_fm a, conv_fm b)
 | Rise (k,f) -> "rise" ^ conv_kind k ^ " " ^ conv_fm f
 | Fall (k,f) -> "fall" ^ conv_kind k ^ " " ^ conv_fm f
-| Prev (k,f) -> "prev" ^ conv_kind k ^ " " ^ conv_fm f
-| Next (k,f) -> "next" ^ conv_kind k ^ " " ^ conv_fm f*)
+| Prev (k,f) -> "prev" ^ conv_kind k ^ " " ^ conv_fm f*)
+| Next (Less (t,u) as k,f) -> Until (conv_kind k, mfalse, conv_fm f)
+| Next (Equal (t,u) as k,f) ->  Until_eq (conv_kind k, mfalse, conv_fm f)
+| Next (LessOrEqual (t,u) as k,f) -> Or(Until_eq (conv_kind k, mfalse, conv_fm f), Until (conv_kind k, mfalse, conv_fm f))
 | Always (Less (t,u) as k,f) -> malways (conv_kind k) (conv_fm f)
 | Always (Equal (t,u) as k,f) -> malways_eq (conv_kind k) (conv_fm f)
 | Always (LessOrEqual (t,u) as k,f) -> malways_leq (conv_kind k) (conv_fm f)

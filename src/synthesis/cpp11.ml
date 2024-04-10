@@ -71,6 +71,32 @@ let synth_fm_less (cmptr1, a) (cmptr2, b) helper =
     a ^ b )
 
 let synth_fm_uless gamma (sf1, a) (sf2, b) helper =
+  (* detect case when false U< f2 and f1=false *)
+  if (sf1,a) = synth_fm_not (synth_fm_true helper) helper then
+    (
+      print_endline "next operator is being simplified ...";
+      (* get new id *)
+      let id = get_until_counter helper in
+      ("always_equal<T, Eval_always_b_"
+      ^ string_of_int id ^ "<T>, "
+      ^ string_of_int (int_of_float gamma)
+      ^ ">","
+        template <typename T> class Eval_always_b_" ^ string_of_int id
+        ^ " {\n\
+          \  public:\n\
+          \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+          \      auto sf = " ^ sf2
+        ^ ";\n\
+          \      return sf;\n\
+          \    };\n\
+          \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+          \      return T_UNKNOWN;\n\
+          \    };\n\
+          \  };\n\
+          \  " )
+
+    )
+  else
   (* get new id *)
   let id = get_until_counter helper in
   ( "until_less<T, Eval_until_less_" ^ string_of_int id ^ "<T>, "

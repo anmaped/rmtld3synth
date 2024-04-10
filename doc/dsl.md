@@ -6,6 +6,7 @@ The BNF representation of the domain specification language is provided below:
 ```ocaml
 <F> ::==                             (* Formulas *)
 | <proposition>                      (* atomic proposition *)
+| "~" <F>                            (* negation *)
 | <F> "->" <F>                       (* implies *)
 | <F> "&&" <F>                       (* and *)
 | <F> "||" <F>                       (* or *)
