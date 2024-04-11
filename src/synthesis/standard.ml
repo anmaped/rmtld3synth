@@ -8,29 +8,19 @@ module type Translate_sig = sig
   type body
 
   val synth_tm_constant : value -> helper -> body
-
   val synth_tm_variable : string -> helper -> body
-
   val synth_tm_duration : body -> body -> helper -> body
-
   val synth_tm_plus : body -> body -> helper -> body
-
   val synth_tm_times : body -> body -> helper -> body
-
   val synth_fm_true : helper -> body
-
   val synth_fm_p : prop_base10 -> helper -> body
-
   val synth_fm_not : body -> helper -> body
-
   val synth_fm_or : body -> body -> helper -> body
-
   val synth_fm_less : body -> body -> helper -> body
-
   val synth_fm_uless : value -> body -> body -> helper -> body
-
   val synth_fm_ueq : value -> body -> body -> helper -> body
-
+  val synth_fm_sless : value -> body -> body -> helper -> body
+  val synth_fm_seq : value -> body -> body -> helper -> body
 end
 
 module Translate (T : Translate_sig) = struct
@@ -53,9 +43,10 @@ module Translate (T : Translate_sig) = struct
     | Prop p ->
         let tbl = get_proposition_hashtbl helper in
         let id_num10, id_asciistr =
-          try (Hashtbl.find tbl p, "") with Not_found ->
+          try (Hashtbl.find tbl p, "")
+          with Not_found ->
             let cnt = get_proposition_counter helper in
-            set_proposition_two_way_map p cnt helper ;
+            set_proposition_two_way_map p cnt helper;
             (cnt, p)
         in
         T.synth_fm_p id_num10 helper
@@ -66,15 +57,23 @@ module Translate (T : Translate_sig) = struct
         if gamma > 0. then
           T.synth_fm_uless gamma (synth sf1 helper) (synth sf2 helper) helper
         else raise (Failure "Gamma of U< operator is negative")
+    | Since (gamma, sf1, sf2) ->
+        if gamma > 0. then
+          T.synth_fm_sless gamma (synth sf1 helper) (synth sf2 helper) helper
+        else raise (Failure "Gamma of S< operator is negative")
     | Until_eq (gamma, sf1, sf2) ->
         if gamma > 0. then
           T.synth_fm_ueq gamma (synth sf1 helper) (synth sf2 helper) helper
         else raise (Failure "Gamma of U= operator is negative")
+    | Since_eq (gamma, sf1, sf2) ->
+        if gamma > 0. then
+          T.synth_fm_seq gamma (synth sf1 helper) (synth sf2 helper) helper
+        else raise (Failure "Gamma of S= operator is negative")
     | LessThan (tr1, tr2) ->
         T.synth_fm_less (synth_term tr1 helper) (synth_term tr2 helper) helper
     | _ ->
         raise
           (Failure
-             ( "synth: unsupported formula "
-             ^ Sexp.to_string_hum (sexp_of_rmtld3_fm formula) ))
+             ("synth: unsupported formula "
+             ^ Sexp.to_string_hum (sexp_of_rmtld3_fm formula)))
 end

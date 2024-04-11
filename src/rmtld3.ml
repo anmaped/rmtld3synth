@@ -26,9 +26,11 @@ type fm =
   | Not of fm
   | Or of fm * fm
   | Until of time * fm * fm
+  | Since of time * fm * fm
   | Exists of var_id * fm
   | LessThan of tm * tm
   | Until_eq of time * fm * fm
+  | Since_eq of time * fm * fm
 and tm =
   | Constant of value
   | Variable of var_id
@@ -462,9 +464,14 @@ and string_of_rmtld_fm rmtld_fm =
       "(" ^ string_of_rmtld_fm sf1 ^ " or " ^ string_of_rmtld_fm sf2 ^ ")"
   | Until (pval, sf1, sf2) ->
     "(" ^ string_of_rmtld_fm sf1 ^ " U[" ^ string_of_float pval ^ "] "
+  | Since (pval, sf1, sf2) ->
+    "(" ^ string_of_rmtld_fm sf1 ^ " S[" ^ string_of_float pval ^ "] "
     ^ string_of_rmtld_fm sf2 ^ ")"
   | Until_eq (pval, sf1, sf2) ->
     "(" ^ string_of_rmtld_fm sf1 ^ " U[=" ^ string_of_float pval ^ "] "
+    ^ string_of_rmtld_fm sf2 ^ ")"
+  | Since_eq (pval, sf1, sf2) ->
+    "(" ^ string_of_rmtld_fm sf1 ^ " S[=" ^ string_of_float pval ^ "] "
     ^ string_of_rmtld_fm sf2 ^ ")"
   | Exists (var, sf) -> "exists " ^ var ^ " (" ^ string_of_rmtld_fm sf ^ ")"
   | LessThan (tr1, tr2) ->

@@ -1,10 +1,13 @@
-
 type var_id = string
 type prop = string
 type time = Unbound | Bound of int
 type value = float
 type units = S | Ms | Us | Ns
-type kind = Less of time * units | Equal of time * units | LessOrEqual of time * units
+
+type kind =
+  | Less of time * units
+  | Equal of time * units
+  | LessOrEqual of time * units
 
 type fm =
   | True
@@ -29,8 +32,7 @@ type fm =
   | Eventually of kind * fm (* shorthand *)
   | PastEventually of kind * fm (* shorthand *)
 
-and interval =
-  | Interval of tm * tm
+and interval = Interval of tm * tm
 
 and tm =
   | Constant of value

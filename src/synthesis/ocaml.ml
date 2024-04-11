@@ -7,7 +7,6 @@ open Str
 open Rmtld3
 open Helper
 
-
 let has_tm_dur = ref false
 let has_fm_uless = ref false
 let has_fm_ueq = ref false
@@ -213,6 +212,12 @@ let synth_fm_ulesseq_body =
   \      b4_to_b3 eval_c\n\
   \  end\n"
 
+let synth_fm_sless gamma (sf1, a) (sf2, b) helper =
+  failwith ("S[<" ^ string_of_float gamma ^ "] Not Implemented!")
+
+let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
+  failwith ("S[=" ^ string_of_float gamma ^ "] Not Implemented!")
+
 let synth_ocaml compute helper =
   (* out_file cluster_name monitor_period *)
   print_endline "Current Configuration:";
@@ -262,8 +267,8 @@ let synth_ocaml compute helper =
     ^ List.fold_right
         (fun ((function_call, body), n) str ->
           "module "
-          ^ String.capitalize_ascii monitor_name ^ "_"
-          ^ n ^ "  ( T : Trace  ) = struct \n" ^ body
+          ^ String.capitalize_ascii monitor_name
+          ^ "_" ^ n ^ "  ( T : Trace  ) = struct \n" ^ body
           ^ (if !has_fm_uless then synth_fm_uless_body else "")
           ^ (if !has_fm_ueq then synth_fm_ueq_body else "")
           ^ (if !has_fm_ulesseq then synth_fm_ulesseq_body else "")
@@ -302,7 +307,8 @@ let synth_ocaml compute helper =
       let stream = open_out out_file in
       Printf.fprintf stream "%s\n"
         (Str.global_replace (Str.regexp monitor_name)
-           (out_file |> Filename.basename |> Filename.remove_extension |> String.capitalize_ascii)
+           (out_file |> Filename.basename |> Filename.remove_extension
+          |> String.capitalize_ascii)
            code1);
       close_out stream;
 

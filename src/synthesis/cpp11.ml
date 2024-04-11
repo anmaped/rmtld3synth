@@ -73,6 +73,7 @@ let synth_fm_less (cmptr1, a) (cmptr2, b) helper =
 let convert_to_always sf2 gamma id helper =
   print_endline
     ("The next operator 'false U[" ^ string_of_float gamma
+   ^ "] fm' or false U[=" ^ string_of_float gamma
    ^ "] fm' is converted to 'Always[="
     ^ string_of_int (int_of_float gamma)
     ^ "] fm' since cpp11 synthesis is enabled.");
@@ -160,6 +161,12 @@ let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
         \    };\n\
         \  };\n\
         \  " )
+
+let synth_fm_sless gamma (sf1, a) (sf2, b) helper =
+  failwith ("S[<" ^ string_of_float gamma ^ "] Not Implemented!")
+
+let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
+  failwith ("S[=" ^ string_of_float gamma ^ "] Not Implemented!")
 
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11 compute helper =

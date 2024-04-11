@@ -1,7 +1,6 @@
 open Rmtld3
 open Helper
 open Synthesis.Standard
-open Synthesis.Smt
 open Sexplib.Conv
 
 let create_dir dir_name =
@@ -175,14 +174,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
       call_list :=
         !call_list ^ "__unit_test_" ^ cluster_name ^ "_c"
         ^ string_of_int (get_counter_test_cases helper)
-        ^ "_" ^ string_of_int n ^ "();";
-      (* generate smt benchmark tests *)
-      (* create directory *)
-      let oc = open_out (cluster_name ^ "/" ^ id ^ ".smt2") in
-      (*let smtlibv2 = Sexp.to_string (sexp_of_formula formula) in*)
-      let smtlibv2 = rmtld3synthsmt formula helper in
-      output_string oc smtlibv2;
-      close_out oc)
+        ^ "_" ^ string_of_int n ^ "();")
     else raise (TEST_FAIL (b3_to_string t_value))
   in
   let pass_test expected_value lb trace formula =

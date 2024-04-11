@@ -1,6 +1,5 @@
 open Lexing
 open Printf
-
 module E = MenhirLib.ErrorReports
 module L = MenhirLib.LexerUtil
 
@@ -12,19 +11,14 @@ module I = UnitActionsParser.MenhirInterpreter
    which must be of the form [HandlingError env]. *)
 
 let env checkpoint =
-  match checkpoint with
-  | I.HandlingError env ->
-      env
-  | _ ->
-      assert false
+  match checkpoint with I.HandlingError env -> env | _ -> assert false
 
 (* [state checkpoint] extracts the number of the current state out of a
    checkpoint. *)
 
 let state checkpoint : int =
   match I.top (env checkpoint) with
-  | Some (I.Element (s, _, _, _)) ->
-      I.number s
+  | Some (I.Element (s, _, _, _)) -> I.number s
   | None ->
       (* Hmm... The parser is in its initial state. The incremental API
          currently lacks a way of finding out the number of the initial
@@ -36,9 +30,7 @@ let state checkpoint : int =
    delimited by the positions [pos1] and [pos2]. *)
 
 let show text positions =
-  E.extract text positions
-  |> E.sanitize
-  |> E.compress
+  E.extract text positions |> E.sanitize |> E.compress
   |> E.shorten 20 (* max width 43 *)
 
 (* [get text checkpoint i] extracts and shows the range of the input text that
@@ -46,8 +38,7 @@ let show text positions =
 
 let get text checkpoint i =
   match I.get i (env checkpoint) with
-  | Some (I.Element (_, _, pos1, pos2)) ->
-      show text (pos1, pos2)
+  | Some (I.Element (_, _, pos1, pos2)) -> show text (pos1, pos2)
   | None ->
       (* The index is out of range. This should not happen if [$i]
          keywords are correctly inside the syntax error message
@@ -60,8 +51,7 @@ let get text checkpoint i =
    table-based parser is invoked only when we know that there is a
    syntax error in the input file. *)
 
-let succeed _v =
-  assert false
+let succeed _v = assert false
 
 (* [fail text buffer checkpoint] is invoked when parser has encountered a
    syntax error. *)
