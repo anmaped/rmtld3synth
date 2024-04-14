@@ -230,7 +230,7 @@ let synth_cpp11 compute helper =
     ^ String.uppercase_ascii monitor_name
     ^ "_H_\n\n\
       \  #include <rmtld3/rmtld3.h>\n\
-      \  #include <rmtld3/macros.h>\n\
+      \  #include <rmtld3/formulas.h>\n\
       \  \n\
       \  #define RTM_TIME_UNIT "
     ^ get_setting_string "rtm_monitor_time_unit" helper

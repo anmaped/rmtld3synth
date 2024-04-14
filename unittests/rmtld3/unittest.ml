@@ -432,7 +432,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
        ("\n\
          #include <reader.h>\n\
          #include <rmtld3/reader.h>\n\
-         #include <rmtld3/macros.h>\n\
+         #include <rmtld3/formulas.h>\n\
          #include <periodicmonitor.h>\n\
          #include \"prop.h\"\n\n\
          #ifdef __NUTTX__\n\
