@@ -464,6 +464,7 @@ and string_of_rmtld_fm rmtld_fm =
       "(" ^ string_of_rmtld_fm sf1 ^ " or " ^ string_of_rmtld_fm sf2 ^ ")"
   | Until (pval, sf1, sf2) ->
     "(" ^ string_of_rmtld_fm sf1 ^ " U[" ^ string_of_float pval ^ "] "
+    ^ string_of_rmtld_fm sf2 ^ ")"
   | Since (pval, sf1, sf2) ->
     "(" ^ string_of_rmtld_fm sf1 ^ " S[" ^ string_of_float pval ^ "] "
     ^ string_of_rmtld_fm sf2 ^ ")"
