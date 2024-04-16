@@ -51,24 +51,32 @@ and conv_fm : fm -> Rmtld3.fm = function
       Or
         ( Since (conv_kind k, conv_fm a, conv_fm b),
           Since_eq (conv_kind k, conv_fm a, conv_fm b) )
-  (*| Rise (k,f) -> "rise" ^ conv_kind k ^ " " ^ conv_fm f
-    | Fall (k,f) -> "fall" ^ conv_kind k ^ " " ^ conv_fm f
-    | Prev (k,f) -> "prev" ^ conv_kind k ^ " " ^ conv_fm f*)
-  | Next ((Less (t, u) as k), f) -> Until (conv_kind k, mfalse, conv_fm f)
-  | Next ((Equal (t, u) as k), f) -> Until_eq (conv_kind k, mfalse, conv_fm f)
-  | Next ((LessOrEqual (t, u) as k), f) ->
-      Or
-        ( Until (conv_kind k, mfalse, conv_fm f),
-          Until_eq (conv_kind k, mfalse, conv_fm f) )
+  | Rise (k, f) -> failwith "rise"
+  | Fall (k, f) -> failwith "fall"
+  | Next ((Less (t, u) as k), f) -> mnext (conv_kind k) (conv_fm f)
+  | Next ((Equal (t, u) as k), f) -> mnext_eq (conv_kind k) (conv_fm f)
+  | Next ((LessOrEqual (t, u) as k), f) -> mnext_leq (conv_kind k) (conv_fm f)
+  | Prev ((Less (t, u) as k), f) -> mprev (conv_kind k) (conv_fm f)
+  | Prev ((Equal (t, u) as k), f) -> mprev_eq (conv_kind k) (conv_fm f)
+  | Prev ((LessOrEqual (t, u) as k), f) -> mprev_leq (conv_kind k) (conv_fm f)
   | Always ((Less (t, u) as k), f) -> malways (conv_kind k) (conv_fm f)
   | Always ((Equal (t, u) as k), f) -> malways_eq (conv_kind k) (conv_fm f)
   | Always ((LessOrEqual (t, u) as k), f) ->
       malways_leq (conv_kind k) (conv_fm f)
-  (*| Historically (k,f) -> "historically" ^ conv_kind k ^ " " ^ conv_fm f*)
+  | Historically ((Less (t, u) as k), f) ->
+      mhistorically (conv_kind k) (conv_fm f)
+  | Historically ((Equal (t, u) as k), f) ->
+      mhistorically_eq (conv_kind k) (conv_fm f)
+  | Historically ((LessOrEqual (t, u) as k), f) ->
+      mhistorically_leq (conv_kind k) (conv_fm f)
   | Eventually ((Less (t, u) as k), f) -> meventually (conv_kind k) (conv_fm f)
   | Eventually ((Equal (t, u) as k), f) ->
       meventually_eq (conv_kind k) (conv_fm f)
   | Eventually ((LessOrEqual (t, u) as k), f) ->
       meventually_leq (conv_kind k) (conv_fm f)
-  (*| PastEventually (k,f) -> "past eventually" ^ conv_kind k ^ " " ^ conv_fm f*)
-  | _ -> failwith "incomplete!"
+  | PastEventually ((Less (t, u) as k), f) ->
+      mpasteventually (conv_kind k) (conv_fm f)
+  | PastEventually ((Equal (t, u) as k), f) ->
+      mpasteventually_eq (conv_kind k) (conv_fm f)
+  | PastEventually ((LessOrEqual (t, u) as k), f) ->
+      mpasteventually_leq (conv_kind k) (conv_fm f)

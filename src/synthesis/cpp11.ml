@@ -163,10 +163,60 @@ let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
         \  " )
 
 let synth_fm_sless gamma (sf1, a) (sf2, b) helper =
-  failwith ("S[<" ^ string_of_float gamma ^ "] Not Implemented!")
+  (* get new id *)
+  let id = get_until_counter helper in
+  ( "since_less<T, Eval_since_less_" ^ string_of_int id ^ "<T>, "
+    ^ string_of_int (int_of_float gamma)
+    ^ ">(trace, t)",
+    a ^ b ^ "\n  template <typename T> class Eval_since_less_"
+    ^ string_of_int id
+    ^ " {\n\
+      \  public:\n\
+      \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+      \      auto sf = " ^ sf1
+    ^ ";\n\
+      \      return sf;\n\
+      \    };\n\
+      \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+      \      auto sf = " ^ sf2 ^ ";\n      return sf;\n    };\n  };\n" )
 
 let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
-  failwith ("S[=" ^ string_of_float gamma ^ "] Not Implemented!")
+  (* get new id *)
+  let id = get_until_counter helper in
+  ( "[](T &trace, timespan &t){\n\
+    \    auto x = historically_less<T, Eval_historically_a_" ^ string_of_int id
+    ^ "<T>, "
+    ^ string_of_int (int_of_float gamma)
+    ^ ">(trace, t);\n    auto y = historically_equal<T, Eval_historically_b_"
+    ^ string_of_int id ^ "<T>, "
+    ^ string_of_int (int_of_float gamma)
+    ^ ">(trace, t);\n    return b3_and(x,y);\n  }(trace, t)\n  ",
+    a ^ b ^ "template <typename T> class Eval_historically_a_"
+    ^ string_of_int id
+    ^ " {\n\
+      \  public:\n\
+      \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+      \      auto sf = " ^ sf1
+    ^ ";\n\
+      \      return sf;\n\
+      \    };\n\
+      \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+      \      return T_UNKNOWN;\n\
+      \    };\n\
+      \  };\n\
+       template <typename T> class Eval_historically_b_" ^ string_of_int id
+    ^ " {\n\
+      \  public:\n\
+      \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+      \      auto sf = " ^ sf2
+    ^ ";\n\
+      \      return sf;\n\
+      \    };\n\
+      \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+      \      return T_UNKNOWN;\n\
+      \    };\n\
+      \  };\n\
+      \  " )
 
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11 compute helper =

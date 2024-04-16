@@ -57,17 +57,43 @@ let mimplies phi1 phi2 = Or (Not phi1, phi2)
 
 let until_leq t phi1 phi2 = Or( Until_eq(t, phi1, phi2), Until(t, phi1, phi2) )
 
+let since_leq t phi1 phi2 = Or( Since_eq(t, phi1, phi2), Since(t, phi1, phi2) )
+
 let meventually t phi = Until (t, mtrue, phi)
 
 let meventually_eq t phi = Until_eq (t, mtrue, phi)
 
 let meventually_leq t phi = until_leq t mtrue phi
 
+let mpasteventually t phi = Since (t, mtrue, phi)
+
+let mpasteventually_eq t phi = Since_eq (t, mtrue, phi)
+
+let mpasteventually_leq t phi = since_leq t mtrue phi
+
 let malways t phi = Not (meventually t (Not phi))
 
 let malways_eq t phi = Not (meventually_eq t (Not phi))
 
 let malways_leq t phi = Not (meventually_leq t (Not phi))
+
+let mhistorically t phi = Not (mpasteventually t (Not phi))
+
+let mhistorically_eq t phi = Not (mpasteventually_eq t (Not phi))
+
+let mhistorically_leq t phi = Not (mpasteventually_leq t (Not phi))
+
+let mnext t phi = Until (t, mfalse, phi)
+
+let mnext_eq t phi = Until_eq (t, mfalse, phi)
+
+let mnext_leq t phi = until_leq t mfalse phi
+
+let mprev t phi = Since (t, mfalse, phi)
+
+let mprev_eq t phi = Since_eq (t, mfalse, phi)
+
+let mprev_leq t phi = since_leq t mfalse phi
 
 let forall var phi = Not (Exists (var, Not phi))
 

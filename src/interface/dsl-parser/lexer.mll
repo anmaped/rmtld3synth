@@ -15,6 +15,7 @@ rule token = parse
 | '+' { PLUS }
 | '*' { TIMES }
 | "&&" { AND }
+| "||" { OR }
 | '<' { LESS }
 | '>' { GREATER }
 | "<=" {LESSOREQUAL }
@@ -23,25 +24,28 @@ rule token = parse
 | ':' { TWODOTS }
 | ',' { COMMA }
 | "until" { UNTIL }
+| "U" { UNTIL }
 | "since" { SINCE }
+| "S" { SINCE }
 | "within" { WITHIN }
 | "always" { ALWAYS }
 | "historically" { HISTORICALLY }
 | "eventually" { EVENTUALLY }
 | "past" { PAST }
 | "next" { NEXT }
+| "N" { NEXT }
 | "previous" { PREV }
+| "prev" { PREV }
+| "P" { NEXT }
 | "fall" { FALL }
 | "rise" { RISE }
 | "duration" { DURATION }
 | "in" { IN }
 | "of" { OF }
 | ".." { DOTS }
-| [ 'A'-'Z' 'a'-'z']+ as s { NAME s }
+| [ 'A'-'Z' 'a'-'z' '_']+ as s { NAME s }
 | [ '0'-'9' ]+ as t (("s" | "ms" | "us" | "ns") as u) { TIME (t,u) }
 | [ '0'-'9' '.']+ as n { NUM n }
-(*| '_' { EMPTY }*)
-| '|' '|' { OR }
 | '(' { LPAR }
 | ')' { RPAR }
 | '[' { LSQPAR }
