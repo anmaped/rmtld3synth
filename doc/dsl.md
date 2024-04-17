@@ -51,7 +51,10 @@ The BNF representation of the domain specification language is provided below:
 ## Examples
 
 1)
-![Alt](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/docs/waves/wave1.json)
+![Wave 1](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/doc/waves/wave1.json)
 
 2)
-![Alt](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/docs/waves/wave2.json)
+![Wave 2](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/doc/waves/wave2.json)
+
+3)
+![Wave 3](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/doc/waves/wave3.json)
