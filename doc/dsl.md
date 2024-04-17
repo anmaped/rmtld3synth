@@ -47,3 +47,11 @@ The BNF representation of the domain specification language is provided below:
 | "<=" <integer> <U>
 | <integer> <U>
 ```
+
+## Examples
+
+1)
+![Alt](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/docs/waves/wave1.json)
+
+2)
+![Alt](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/docs/waves/wave2.json)
