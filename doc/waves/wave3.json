@@ -3,7 +3,7 @@
     {name: 'signal a', wave: 'x1..0.....'},
     {name: 'signal b', wave: 'x0..1010..'},
     {},
-    {name: 'always (a -> (eventually b within =3)) within 10', wave: '1.0.......'},
-    {name: 'always ((rise a) -> (eventually b within =3)) within 10', wave: '1.........'},
-    {name: 'always ((fall a) -> (eventually b within =3)) within 10', wave: '1.........'}
+    {name: 'always (a -> (eventually b within =3)) within 10', wave: 'x.0.......'},
+    {name: 'always ((rise a) -> (eventually b within =3)) within 10', wave: 'x...1.....'},
+    {name: 'always ((fall a) -> (eventually b within =3)) within 10', wave: 'x......1..'}
   ]}

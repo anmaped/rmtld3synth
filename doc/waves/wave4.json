@@ -1,0 +1,10 @@
+{signal: [
+    {name: 'trace', wave: 'x2..343545.', data: ['a', 'a /\\ b',  'b', 'a /\\ b', 'c', 'b', 'c']},
+    {name: 'signal a', wave: 'x1...010...'},
+    {name: 'signal b', wave: 'x0..1..010.'},
+    {name: 'signal c', wave: 'x0.....101.'},
+    {},
+    {name: 'always (a -> (eventually b && (eventually c within =3) within =3)) within 10', wave: 'xxxxx0.....'},
+    {name: 'always ((rise a) -> (eventually b  && (eventually c within =3) within =3)) within 10', wave: 'xxxxxxx1...'},
+    {name: 'always ((fall a) -> (eventually b  && (eventually c within =3) within =3)) within 10', wave: 'xxxx0......'}
+  ]}

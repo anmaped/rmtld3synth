@@ -1,8 +1,12 @@
 type var_id = string
+
 type prop = string
+
 type time = Unbound | Bound of int
+
 type value = float
-type units = S | Ms | Us | Ns
+
+type units = S | Ms | Us | Ns | NoUnits
 
 type kind =
   | Less of time * units

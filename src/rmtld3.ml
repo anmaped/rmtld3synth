@@ -31,6 +31,7 @@ type fm =
   | LessThan of tm * tm
   | Until_eq of time * fm * fm
   | Since_eq of time * fm * fm
+
 and tm =
   | Constant of value
   | Variable of var_id
@@ -55,9 +56,11 @@ let mand_list lst = List.fold_left (fun a b -> mand a b) (hd lst) (tl lst)
 
 let mimplies phi1 phi2 = Or (Not phi1, phi2)
 
-let until_leq t phi1 phi2 = Or( Until_eq(t, phi1, phi2), Until(t, phi1, phi2) )
+let until_leq t phi1 phi2 =
+  Or (Until_eq (t, phi1, phi2), Until (t, phi1, phi2))
 
-let since_leq t phi1 phi2 = Or( Since_eq(t, phi1, phi2), Since(t, phi1, phi2) )
+let since_leq t phi1 phi2 =
+  Or (Since_eq (t, phi1, phi2), Since (t, phi1, phi2))
 
 let meventually t phi = Until (t, mtrue, phi)
 
@@ -113,9 +116,7 @@ type idx_ct =
   | KDuration of fm * tm
   | KFormula of fm
 
-(*
-   Untimed trace is a time of the form, prop1,prop2,...
-*)
+(* Untimed trace is a time of the form, prop1,prop2,... *)
 type trace_untimed = prop list [@@deriving sexp]
 
 (*
@@ -171,10 +172,10 @@ let b3_not b3 =
 
 (* Relation operator < *)
 let b3_lessthan n1 n2 =
-  match n1,n2 with
-  | Dnone,Dnone | Dsome(_),Dnone | Dnone,Dsome(_) -> Unknown
-  | Dsome(v1),Dsome(v2) -> if v1 < v2 then True else False
-  (*if n1 < n2 then True else if n1 >= n2 then False else Unknown*)
+  match (n1, n2) with
+  | Dnone, Dnone | Dsome _, Dnone | Dnone, Dsome _ -> Unknown
+  | Dsome v1, Dsome v2 -> if v1 < v2 then True else False
+(*if n1 < n2 then True else if n1 >= n2 then False else Unknown*)
 
 (* environment record type *)
 type ev =
@@ -258,7 +259,8 @@ let gen_formula size (n_v, n_p, c_I, u_I, pr_u, pr_e, pr_l, pr_d) =
             , gen_formula_ (t_ size s) )
       | x when x < pr_u +. pr_e ->
           (* gen exists formula *)
-          Exists ("v" ^ string_of_int (Random.int n_v), gen_formula_ (size - 1))
+          Exists
+            ("v" ^ string_of_int (Random.int n_v), gen_formula_ (size - 1))
       | x when x < pr_u +. pr_e +. pr_l ->
           (* gen less than formula *)
           LessThan (gen_term s, gen_term (t_ size s))
@@ -280,9 +282,7 @@ let gen_formula size (n_v, n_p, c_I, u_I, pr_u, pr_e, pr_l, pr_d) =
 let gen_formula_default () =
   gen_formula 20 (5, 5, (1, 4), (1, 4), 0.2, 0.1, 0.3, 0.3)
 
-(*
-   Functions for getting results about the search space
-*)
+(* Functions for getting results about the search space *)
 
 (* measuring formulas (n durations, n temporal operators) *)
 let rec measure_term term =
@@ -350,7 +350,7 @@ let rec asym_comp (a, b, c) fm =
            (fun (cts, lst) _ ->
              ( cts + asym_comp (lst, b, c) fm1 + asym_comp (lst, b, c) fm2
              , List.tl lst ) )
-           (0, a) a)
+           (0, a) a )
   | Prop _ -> 1
   | _ -> raise (Failure "Not supported formula.")
 
@@ -437,8 +437,8 @@ let rec slatex_of_rmtld_tm term =
   | Constant value -> string_of_int (int_of_float value) ^ " "
   | Variable id -> id ^ " "
   | Duration (trm, sf) ->
-      "\\int^{" ^ slatex_of_rmtld_tm trm ^ "} \\left(" ^ slatex_of_rmtld_fm sf
-      ^ "\\right) "
+      "\\int^{" ^ slatex_of_rmtld_tm trm ^ "} \\left("
+      ^ slatex_of_rmtld_fm sf ^ "\\right) "
   | FPlus (eta1, eta2) ->
       "\\left( " ^ slatex_of_rmtld_tm eta1 ^ " + " ^ slatex_of_rmtld_tm eta2
       ^ "\\right)"
@@ -458,7 +458,8 @@ and slatex_of_rmtld_fm formula =
       ^ string_of_int (int_of_float pval)
       ^ "} \\ " ^ slatex_of_rmtld_fm sf2 ^ "\\right)"
   | Exists (var, sf) ->
-      "\\exists {" ^ var ^ "} \\ \\left(" ^ slatex_of_rmtld_fm sf ^ "\\right)"
+      "\\exists {" ^ var ^ "} \\ \\left(" ^ slatex_of_rmtld_fm sf
+      ^ "\\right)"
   | LessThan (tr1, tr2) ->
       "\\left(" ^ slatex_of_rmtld_tm tr1 ^ "< " ^ slatex_of_rmtld_tm tr2
       ^ "\\right)"
@@ -489,24 +490,23 @@ and string_of_rmtld_fm rmtld_fm =
   | Or (sf1, sf2) ->
       "(" ^ string_of_rmtld_fm sf1 ^ " or " ^ string_of_rmtld_fm sf2 ^ ")"
   | Until (pval, sf1, sf2) ->
-    "(" ^ string_of_rmtld_fm sf1 ^ " U[" ^ string_of_float pval ^ "] "
-    ^ string_of_rmtld_fm sf2 ^ ")"
+      "(" ^ string_of_rmtld_fm sf1 ^ " U["
+      ^ (if pval = max_float then "infty" else string_of_float pval)
+      ^ "] " ^ string_of_rmtld_fm sf2 ^ ")"
   | Since (pval, sf1, sf2) ->
-    "(" ^ string_of_rmtld_fm sf1 ^ " S[" ^ string_of_float pval ^ "] "
-    ^ string_of_rmtld_fm sf2 ^ ")"
+      "(" ^ string_of_rmtld_fm sf1 ^ " S[" ^ string_of_float pval ^ "] "
+      ^ string_of_rmtld_fm sf2 ^ ")"
   | Until_eq (pval, sf1, sf2) ->
-    "(" ^ string_of_rmtld_fm sf1 ^ " U[=" ^ string_of_float pval ^ "] "
-    ^ string_of_rmtld_fm sf2 ^ ")"
+      "(" ^ string_of_rmtld_fm sf1 ^ " U[=" ^ string_of_float pval ^ "] "
+      ^ string_of_rmtld_fm sf2 ^ ")"
   | Since_eq (pval, sf1, sf2) ->
-    "(" ^ string_of_rmtld_fm sf1 ^ " S[=" ^ string_of_float pval ^ "] "
-    ^ string_of_rmtld_fm sf2 ^ ")"
+      "(" ^ string_of_rmtld_fm sf1 ^ " S[=" ^ string_of_float pval ^ "] "
+      ^ string_of_rmtld_fm sf2 ^ ")"
   | Exists (var, sf) -> "exists " ^ var ^ " (" ^ string_of_rmtld_fm sf ^ ")"
   | LessThan (tr1, tr2) ->
       "(" ^ string_of_rmtld_tm tr1 ^ " < " ^ string_of_rmtld_tm tr2 ^ ")"
-  (*| a ->
-      raise
-        (Failure ("string_of_rmtld_fm: Unsupported formula "
-          ^ Sexp.to_string_hum (sexp_of_fm a)))*)
+(*| a -> raise (Failure ("string_of_rmtld_fm: Unsupported formula " ^
+  Sexp.to_string_hum (sexp_of_fm a)))*)
 
 (* print formulas and terms in plaintext *)
 let print_plaintext_formula f = print_string (string_of_rmtld_fm f)
@@ -530,11 +530,9 @@ let observation duration (trace_backward, trace_forward) p t =
     (* check t upper b_i' *)
     if not (t < b_i') then False else search trace prop t
   in
-  (*Printf.fprintf stdout "%i %i\n " (length trace_backward) (length trace_forward);
-  Printf.printf " S--- ";
-  print_trace trace_backward;
-  Printf.printf "--- \n ";
-  print_trace trace_forward;*)
+  (*Printf.fprintf stdout "%i %i\n " (length trace_backward) (length
+    trace_forward); Printf.printf " S--- "; print_trace trace_backward;
+    Printf.printf "--- \n "; print_trace trace_forward;*)
   if (length trace_forward < 1 && length trace_backward < 1) || t >= duration
   then Unknown
   else if length trace_backward < 1 && not (length trace_forward < 1) then
@@ -555,7 +553,7 @@ let environment trace =
     (function
       | [] -> 0.
       | x :: xs ->
-          fold_left (fun a (_, (x1, x2)) -> a +. (x2 -. x1)) 0. (x :: xs))
+          fold_left (fun a (_, (x1, x2)) -> a +. (x2 -. x1)) 0. (x :: xs) )
       trace
   in
   let trace_tuple = ([], trace) in
@@ -572,11 +570,13 @@ let rec logical_environment =
     eval= (fun var -> assoc var logical_environment.theta)
   ; add=
       (fun var value ->
-        logical_environment.theta <- (var, value) :: logical_environment.theta ;
+        logical_environment.theta <-
+          (var, value) :: logical_environment.theta ;
         () )
   ; remove=
       (fun var ->
-        logical_environment.theta <- remove_assoc var logical_environment.theta ;
+        logical_environment.theta <-
+          remove_assoc var logical_environment.theta ;
         () ) }
 
 (* sub-trace function *)
@@ -588,43 +588,11 @@ let sub_k (k, _, t) gamma =
   else
     let p1, _ =
       partition
-        (fun (_, (i1, _)) -> if t <= i1 && i1 < t +. gamma then true else false)
+        (fun (_, (i1, _)) ->
+          if t <= i1 && i1 < t +. gamma then true else false )
         tb
-    in p1
-
-(*
-(* sub-trace function *)
-let sub_k (k,u,t) gamma =
-  if k.duration_of_trace <= (t +. gamma) then
-    (* possible unknown value *)
-  else
-    (* only true or false *)
-*)
-
-(* next trace function *)
-(*let next_k k =
-        let tb,tf = k.trace in
-        (* check k size *)
-        if length tf < 1 then raise (Failure "next_k k=(_,[])") else
-        {
-          trace = (hd tf)::tb, (tl tf) ;
-          duration_of_trace =  k.duration_of_trace ;
-          evaluate = k.evaluate ;
-          trace_cardinality = k.trace_cardinality ;
-        }
-*)
-(* previous trace function *)
-(*let prev_k k =
-        let tb,tf = k.trace in
-        (* check k size *)
-        if length tb < 1 then raise (Failure "prev_k k=([],_)") else
-        {
-          trace = (tl tb), (hd tb)::tf ;
-          duration_of_trace =  k.duration_of_trace ;
-          evaluate = k.evaluate ;
-          trace_cardinality = k.trace_cardinality ;
-        }
-*)
+    in
+    p1
 
 (* Compute function has the following inputs. The environment, the logical environment,
  * the initial time, and the MTLD formula. This function has the following
@@ -633,10 +601,17 @@ let sub_k (k,u,t) gamma =
  *)
 let rec compute_term m t term =
   match term with
-  | Constant value -> Dsome(value)
-  | Duration (di, phi) -> compute_term_duration m (t, compute_term m t di) phi
-  | FPlus (tr1, tr2) -> ( match (compute_term m t tr1,compute_term m t tr2) with | Dsome(v1),Dsome(v2) -> Dsome(v1 +. v2) | _ -> Dnone )
-  | FTimes (tr1, tr2) -> ( match (compute_term m t tr1,compute_term m t tr2) with | Dsome(v1),Dsome(v2) -> Dsome(v1 *. v2) | _ -> Dnone )
+  | Constant value -> Dsome value
+  | Duration (di, phi) ->
+      compute_term_duration m (t, compute_term m t di) phi
+  | FPlus (tr1, tr2) -> (
+    match (compute_term m t tr1, compute_term m t tr2) with
+    | Dsome v1, Dsome v2 -> Dsome (v1 +. v2)
+    | _ -> Dnone )
+  | FTimes (tr1, tr2) -> (
+    match (compute_term m t tr1, compute_term m t tr2) with
+    | Dsome v1, Dsome v2 -> Dsome (v1 *. v2)
+    | _ -> Dnone )
   | _ -> raise (Failure "compute_terms: missing term")
 
 and compute_term_duration (k, u) dt formula =
@@ -659,8 +634,8 @@ and compute_term_duration (k, u) dt formula =
     fold_left (fun s (_, (i, t')) -> riemann_sum m dt (i, t') phi +. s) 0. x
   in
   match dt with
-  | (t, Dsome(t')) when k.duration_of_trace >= t +. t'  ->
-    Dsome( eval_eta (k, u) (t,t') formula (sub_k (k, u, t) t') )
+  | t, Dsome t' when k.duration_of_trace >= t +. t' ->
+      Dsome (eval_eta (k, u) (t, t') formula (sub_k (k, u, t) t'))
   | _ -> Dnone
 
 and compute (env, lg_env, t) formula =
@@ -682,7 +657,7 @@ and compute (env, lg_env, t) formula =
       raise
         (Failure
            ( "compute: bad formula "
-           ^ Sexp.to_string_hum (sexp_of_rmtld3_fm formula) ))
+           ^ Sexp.to_string_hum (sexp_of_rmtld3_fm formula) ) )
 
 and compute_uless m gamma phi1 phi2 =
   let eval_i b1 b2 =
@@ -720,8 +695,7 @@ and compute_uless m gamma phi1 phi2 =
           (eval_b (k, u, t') phi1 phi2 v, ii2) )
         (Symbol, t) x
     in
-    if !activate_debug then
-      Printf.printf "fold_end : %s \n" (b4_to_string s) ;
+    if !activate_debug then Printf.printf "fold_end : %s \n" (b4_to_string s) ;
     s
   in
   if gamma >= 0. then (
@@ -750,9 +724,7 @@ let rec calculate_t_upper_bound (formula : rmtld3_fm) =
   | Prop _ -> 0.
   | Not sf -> calculate_t_upper_bound sf
   | Or (sf1, sf2) ->
-      Stdlib.max
-        (calculate_t_upper_bound sf1)
-        (calculate_t_upper_bound sf2)
+      Stdlib.max (calculate_t_upper_bound sf1) (calculate_t_upper_bound sf2)
   | Until (gamma, sf1, sf2) ->
       gamma
       +. Stdlib.max
@@ -771,25 +743,23 @@ let rec calculate_t_upper_bound (formula : rmtld3_fm) =
       raise
         (Failure
            ( "ERROR: Calculating bound for unsupported formula="
-           ^ Sexp.to_string (sexp_of_rmtld3_fm formula) ))
+           ^ Sexp.to_string (sexp_of_rmtld3_fm formula) ) )
 
 and calculate_t_upper_bound_term term =
   match term with
   | Constant _ -> 0.
-  | Duration (Constant c, fm) ->
-        c +.
-        (calculate_t_upper_bound fm)
+  | Duration (Constant c, fm) -> c +. calculate_t_upper_bound fm
   | Duration (tr, fm) ->
-        (calculate_t_upper_bound_term tr) +.
-        (calculate_t_upper_bound fm)
-  | FPlus (tr1, tr2) -> Stdlib.max
+      calculate_t_upper_bound_term tr +. calculate_t_upper_bound fm
+  | FPlus (tr1, tr2) ->
+      Stdlib.max
         (calculate_t_upper_bound_term tr1)
         (calculate_t_upper_bound_term tr2)
-  | FTimes (tr1, tr2) -> Stdlib.max
+  | FTimes (tr1, tr2) ->
+      Stdlib.max
         (calculate_t_upper_bound_term tr1)
         (calculate_t_upper_bound_term tr2)
   | _ -> raise (Failure "ERROR: Calculating bound for unsupported term.")
-
 
 (* shorthand for simple duration inequalities *)
 let m_duration_less cons1 formula cons2 =
@@ -799,17 +769,22 @@ let m_duration_less2 cons2 cons1 formula =
   LessThan (cons2, Duration (cons1, formula))
 
 let m_duration_notequal cons1 formula cons2 =
-  Or (m_duration_less cons1 formula cons2, m_duration_less2 cons2 cons1 formula)
+  Or
+    ( m_duration_less cons1 formula cons2
+    , m_duration_less2 cons2 cons1 formula )
 
 let m_duration_equal cons1 formula cons2 =
   Not (m_duration_notequal cons1 formula cons2)
 
 let m_duration_lessorequal cons1 formula cons2 =
-  Or (m_duration_less cons1 formula cons2, m_duration_equal cons1 formula cons2)
+  Or
+    ( m_duration_less cons1 formula cons2
+    , m_duration_equal cons1 formula cons2 )
 
 let m_duration_notequal2 cons2 cons1 formula =
   Or
-    (m_duration_less2 cons2 cons1 formula, m_duration_less2 cons1 cons2 formula)
+    ( m_duration_less2 cons2 cons1 formula
+    , m_duration_less2 cons1 cons2 formula )
 
 let m_duration_equal2 cons2 cons1 formula =
   Not (m_duration_notequal2 cons2 cons1 formula)
@@ -826,11 +801,11 @@ let _ =
   let activate_graph_generation = ref false in
   if activate_graph_generation = ref true then (
     (*print_latex_formula formula;*)
-    
+
     (* time bins *)
-    (*let bins = [(0.,0.01); (0.01,0.1); (0.1,0.2); (0.2,0.6); (0.6,0.8); (0.8,1.);
-    (1.0,1.5); (1.5,2.); (2.,3.); (3.,5.)] in*)
-    
+    (*let bins = [(0.,0.01); (0.01,0.1); (0.1,0.2); (0.2,0.6); (0.6,0.8);
+      (0.8,1.); (1.0,1.5); (1.5,2.); (2.,3.); (3.,5.)] in*)
+
     (* count bins *)
     let bins =
       [ (0., 10.)
@@ -853,8 +828,8 @@ let _ =
         metrics_array.(0) <- (delta_t, n_to, n_du) :: metrics_array.(0)
       else (
         if v > bin_last then
-          metrics_array.(n_bins - 1)
-          <- (delta_t, n_to, n_du) :: metrics_array.(n_bins - 1)
+          metrics_array.(n_bins - 1) <-
+            (delta_t, n_to, n_du) :: metrics_array.(n_bins - 1)
         else
           (* calculate bin to insert *)
           for i = 0 to n_bins - 1 do
@@ -873,7 +848,8 @@ let _ =
     let fprint_metrics oc =
       (* print bin by line *)
       for i = 0 to n_bins - 1 do
-        Printf.fprintf oc "\\addplot[boxplot] table[row sep=\\\\,y index=0] {" ;
+        Printf.fprintf oc
+          "\\addplot[boxplot] table[row sep=\\\\,y index=0] {" ;
         fprint_metrics_list oc metrics_array.(i) ;
         Printf.fprintf oc "};\n"
       done ;
@@ -896,26 +872,28 @@ let _ =
     let linear_plot_file = open_out "linear_plot.tex" in
     let ha = Array.of_list [1; 2; 3; 5; 10; 15] in
     (*let ha = Array.of_list [1; 2; 3; 4; 5; 6; 7; 8; 9; 10;] in*)
-    (*let matrix_data = Array.of_list [(10, ha); (100, ha); (1000, ha); (10000, ha); (100000, ha);] in*)
+    (*let matrix_data = Array.of_list [(10, ha); (100, ha); (1000, ha);
+      (10000, ha); (100000, ha);] in*)
     (*let matrix_data = Array.of_list [(10, ha); (100, ha); (1000, ha);] in*)
     let matrix_data = Array.of_list [(10, ha); (100, ha); (1000, ha)] in
     for st = 0 to Array.length matrix_data - 1 do
       let sizeof_trace, mheight = matrix_data.(st) in
       Printf.fprintf linear_plot_file
-        "\\addplot[color=black,mark=o,solid,] table[row sep=\\\\,y index=2, x \
-         index = 1]  {" ;
+        "\\addplot[color=black,mark=o,solid,] table[row sep=\\\\,y index=2, \
+         x index = 1]  {" ;
       for j = 0 to Array.length mheight - 1 do
         let height = mheight.(j) in
         (* construct trace and formula *)
         (*let trace = rev (generate_uniform_traces 0. sizeof_trace []) in*)
         (* strategic trace construction *)
-        (* factor * sizeof_trace * 2 = duration -> factor = duration / (sizeof_trace*2) *)
+        (* factor * sizeof_trace * 2 = duration -> factor = duration /
+           (sizeof_trace*2) *)
         let duration = 10. in
         let trace =
           rev
             (strategic_uniform_trace 0. sizeof_trace
                (duration /. (float_of_int sizeof_trace /. 1.95))
-               [])
+               [] )
         in
         let formula =
           gen_u_formula_with_triangle_pattern true (height - 2) duration
@@ -930,15 +908,15 @@ let _ =
         (* generate environment based on trace *)
         let lg_env = logical_environment in
         (* logic environment -- not used when gen_quantifiers is false *)
-        
+
         (* reset count *)
         count := 0 ;
         let time_start = Sys.time () in
         let _ev = compute (env, lg_env, 0.) formula in
         let time_end = Sys.time () in
         let delta_t = time_end -. time_start in
-        Printf.fprintf linear_plot_file "%i %f %i %i %f\\\\ %!" !count delta_t
-          height sizeof_trace
+        Printf.fprintf linear_plot_file "%i %f %i %i %f\\\\ %!" !count
+          delta_t height sizeof_trace
           (2. ** float_of_int height) ;
         ()
       done ;
@@ -953,7 +931,8 @@ let _ =
     for i = 1 to nsamples do
       let formula =
         (* this generation manner is deprecated *)
-        (*gen_formula height ((2. ** (float_of_int (height)))/. (float_of_int sizeof_trace)) in*)
+        (*gen_formula height ((2. ** (float_of_int (height)))/. (float_of_int
+          sizeof_trace)) in*)
         (* use "gen_formula height in" instead *)
         gen_formula_default ()
       in
@@ -965,7 +944,7 @@ let _ =
       (* generate environment based on trace *)
       let lg_env = logical_environment in
       (* logic environment -- not used when gen_quantifiers is false *)
-      
+
       (* reset count *)
       count := 0 ;
       count_duration := 0 ;

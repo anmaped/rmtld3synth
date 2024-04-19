@@ -58,3 +58,6 @@ The BNF representation of the domain specification language is provided below:
 
 3)
 ![Wave 3](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/doc/waves/wave3.json)
+
+4)
+![Wave 4](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/doc/waves/wave4.json)

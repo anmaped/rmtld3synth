@@ -43,6 +43,7 @@ rule token = parse
 | "in" { IN }
 | "of" { OF }
 | ".." { DOTS }
+| "_" { DONTCARE }
 | [ 'A'-'Z' 'a'-'z' '_']+ as s { NAME s }
 | [ '0'-'9' ]+ as t (("s" | "ms" | "us" | "ns") as u) { TIME (t,u) }
 | [ '0'-'9' '.']+ as n { NUM n }

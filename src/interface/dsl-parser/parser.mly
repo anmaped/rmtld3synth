@@ -18,6 +18,7 @@
 %token EOF
 %token TWODOTS
 %token NEGATION
+%token DONTCARE
 
 %token IMPLIES
 %token AND
@@ -50,8 +51,8 @@
 main: f = scope EOF { f }
 
 scope:
-  | HISTORICALLY TWODOTS a = formula { Historically (Less (Unbound, S),a) }
-  | ALWAYS TWODOTS a = formula { Always (Less (Unbound, S),a) }
+  | HISTORICALLY TWODOTS f = formula { Historically (Less (Unbound, NoUnits),f) }
+  | ALWAYS TWODOTS f = formula { Always (Less (Unbound, NoUnits),f) }
   | r = formula { r }
 
 
@@ -88,6 +89,7 @@ time:
   | LESSOREQUAL t = TIME { LessOrEqual (Bound (int_of_string (fst t)), map_u (snd t) ) }
   | LESS t = TIME { Less (Bound (int_of_string (fst t)), map_u (snd t) ) }
   | t = TIME { Less (Bound (int_of_string (fst t)), map_u (snd t) ) }
+  | DONTCARE { Less (Unbound, NoUnits) }
 
 atom:
 | LPAR r = formula RPAR { r }
