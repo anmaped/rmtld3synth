@@ -503,7 +503,7 @@ let _ =
      (rtm_min_inter_arrival_time 1)\n\
      (rtm_max_period 2000000)\n\
      (rtm_event_type Event)\n\
-     (rtm_event_subtype int)\n\
+     (rtm_event_subtype proposition)\n\
      (rtm_monitor_name_prefix rtm_#_%)\n\
      (gen_unit_tests true)\n\
      (gen_paper_results false)"
