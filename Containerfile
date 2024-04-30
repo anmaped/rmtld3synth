@@ -11,6 +11,7 @@ RUN \
   m4 \
   python3 \
   python3-distutils \
+  dos2unix \
   opam
 
 RUN opam init --disable-sandboxing -ya

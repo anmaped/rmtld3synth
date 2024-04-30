@@ -303,7 +303,7 @@ let synth_cpp11 compute helper =
       \  #define RTM_TIME_UNIT "
     ^ get_setting_string "rtm_monitor_time_unit" helper
     ^ "\n  \n  // Propositions\n  "
-    ^ Printf.sprintf "enum prop {"
+    ^ Printf.sprintf "enum _auto_gen_prop {"
     ^ Hashtbl.fold
         (fun x y str -> str ^ Printf.sprintf "PROP_%s = %i, " x y)
         (get_proposition_hashtbl helper)
@@ -439,14 +439,14 @@ let synth_cpp11 compute helper =
        class Writer_"
     ^ String.uppercase_ascii monitor_name
     ^ " {\n\n  public:"
-    ^ Printf.sprintf "enum prop {"
+    ^ Printf.sprintf "enum _auto_gen_prop {"
     ^ Hashtbl.fold
         (fun x y str -> str ^ Printf.sprintf "%s = %i, " x y)
         (get_proposition_hashtbl helper)
         ""
     ^ "};\n\n    typedef " ^ get_event_fulltype helper
     ^ " buffer_t;\n\n\
-      \    typename T::error_t push(prop s, timespan t) {\n\
+      \    typename T::error_t push(_auto_gen_prop s, timespan t) {\n\
       \      typename T::event_t e = typename T::event_t(s,t);\n\
       \      return w.push(e);\n\
       \    };\n\n\
