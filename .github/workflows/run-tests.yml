@@ -6,6 +6,7 @@ on:
       - Publish Docker image
     branches:
       - v0.4
+      - v0.4-x
     types:
       - completed
 

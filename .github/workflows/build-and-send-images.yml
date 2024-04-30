@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - v0.4
+      - v0.4-x
 
 jobs:
   push_to_registry:
