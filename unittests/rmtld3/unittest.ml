@@ -160,8 +160,9 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
       let id = string_of_int (get_counter_test_cases helper) in
       Printf.printf "\x1b[32m[Sucess]\x1b[0m (%s) \n" (b3_to_string t_value);
       (* to generate C++ unit tests *)
-      call_code :=
+      call_code := 
         !call_code
+        ^ "// " ^ lb ^ "\n"
         ^ (rmtld3_unit_test_case_generation trace formula t_value cpp11_compute helper
             cluster_name n);
       Printf.printf "count_until: %i, stack_deep:%i count_full:%d\n" !count
@@ -423,7 +424,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
       ("A", (9., 20.));
     ]
   in
-  pass_test Unknown "usecase1" trc usecase1_formula;
+  pass_test Unknown (string_of_rmtld_fm usecase1_formula) trc usecase1_formula;
 
   let filename = cluster_name ^ "/tests/unit_test_cases.h" in
   let oc = open_out filename in

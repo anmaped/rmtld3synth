@@ -2,14 +2,14 @@
 rmtld3synth toolchain: Synthesis from a fragment of MTL with durations
 ======================================================================
 
-The rmtld3synth toolchain is capable of automatically generating cpp11/ocaml monitors and specifications in SMT-LIB v2 standard language from a fragment of metric temporal logic with durations. This logic is a three-valued extension over a restricted fragment of metric temporal logic with durations that allow us to reason about explicit time and temporal order of durations.
+The rmtld3synth toolchain is capable of automatically generating cpp11/ocaml monitors and specifications in the SMT-LIB v2 standard language from a fragment of metric temporal logic with durations. This logic is a three-valued extension of a restricted fragment of metric temporal logic with durations, which allows us to reason about explicit time and temporal order of durations.
 
-Supported by this formalism are polynomial inequalities (using the less relation <) and the common modal operators of temporal logics U (until) and S (since). 
-The existential quantification over these formulas is also possible through the adoption of the cylindrical algebraic decomposition (CAD) method. This method is suitable for converting quantified formulas under various decomposed conditions without these quantifiers.
+Supported by this formalism are polynomial inequalities (using the less relation <) and the common modal operators of temporal logic U (until) and S (since). 
+Existential quantification via these formulae is also possible by adopting the cylindrical algebraic decomposition (CAD) method. This method is suitable for converting quantified formulas under various decomposition conditions without these quantifiers.
 
-To check formula satisfiability, the tool is ready to synthesize the logic fragment in the input language accepted by the z3 SMT solver or any other prover supporting AUFNIRA logic and SMT-LIB v2. It can be used to discard various constraints involving the duration and temporal order of the propositions.
+To check the satisfiability of formulae, the tool is ready to synthesize the logic fragment in the input language accepted by the z3 SMT solver or any other prover supporting AUFNIRA logic and SMT-LIB v2. It can be used to discard various constraints concerning the duration and temporal order of the propositions.
 
-For example, schedulability analysis of hard real-time systems is possible by specifying the complete problem in RMTLD3. First using rmtld3synth to synthesize the problem in SMT-LIB and then using Z3 to solve it. The idea is to know if there exists a trace for which the RMTLD3 problem is satisfiable, or whether the SMT gives us an unsatisfiable answer meaning that is impossible to schedule such a configuration. The latter reinforces the refinement by drawing a counterexample.
+For example, schedulability analysis of hard real-time systems is possible by specifying the complete problem in RMTLD3. First, rmtld3synth is used to synthesize the problem in SMT-LIB, and then Z3 is used to solve it. The idea is to know whether there is a trace for which the RMTLD3 problem is satisfiable, or whether the SMT gives us an unsatisfiable answer, meaning that it is impossible to plan such a configuration. The latter reinforces the refinement by giving a counterexample.
 
 # Contents
 
@@ -21,15 +21,15 @@ For example, schedulability analysis of hard real-time systems is possible by sp
 - [Documentation](#documentation)
 - [License](#license)
 
-### Get started with the online demonstrator :camel:
+## Get started with the online demonstrator :camel:
 
 The stable version is available for testing in the browser [Try it](https://anmaped.github.io/rmtld3synth).
 
-### Get started with Tarball binaries
+## Get started with Tarball binaries
 
-The latest release version is [0.4-alpha](../../releases/tag/v0.4-alpha/).
+The latest release version is [0.4](../../releases).
 
-### Get started with docker :whale:
+## Get started with docker :whale:
 
 ![build workflow](https://github.com/anmaped/rmtld3synth/actions/workflows/build-and-send-images.yml/badge.svg)
 
@@ -60,13 +60,12 @@ For further insights on instrumenting the monitors, please refer to the illustra
 Alternatively, you may explore the [Documentation](#documentation) section of rmtld3synth. This resource provides valuable insights into creating monitors for various targets such as bare metal or operating systems like NuttX and FreeRTOS.
 
 
-### Building from Git
+## Building from Git
 
 ![run tests workflow](https://github.com/anmaped/rmtld3synth/actions/workflows/run-tests.yml/badge.svg)
 
-<!--[![Build Status](https://app.travis-ci.com/anmaped/rmtld3synth.svg?branch=master)](https://app.travis-ci.com/anmaped/rmtld3synth)-->
 
-#### To compile rmtld3synth for Linux and macOS using Opam and Ocaml version >= 4.04.0
+### To compile rmtld3synth for Linux and macOS using Opam and Ocaml version >= 4.04.0
 
 To build rmtld3synth for Linux and macOS using Opam and a minimum Ocaml version of 4.04.0, follow these steps:
 
@@ -96,7 +95,7 @@ sudo make install
 Please ensure that you have at least Python version 2.7 and `g++-5` installed on your system.
 
 
-#### To compile rmtld3synth for Windows using ocaml >= 4.04.0
+### To compile rmtld3synth for Windows using ocaml >= 4.04.0
 
 Get [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/) and switch the Ocaml compiler to version `>= 4.04.0``.
 
@@ -125,31 +124,40 @@ CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar py
 Ensure also that libz3 is properly installed in the current environment.
 If the libz3 is not found then use the copy command to copy the `z3/build/libz3.dll.a` library to the `/lib` or `/home/current-user/.opam/compiler-version/lib` directory.
 
-#### Instructions to use rtmlib2
+## Notes on rtmlib2
 
-The current version is [v2.0.1](https://github.com/anmaped/rtmlib/tags).
+The current version is [v2.0.5](https://github.com/anmaped/rtmlib/tags).
+
+![build workflow](https://github.com/anmaped/rtmlib/actions/workflows/build-and-send-images.yml/badge.svg)
 
 The rtmlib2 is a support library for embedding runtime monitors written in CPP11.
 
-Note that we can skip this compilation step if we do not need to integrate the monitors into the target system or if we just want to synthesize RMTLD3 specifications in SMT-Libv2.
+Note that we can skip this compilation step if we do not need to integrate the monitors into the target system, or if we just want to synthesize the RMTLD3 specifications into SMT-Libv2.
 
-Please ensure that you have the gcc 4.7.0 or greater with the c++0x standard flag enabled. Proper files to support atomics are provided in the GIT repository and do not need to be added afterward (only for GCC 4.7.0 version).
+Please make sure you have gcc 4.7.0 or later with the c++0x standard flag enabled. The appropriate files to support atomics are provided in the GIT repository and do not need to be added afterward (only for GCC 4.7.0 version).
 
-More details are available in the [rtmlib documentation repository](https://anmaped.github.io/rtmlib/doc/).
+See below for more details. See also the [rtmlib documentation repository](https://anmaped.github.io/rtmlib/doc/).
 
 
 ## Documentation
 
-- [rmtld3synth's CLI](doc/general.md#overview-of-the-command-line-interface-of-rmtld3synth)
-  - [The Configuration File](doc/general.md#overview-of-the-configuration-file)
-- [Write Formulas in RMTLD3](doc/general.md#write-formulas-in-rmtld3)
-- [Import Formulas from Latex Equations](doc/general.md#write-formulas-in-latex-and-know-how-to-use-them)
-- [Compile generated Monitors](doc/general.md#compile-the-generated-monitors)
-- [Map Event Symbols](doc/general.md#map-event-symbols)
-- [Integrate Monitors using rtmlib in Bare Metal Platforms](doc/general.md#integrate-monitors-using-rtmlib-in-a-bare-metal-platform)
-  - [NuttX](doc/general.md#nuttx-os)
-  - [FreeRTOS](doc/general.md#freertos)
-- [Unit Test Generation](doc/general.md#unit-test-generation)
+- [Overview of the Command Line Interface of rmtld3synth](doc/general.md#overview-of-the-command-line-interface-of-rmtld3synth)
+- [Input Languages](doc/general.md#input-languages)
+  - [With DSL (prefered)](doc/input-languages.md#with-dsl-prefered)
+  - [With symbolic expressions (old style)](doc/input-languages.md#with-symbolic-expressions-old-style)
+  - [LaTex expressions for paper writing purposes](doc/input-languages.md#latex-expressions-for-paper-writing-purposes)
+- [Include Monitors with rtmlib2](doc/general.md#include-monitors-with-rtmlib2)
+  - [Sample](doc/general.md#sample-runs-on-all-architectures-supported-by-rtmlib2)
+  - [Bare Metal (without OS)](doc/general.md#bare-metal-without-os)
+  - Real-time OS
+    - [NuttX](doc/general.md#nuttx-os)
+    - [FreeRTOS](doc/general.md#freertos)
+    - [RTEMS](doc/general.md#rtems)
+  - [Hardware (FPGA)](doc/general.md#hardware-fpga)
+  - [Mapping between propositions and symbols](doc/general.md#to-show-the-mapping-between-the-propositions-and-the-symbols)
+- [Translate rmtld3 to smtlibv2](doc/general.md#translate-rmtld3-to-smtlibv2)
+- [The Configuration File (optional)](doc/general.md#configuration-file-optional)
+  - [Unit Tests flags](doc/general.md#unit-tests-flags)
 
 
 ## License

@@ -2,18 +2,23 @@
 # General Documentation
 
 ## Table of Contents
-- [rmtld3synth's CLI Overview](#overview-of-the-command-line-interface-of-rmtld3synth)
-- [Input Languages](#input-languages)
-  - [Write Formulas in RMTLD3](#write-formulas-in-rmtld3)
-  - [Import Formulas from Latex Equations](#write-formulas-in-latex-and-know-how-to-use-them)
-- [Compile generated Monitors](#compile-the-generated-monitors)
-- [Map Event Symbols](#map-event-symbols)
-- [Integrate Monitors using rtmlib in Bare Metal Platforms](#integrate-monitors-using-rtmlib-in-a-bare-metal-platform)
-  - [NuttX](#nuttx-os)
-  - [FreeRTOS](#freertos)
-- [Unit Test Generation](#unit-test-generation)
-- [Translate rmtld3 to smtlibv2](#translate-rmtld3-to-smtlibv2)
-- [The Configuration File (optional)](#configuration-file-optional)
+- [Overview of the Command Line Interface of rmtld3synth](general.md#overview-of-the-command-line-interface-of-rmtld3synth)
+- [Input Languages](general.md#input-languages)
+  - [With DSL (prefered)](input-languages.md#with-dsl-prefered)
+  - [With symbolic expressions (old style)](input-languages.md#with-symbolic-expressions-old-style)
+  - [LaTex expressions for paper writing purposes](input-languages.md#latex-expressions-for-paper-writing-purposes)
+- [Include Monitors with rtmlib2](general.md#include-monitors-with-rtmlib2)
+  - [Sample](general.md#sample-runs-on-all-architectures-supported-by-rtmlib2)
+  - [Bare Metal (without OS)](general.md#bare-metal-without-os)
+  - Real-time OS
+    - [NuttX](general.md#nuttx-os)
+    - [FreeRTOS](general.md#freertos)
+    - [RTEMS](general.md#rtems)
+  - [Hardware (FPGA)](general.md#hardware-fpga)
+  - [Mapping between propositions and symbols](general.md#to-show-the-mapping-between-the-propositions-and-the-symbols)
+- [Translate rmtld3 to smtlibv2](general.md#translate-rmtld3-to-smtlibv2)
+- [The Configuration File (optional)](general.md#configuration-file-optional)
+  - [Unit Tests flags](general.md#unit-tests-flags)
 
 
 ## Overview of the Command Line Interface of rmtld3synth
@@ -184,6 +189,10 @@ The monitors to be used with Ardupilot should be included in the external Px4 ma
 
 Please refer to [rtmlib2](https://github.com/anmaped/rtmlib) documentation for more details.
 
+### RTEMS
+
+[TBD]
+
 
 ### Hardware (FPGA)
 
@@ -210,7 +219,7 @@ enum _auto_gen_prop
 
 In fact, `a`,`b` and `c` have been mapped to a kind of binary enumeration using a hash table (i.e. `0x03` for a, `0x02` for `b`, and `0x01` for `c`). To match this encoding when generating events describing `a,b,c` we need to use the macro definitions `PROP_a,PROP_b,PROP_c`. If we have a symbol `sym` then the corresponding macro should be `PROP_sym`.
 
-Although the rtmtld3synth tool does a check and all variable names accepted by the DSL are safe, we need to be aware of the macro variable names accepted in C++11 when describing the names of propositions in other RMTLD3 specifications.
+Although the rmtld3synth tool does a check and all variable names accepted by the DSL are safe, we need to be aware of the macro variable names accepted in C++11 when describing the names of propositions in other RMTLD3 specifications.
 
 ```C++
 #ifdef RTMLIB_ENABLE_MAP_SORT
