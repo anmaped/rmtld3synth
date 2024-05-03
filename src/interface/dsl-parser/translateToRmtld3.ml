@@ -54,8 +54,8 @@ and conv_fm : fm -> Rmtld3.fm = function
       Or
         ( Since (conv_kind k, conv_fm a, conv_fm b)
         , Since_eq (conv_kind k, conv_fm a, conv_fm b) )
-  | Rise (k, f) -> failwith "rise"
-  | Fall (k, f) -> failwith "fall"
+  | Rise (k, f) -> mand (mprev_eq (conv_kind k) (conv_fm (Not(f)))) (conv_fm f)
+  | Fall (k, f) -> mand (mprev_eq (conv_kind k) (conv_fm f)) (conv_fm (Not(f)))
   | Next ((Less (t, u) as k), f) -> mnext (conv_kind k) (conv_fm f)
   | Next ((Equal (t, u) as k), f) -> mnext_eq (conv_kind k) (conv_fm f)
   | Next ((LessOrEqual (t, u) as k), f) ->

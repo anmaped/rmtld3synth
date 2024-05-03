@@ -36,7 +36,7 @@
 %token EVENTUALLY PAST
 %token NEXT PREV
 %token RISE FALL
-%token DURATION IN COMMA
+%token DURATION IN COMMA ON
 %token DOTS OF
 
 %left PLUS
@@ -60,7 +60,7 @@ formula:
   | r = implies { r }
 
 implies:
-  | a = implies IMPLIES b = disjunction { Implies(a, b) }
+  | a = disjunction IMPLIES b = implies { Implies(a, b) }
   | r = disjunction { r }
 
 disjunction:
@@ -80,8 +80,11 @@ temporal:
   | NEXT a = atom WITHIN t = time { Next(t,a) }
   | FALL f = atom WITHIN t = time { Fall(t,f) }
   | RISE f = atom WITHIN t = time { Rise(t,f) }
+  | FALL f = atom { Fall(Less(Unbound,NoUnits),f) }
+  | RISE f = atom { Rise(Less(Unbound,NoUnits),f) }
   | a = temporal UNTIL b = atom WITHIN t = time { Until (t,a,b) }
   | a = temporal SINCE b = atom WITHIN t = time { Since (t,a,b) }
+  | a = temporal ON t = TIME { Eventually (Equal (Bound (int_of_string (fst t)), map_u (snd t) ),a)  }
   | r = atom { r }
 
 time:

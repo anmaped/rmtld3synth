@@ -1,3 +1,3 @@
 File "stdin", line 1, characters 9-9:
 Syntax error after 'a' and before ''.
-The exp. is incomplete. The correct exp. is: "always" <F> "within" <C>
+Ill-formed expression. Try "always" <F> "within" <C>

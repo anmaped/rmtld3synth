@@ -8,7 +8,7 @@ main: WITHIN
 ##
 ##
 
-Your expression is missing or it doesn't make cense.
+Your expression is missing or it doesn't make sense.
 
 main: RISE WITHIN
 ##
@@ -20,7 +20,7 @@ main: RISE WITHIN
 ## RISE
 ##
 
-The rest of rise exp. is missing. The correct exp. is: "rise" <F> "within" <C>
+The rest of rise exp. is missing. Try "rise" <F> "within" <C>
 
 main: NEGATION WITHIN
 ##
@@ -44,7 +44,7 @@ main: LPAR WITHIN
 ## LPAR
 ##
 
-Missing formula after '('. The correct exp. is: "(" <F> ")"
+Missing formula after '('. Try "(" <F> ")"
 
 main: PREV WITHIN
 ##
@@ -56,7 +56,7 @@ main: PREV WITHIN
 ## PREV
 ##
 
-Missing formula after 'previous'. The correct exp. is: "previous" <F> "within" <C>
+Missing formula after 'previous'. Try "previous" <F> "within" <C>
 
 
 main: DURATION WITHIN
@@ -69,7 +69,7 @@ main: DURATION WITHIN
 ## DURATION
 ##
 
-Missing the 'of' after duration. The correct exp. is: "duration of" <F> "in" <I>
+Missing the 'of' after duration. Try "duration of" <F> "in" <I>
 
 main: DURATION OF WITHIN
 ##
@@ -81,7 +81,7 @@ main: DURATION OF WITHIN
 ## DURATION OF
 ##
 
-Missing formula after 'of'. The correct exp. is: "duration of" <F> "in" <I>
+Missing formula after 'of'. Try "duration of" <F> "in" <I>
 
 main: PAST WITHIN
 ##
@@ -93,7 +93,7 @@ main: PAST WITHIN
 ## PAST
 ##
 
-Missing eventually after past. The correct exp. is: "past eventually" <F> "within" <C>
+Missing eventually after past. Try "past eventually" <F> "within" <C>
 
 main: PAST EVENTUALLY WITHIN
 ##
@@ -105,7 +105,7 @@ main: PAST EVENTUALLY WITHIN
 ## PAST EVENTUALLY
 ##
 
-Missing formula after eventually. The correct exp. is: "past eventually" <F> "within" <C>
+Missing formula after eventually. Try "past eventually" <F> "within" <C>
 
 main: NUM WITHIN
 ##
@@ -134,7 +134,7 @@ main: NUM TIMES WITHIN
 ## term TIMES
 ##
 
-Missing term after the '*' operator. The correct exp. is: <T> "*" <T>
+Missing term after the '*' operator. Try <T> "*" <T>
 
 main: NUM GREATER LPAR WITHIN
 ##
@@ -172,7 +172,7 @@ main: NUM PLUS WITHIN
 ## term PLUS
 ##
 
-Missing term after the '+' operator. The correct exp. is: <T> "+" <T>
+Missing term after the '+' operator. Try <T> "+" <T>
 
 main: NUM PLUS NUM TWODOTS
 ##
@@ -198,7 +198,7 @@ main: NUM LESSOREQUAL WITHIN
 ## term LESSOREQUAL
 ##
 
-Missing term after the '<=' operator. The correct exp. is: <T> "<=" <T>
+Missing term after the '<=' operator. Try <T> "<=" <T>
 
 main: NUM LESSOREQUAL NUM TWODOTS
 ##
@@ -224,7 +224,7 @@ main: NUM LESS WITHIN
 ## term LESS
 ##
 
-Missing term after the '<' operator. The correct exp. is: <T> "<" <T>
+Missing term after the '<' operator. Try <T> "<" <T>
 
 main: NUM LESS NUM TWODOTS
 ##
@@ -250,7 +250,7 @@ main: NUM GREATEROREQUAL WITHIN
 ## term GREATEROREQUAL
 ##
 
-Missing term after the '>=' operator. The correct exp. is: <T> ">=" <T>
+Missing term after the '>=' operator. Try <T> ">=" <T>
 
 main: NUM GREATEROREQUAL NUM TWODOTS
 ##
@@ -276,7 +276,7 @@ main: NUM GREATER WITHIN
 ## term GREATER
 ##
 
-Missing term after the '>' operator. The correct exp. is: <T> ">" <T>
+Missing term after the '>' operator. Try <T> ">" <T>
 
 main: NUM GREATER NUM TWODOTS
 ##
@@ -292,8 +292,6 @@ main: NUM GREATER NUM TWODOTS
 
 The addition of ':' doesn't make sense.
 
-
-
 main: PAST EVENTUALLY FALSE UNTIL
 ##
 ## Ends in an error in state: 26.
@@ -304,7 +302,7 @@ main: PAST EVENTUALLY FALSE UNTIL
 ## PAST EVENTUALLY atom
 ##
 
-Missing the rest of the exp. The correct exp. is: "past eventually" <F> "within" <C>
+Missing the rest of the exp. Try "past eventually" <F> "within" <C>
 
 main: PAST EVENTUALLY FALSE WITHIN WITHIN
 ##
@@ -316,7 +314,7 @@ main: PAST EVENTUALLY FALSE WITHIN WITHIN
 ## PAST EVENTUALLY atom WITHIN
 ##
 
-Missing the rest of the exp. The correct exp. is: "past eventually" <F> "within" <C>
+Missing the rest of the exp. Try "past eventually" <F> "within" <C>
 
 main: ALWAYS FALSE WITHIN LESSOREQUAL WITHIN
 ##
@@ -328,7 +326,7 @@ main: ALWAYS FALSE WITHIN LESSOREQUAL WITHIN
 ## LESSOREQUAL
 ##
 
-The expression is incomplete. The correct exp. is: "always" <F> "within" "<=" <integer> <U>
+The expression is incomplete. Try "always" <F> "within" "<=" <integer> <U>
 
 main: ALWAYS FALSE WITHIN LESS WITHIN
 ##
@@ -340,7 +338,7 @@ main: ALWAYS FALSE WITHIN LESS WITHIN
 ## LESS
 ##
 
-The expression is incomplete. The correct exp. is: "always" <F> "within" "<" <integer> <U>
+The expression is incomplete. Try "always" <F> "within" "<" <integer> <U>
 
 main: ALWAYS FALSE WITHIN EQUAL WITHIN
 ##
@@ -352,7 +350,7 @@ main: ALWAYS FALSE WITHIN EQUAL WITHIN
 ## EQUAL
 ##
 
-The expression is incomplete. The correct exp. is: "always" <F> "within" "=" <integer> <U>
+The expression is incomplete. Try "always" <F> "within" "=" <integer> <U>
 
 main: NEXT WITHIN
 ##
@@ -364,7 +362,7 @@ main: NEXT WITHIN
 ## NEXT
 ##
 
-The exp. is incomplete. The correct exp. is: "next" <F> "within" <C>
+Ill-formed expression. Try "next" <F> "within" <C>
 
 main: NEXT FALSE UNTIL
 ##
@@ -376,7 +374,7 @@ main: NEXT FALSE UNTIL
 ## NEXT atom
 ##
 
-The exp. is incorrect. The correct exp. is: "next" <F> "within" <C> 
+Ill-formed expression. Try "next" <F> "within" <C> 
 
 main: NEXT FALSE WITHIN WITHIN
 ##
@@ -388,7 +386,7 @@ main: NEXT FALSE WITHIN WITHIN
 ## NEXT atom WITHIN
 ##
 
-The exp. is incomplete. The correct exp. is: "next" <F> "within" <C>
+Ill-formed expression. Try "next" <F> "within" <C>
 
 main: LPAR HISTORICALLY WITHIN
 ##
@@ -400,7 +398,7 @@ main: LPAR HISTORICALLY WITHIN
 ## HISTORICALLY
 ##
 
-The exp. is incomplete. The correct exp. is: ( "historically" <F> "within" <C> )
+Ill-formed expression. Try ( "historically" <F> "within" <C> )
 
 main: HISTORICALLY FALSE UNTIL
 ##
@@ -412,7 +410,7 @@ main: HISTORICALLY FALSE UNTIL
 ## HISTORICALLY atom
 ##
 
-The exp. is badly written. The correct exp. is: "historically" <F> "within" <C>
+The exp. is badly written. Try "historically" <F> "within" <C>
 
 main: HISTORICALLY FALSE WITHIN WITHIN
 ##
@@ -424,7 +422,7 @@ main: HISTORICALLY FALSE WITHIN WITHIN
 ## HISTORICALLY atom WITHIN
 ##
 
-The exp. is incomplete. The correct exp. is: "historically" <F> "within" <C>
+Ill-formed expression. Try "historically" <F> "within" <C>
 
 main: FALL WITHIN
 ##
@@ -436,19 +434,7 @@ main: FALL WITHIN
 ## FALL
 ##
 
-The exp. is incomplete. The correct exp. is: "fall" <F> "within" <C>
-
-main: FALL FALSE UNTIL
-##
-## Ends in an error in state: 45.
-##
-## temporal -> FALL atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## FALL atom
-##
-
-The exp. is incomplete. The correct exp. is: "fall" <F> "within" <C>
+Ill-formed expression. Try "fall" <F> "within" <C>
 
 main: FALL FALSE WITHIN WITHIN
 ##
@@ -460,7 +446,20 @@ main: FALL FALSE WITHIN WITHIN
 ## FALL atom WITHIN
 ##
 
-The exp. is incomplete. The correct exp. is: "fall" <F> "within" <C>
+Ill-formed expression. Try "fall" <F> "within" <C>
+
+main: FALL FALSE TWODOTS
+##
+## Ends in an error in state: 50.
+##
+## temporal -> FALL atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> FALL atom . [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## FALL atom
+##
+
+Ill-formed expression.
 
 main: EVENTUALLY WITHIN
 ##
@@ -472,7 +471,7 @@ main: EVENTUALLY WITHIN
 ## EVENTUALLY
 ##
 
-The exp. is incomplete. The correct exp. is: "eventually" <F> "within" <C>
+Ill-formed expression. Try "eventually" <F> "within" <C>
 
 main: EVENTUALLY FALSE UNTIL
 ##
@@ -484,7 +483,7 @@ main: EVENTUALLY FALSE UNTIL
 ## EVENTUALLY atom
 ##
 
-The exp. is incomplete. The correct exp. is: "eventually" <F> "within" <C>
+Ill-formed expression. Try "eventually" <F> "within" <C>
 
 main: EVENTUALLY FALSE WITHIN WITHIN
 ##
@@ -496,7 +495,7 @@ main: EVENTUALLY FALSE WITHIN WITHIN
 ## EVENTUALLY atom WITHIN
 ##
 
-The exp. is incomplete. The correct exp. is: "eventually" <F> "within" <C>
+Ill-formed expression. Try "eventually" <F> "within" <C>
 
 main: LPAR ALWAYS WITHIN
 ##
@@ -508,7 +507,7 @@ main: LPAR ALWAYS WITHIN
 ## ALWAYS
 ##
 
-The exp. is incomplete. The correct exp. is ("always" <F> "within" <C> )
+The exp. is incomplete. Try "(" "always" <F> "within" <C> ")"
 
 main: ALWAYS FALSE UNTIL
 ##
@@ -520,7 +519,7 @@ main: ALWAYS FALSE UNTIL
 ## ALWAYS atom
 ##
 
-The exp. is incomplete. The correct exp. is: "always" <F> "within" <C>
+Ill-formed expression. Try "always" <F> "within" <C>
 
 main: ALWAYS FALSE WITHIN WITHIN
 ##
@@ -532,7 +531,7 @@ main: ALWAYS FALSE WITHIN WITHIN
 ## ALWAYS atom WITHIN
 ##
 
-The exp. is incomplete. The correct exp. is: "always" <F> "within" <C>
+Ill-formed expression. Try "always" <F> "within" <C>
 
 main: FALSE TWODOTS
 ##
@@ -558,7 +557,7 @@ main: FALSE UNTIL WITHIN
 ## temporal UNTIL
 ##
 
-The exp. is incomplete. The correct exp. is: <F> "until" <F> "within" <C>
+Ill-formed expression. Try <F> "until" <F> "within" <C>
 
 main: FALSE UNTIL FALSE UNTIL
 ##
@@ -570,7 +569,7 @@ main: FALSE UNTIL FALSE UNTIL
 ## temporal UNTIL atom
 ##
 
-The exp. is incomplete. The correct exp. is: <F> "until" <F> "within" <C>
+Ill-formed expression. Try <F> "until" <F> "within" <C>
 
 main: FALSE UNTIL FALSE WITHIN WITHIN
 ##
@@ -582,7 +581,7 @@ main: FALSE UNTIL FALSE WITHIN WITHIN
 ## temporal UNTIL atom WITHIN
 ##
 
-The exp. is incomplete. The correct exp. is: <F> "until" <F> "within" <C>
+Ill-formed expression. Try <F> "until" <F> "within" <C>
 
 main: FALSE SINCE WITHIN
 ##
@@ -594,7 +593,7 @@ main: FALSE SINCE WITHIN
 ## temporal SINCE
 ##
 
-The exp. is incomplete. The correct exp. is: <F> "since" <F> "within" <C>
+Ill-formed expression. Try <F> "since" <F> "within" <C>
 
 main: FALSE SINCE FALSE UNTIL
 ##
@@ -606,7 +605,7 @@ main: FALSE SINCE FALSE UNTIL
 ## temporal SINCE atom
 ##
 
-The exp. is incomplete. The correct exp. is: <F> "since" <F> "within" <C>
+Ill-formed expression. Try <F> "since" <F> "within" <C>
 
 main: FALSE SINCE FALSE WITHIN WITHIN
 ##
@@ -618,7 +617,7 @@ main: FALSE SINCE FALSE WITHIN WITHIN
 ## temporal SINCE atom WITHIN
 ##
 
-The exp. is incomplete. The correct exp. is: <F> "since" <F> "within" <C>
+Ill-formed expression. Try <F> "since" <F> "within" <C>
 
 main: FALSE IMPLIES WITHIN
 ##
@@ -630,7 +629,19 @@ main: FALSE IMPLIES WITHIN
 ## implies IMPLIES
 ##
 
-You are missing the operand after the operator ->. The correct exp. is: <F> "->" <F>
+You are missing the operand after the operator ->. Try <F> "->" <F>
+
+main: FALSE ON WITHIN
+##
+## Ends in an error in state: 70.
+##
+## temporal -> temporal ON . TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal ON
+##
+
+Ill-formed expression.
 
 main: FALSE OR WITHIN
 ##
@@ -642,7 +653,7 @@ main: FALSE OR WITHIN
 ## disjunction OR
 ##
 
-You are missing an operand after the operator ||. The correct exp is: <F> "||" <F>
+You are missing an operand after the operator ||. Try <F> "||" <F>
 
 main: FALSE AND WITHIN
 ##
@@ -654,7 +665,7 @@ main: FALSE AND WITHIN
 ## conjunction AND
 ##
 
-You are missing an operand after the operator &&. The correct exp. is: <F> "&&" <F>
+You are missing an operand after the operator &&. Try <F> "&&" <F>
 
 main: FALSE AND FALSE TWODOTS
 ##
@@ -668,7 +679,7 @@ main: FALSE AND FALSE TWODOTS
 ## conjunction AND temporal
 ##
 
-The ":" should be removed.
+Try removing ':'
 
 main: DURATION OF FALSE RPAR
 ##
@@ -689,7 +700,7 @@ main: DURATION OF FALSE RPAR
 ## In state 65, spurious reduction of production formula -> implies
 ##
 
-The exp. is incomplete. The correct exp. is: "duration of" <F> "in" <I>
+Ill-formed expression. Try "duration of" <F> "in" <I>
 
 main: DURATION OF FALSE IN WITHIN
 ##
@@ -701,7 +712,7 @@ main: DURATION OF FALSE IN WITHIN
 ## DURATION OF formula IN
 ##
 
-The exp. is incomplete. The correct exp. is: "duration of" <F> "in" <I>
+Ill-formed expression. Try "duration of" <F> "in" <I>
 
 main: DURATION OF FALSE IN LSQPAR WITHIN
 ##
@@ -713,7 +724,7 @@ main: DURATION OF FALSE IN LSQPAR WITHIN
 ## LSQPAR
 ##
 
-The exp. is incomplete. The correct exp. is: "duration of" <F> "in" "[" <I> "," <I> "]"
+Ill-formed expression. Try "duration of" <F> "in" "[" <I> "," <I> "]"
 
 main: DURATION OF FALSE IN LSQPAR NUM WITHIN
 ##
@@ -725,7 +736,7 @@ main: DURATION OF FALSE IN LSQPAR NUM WITHIN
 ## LSQPAR term_atom
 ##
 
-The exp. is incomplete. The correct exp. is: "duration of" <F> "in" "[" <I> "," <I> "]"
+Ill-formed expression. Try "duration of" <F> "in" "[" <I> "," <I> "]"
 
 main: DURATION OF FALSE IN TIME WITHIN
 ##
@@ -763,7 +774,7 @@ main: DURATION OF FALSE IN LSQPAR NUM COMMA WITHIN
 ## LSQPAR term_atom COMMA
 ##
 
-The exp. is incomplete. The correct exp. is: "duration of" <F> "in" "[" <I> "," <I> "]"
+Ill-formed expression. Try "duration of" <F> "in" "[" <I> "," <I> "]"
 
 main: DURATION OF FALSE IN LSQPAR NUM COMMA NUM WITHIN
 ##
@@ -775,7 +786,7 @@ main: DURATION OF FALSE IN LSQPAR NUM COMMA NUM WITHIN
 ## LSQPAR term_atom COMMA term_atom
 ##
 
-The exp. is incomplete. The correct exp. is: "duration of" <F> "in" "[" <I> "," <I> "]"
+Ill-formed expression. Try "duration of" <F> "in" "[" <I> "," <I> "]"
 
 main: DURATION OF FALSE IN NUM WITHIN
 ##
@@ -787,7 +798,7 @@ main: DURATION OF FALSE IN NUM WITHIN
 ## term_atom
 ##
 
-The exp. is incomplete. The correct exp. is: "duration of" <F> "in" <I>
+Ill-formed expression. Try "duration of" <F> "in" <I>
 
 main: DURATION OF FALSE IN NUM DOTS WITHIN
 ##
@@ -799,7 +810,7 @@ main: DURATION OF FALSE IN NUM DOTS WITHIN
 ## term_atom DOTS
 ##
 
-The exp. is incomplete. The correct exp. is: "duration of" <F> "in" <I> ".." <I>
+Ill-formed expression. Try "duration of" <F> "in" <I> ".." <I>
 
 main: DURATION OF FALSE IN LSQPAR TIME WITHIN
 ##
@@ -861,7 +872,7 @@ main: PREV FALSE UNTIL
 ## PREV atom
 ##
 
-The exp. is incomplete. The correct exp. is: "previous" <F> "within" <C>
+Ill-formed expression. Try "previous" <F> "within" <C>
 
 main: PREV FALSE WITHIN WITHIN
 ##
@@ -873,7 +884,7 @@ main: PREV FALSE WITHIN WITHIN
 ## PREV atom WITHIN
 ##
 
-The exp. is incomplete. The correct exp. is: "previous" <F> "within" <C>
+Ill-formed expression. Try "previous" <F> "within" <C>
 
 main: DURATION OF FALSE IN LSQPAR NUM COMMA TIME WITHIN
 ##
@@ -926,30 +937,6 @@ main: LPAR FALSE IN
 
 Missing the right parenthesis.
 
-main: RISE FALSE UNTIL
-##
-## Ends in an error in state: 91.
-##
-## temporal -> RISE atom . WITHIN time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## RISE atom
-##
-
-The exp. is incomplete. The correct exp. is: "rise" <F> "within" <C>
-
-main: RISE FALSE WITHIN WITHIN
-##
-## Ends in an error in state: 92.
-##
-## temporal -> RISE atom WITHIN . time [ UNTIL SINCE RPAR OR IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## RISE atom WITHIN
-##
-
-The exp. is incomplete. The correct exp. is: "rise" <F> "within" <C>
-
 main: HISTORICALLY WITHIN
 ##
 ## Ends in an error in state: 94.
@@ -961,7 +948,7 @@ main: HISTORICALLY WITHIN
 ## HISTORICALLY
 ##
 
-The exp. is incomplete. The correct exp. is: "historically" <F> "within" <C>
+Ill-formed expression. Try "historically" <F> "within" <C>
 
 main: HISTORICALLY TWODOTS WITHIN
 ##
@@ -973,7 +960,7 @@ main: HISTORICALLY TWODOTS WITHIN
 ## HISTORICALLY TWODOTS
 ##
 
-Please remove the two dots.
+Try removing ':'
 
 main: ALWAYS WITHIN
 ##
@@ -988,6 +975,31 @@ main: ALWAYS WITHIN
 
 Incorrect expression after always.
 
+main: RISE FALSE TWODOTS
+##
+## Ends in an error in state: 112.
+##
+## temporal -> RISE atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> RISE atom . [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## RISE atom
+##
+
+Ill-formed expression.
+
+main: RISE FALSE WITHIN WITHIN
+##
+## Ends in an error in state: 113.
+##
+## temporal -> RISE atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## RISE atom WITHIN
+##
+
+Ill-formed expression. Try "rise" <F> or "rise" <F> "within" <C>
+
 main: ALWAYS TWODOTS WITHIN
 ##
 ## Ends in an error in state: 98.
@@ -998,7 +1010,7 @@ main: ALWAYS TWODOTS WITHIN
 ## ALWAYS TWODOTS
 ##
 
-Please remove the two dots.
+Try removing ':'
 
 main: FALSE RPAR
 ##

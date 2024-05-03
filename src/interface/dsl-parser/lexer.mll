@@ -42,6 +42,7 @@ rule token = parse
 | "duration" { DURATION }
 | "in" { IN }
 | "of" { OF }
+| "on" { ON }
 | ".." { DOTS }
 | "_" { DONTCARE }
 | [ 'A'-'Z' 'a'-'z' '_']+ as s { NAME s }

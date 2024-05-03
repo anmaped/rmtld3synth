@@ -1,0 +1,1 @@
+(a->(b->eventually[=3s] c))
