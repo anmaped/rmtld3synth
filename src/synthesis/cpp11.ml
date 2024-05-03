@@ -70,7 +70,7 @@ let synth_fm_less (cmptr1, a) (cmptr2, b) helper =
     ^ cmptr2 ^ ";\nreturn b3_lessthan(x, y);\n}(trace,t)"
   , a ^ b )
 
-let convert_to_always_equal (sf2,b) gamma helper =
+let convert_to_always_equal (sf2, b) gamma helper =
   print_endline
     ( "The next operator 'false U[" ^ string_of_float gamma
     ^ "] fm' or false U[=" ^ string_of_float gamma
@@ -82,7 +82,8 @@ let convert_to_always_equal (sf2,b) gamma helper =
   ( "always_equal<T, Eval_always_b_" ^ string_of_int id ^ "<T>, "
     ^ string_of_int (int_of_float gamma)
     ^ ">"
-  , b ^ "\n      template <typename T> class Eval_always_b_" ^ string_of_int id
+  , b ^ "\n      template <typename T> class Eval_always_b_"
+    ^ string_of_int id
     ^ " {\n\
       \  public:\n\
       \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
@@ -96,14 +97,14 @@ let convert_to_always_equal (sf2,b) gamma helper =
       \  };\n\
       \  " )
 
-let convert_to_unbounded_eventually (sf2,b) gamma helper =
+let convert_to_unbounded_eventually (sf2, b) gamma helper =
   print_endline
     "The unbounded until operator 'true U[infty] fm' is converted to \
      'Eventually[infty] fm' since cpp11 synthesis is enabled." ;
   (* get new id *)
   let id = get_until_counter helper in
-  ( "eventually_less_unbounded<T, Eval_eventually_less_unbounded_" ^ string_of_int id
-    ^ "<T> >(trace, t)"
+  ( "eventually_less_unbounded<T, Eval_eventually_less_unbounded_"
+    ^ string_of_int id ^ "<T> >(trace, t)"
   , b ^ "\n      template <typename T> class Eval_eventually_less_unbounded_"
     ^ string_of_int id
     ^ " {\n\
@@ -122,9 +123,9 @@ let convert_to_unbounded_eventually (sf2,b) gamma helper =
 let synth_fm_uless gamma (sf1, a) (sf2, b) helper =
   (* detect case when false U< f2 and f1=false *)
   if (sf1, a) = synth_fm_not (synth_fm_true helper) helper then
-    convert_to_always_equal (sf2,b) gamma helper
+    convert_to_always_equal (sf2, b) gamma helper
   else if gamma = max_float && (sf1, a) = synth_fm_true helper then
-    convert_to_unbounded_eventually (sf2,b) gamma helper
+    convert_to_unbounded_eventually (sf2, b) gamma helper
   else
     (* get new id *)
     let id = get_until_counter helper in
@@ -146,7 +147,7 @@ let synth_fm_uless gamma (sf1, a) (sf2, b) helper =
 let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
   (* detect case when false U= f2 and f1=false *)
   if (sf1, a) = synth_fm_not (synth_fm_true helper) helper then
-    convert_to_always_equal (sf2,b) gamma helper
+    convert_to_always_equal (sf2, b) gamma helper
   else
     (* get new id *)
     let id = get_until_counter helper in
@@ -357,33 +358,40 @@ let synth_cpp11 compute helper =
     ^ String.capitalize_ascii (insert_string name "compute" '#')
     ^ ".h\"\n\n  /* "
     ^ string_of_int (get_setting_int "rtm_buffer_size" helper)
-    ^ ", " ^ get_event_fulltype helper ^ " */\n  #define RTML_BUFFER0_SIZE "
+    ^ ", " ^ get_event_fulltype helper ^ " */\n  #define "
+    ^ String.uppercase_ascii monitor_name
+    ^ "_BUFFER_SIZE "
     ^ string_of_int (get_setting_int "rtm_buffer_size" helper)
-    ^ "\n  #define RTML_BUFFER0_TYPE " ^ get_event_fulltype helper
-    ^ "\n\
-      \  #define RTML_BUFFER0_SETUP() \\\n\
-      \    RTML_buffer<RTML_BUFFER0_TYPE, RTML_BUFFER0_SIZE> __buffer_"
-    ^ monitor_name
+    ^ "\n  #define "
+    ^ String.uppercase_ascii monitor_name
+    ^ "_BUFFER_TYPE " ^ get_event_fulltype helper
+    ^ "\n  #define RTML_BUFFER0_SETUP() \\\n    RTML_buffer<"
+    ^ String.uppercase_ascii monitor_name
+    ^ "_BUFFER_TYPE, "
+    ^ String.uppercase_ascii monitor_name
+    ^ "_BUFFER_SIZE> __buffer_" ^ monitor_name
     ^ ";\\\n\
       \    int tzero = 0;\n\n\
       \    #define RTML_BUFFER0_TRIGGER_PERIODIC_MONITORS() \\\n"
     ^ List.fold_right
         (fun (_, n) str ->
-          "\\\n\
-           RMTLD3_reader< \\\n\
-           RTML_reader<RTML_buffer<RTML_BUFFER0_TYPE, RTML_BUFFER0_SIZE>>, \
-           int> \\\n\
-           __trace_" ^ monitor_name ^ "_" ^ n
-          ^ " = RMTLD3_reader< \\\n\
-            \    RTML_reader<RTML_buffer<RTML_BUFFER0_TYPE, \
-             RTML_BUFFER0_SIZE>>,\\\n\
-            \    int>(__buffer_" ^ monitor_name ^ ", tzero); \\\n\\\n"
+          "\\\nRMTLD3_reader< \\\nRTML_reader<RTML_buffer<"
+          ^ String.uppercase_ascii monitor_name
+          ^ "_BUFFER_TYPE, "
+          ^ String.uppercase_ascii monitor_name
+          ^ "_BUFFER_SIZE>>, int> \\\n__trace_" ^ monitor_name ^ "_" ^ n
+          ^ " = RMTLD3_reader< \\\n    RTML_reader<RTML_buffer<"
+          ^ String.uppercase_ascii monitor_name
+          ^ "_BUFFER_TYPE, "
+          ^ String.uppercase_ascii monitor_name
+          ^ "_BUFFER_SIZE>>,\\\n    int>(__buffer_" ^ monitor_name
+          ^ ", tzero); \\\n\\\n"
           ^ String.capitalize_ascii monitor_name
-          ^ "_" ^ n
-          ^ "<RMTLD3_reader< \\\n\
-            \        RTML_reader<RTML_buffer<RTML_BUFFER0_TYPE, \
-             RTML_BUFFER0_SIZE>>, int>> \\\n\
-            \        rtm_mon" ^ n ^ "("
+          ^ "_" ^ n ^ "<RMTLD3_reader< \\\n        RTML_reader<RTML_buffer<"
+          ^ String.uppercase_ascii monitor_name
+          ^ "_BUFFER_TYPE, "
+          ^ String.uppercase_ascii monitor_name
+          ^ "_BUFFER_SIZE>>, int>> \\\n        rtm_mon" ^ n ^ "("
           ^ ( try string_of_int (get_setting_int "rtm_period" helper)
               with _ -> failwith "Set monitor period!" )
           ^ ", __trace_" ^ monitor_name ^ "_" ^ n ^ "); \\\n" ^ str )
@@ -427,26 +435,31 @@ let synth_cpp11 compute helper =
     "/* This file was automatically generated from rmtld3synth tool version\n\
     \  "
     ^ get_setting_string "version" helper
-    ^ ". */\n  \n  #ifndef "
+    ^ ". */\n\n  #ifndef "
     ^ String.uppercase_ascii monitor_name
     ^ "_H_\n  #define "
     ^ String.uppercase_ascii monitor_name
     ^ "_H_\n\n"
-    ^ "\n\
-      \      #include <writer.h>\n\
-      \  #include <rmtld3/rmtld3.h>\n\n\
-       template<typename T, T& buffer>\n\
-       class Writer_"
+    ^ "\n #include <writer.h>\n #include <rmtld3/rmtld3.h>\n\n #define "
     ^ String.uppercase_ascii monitor_name
-    ^ " {\n\n  public:"
-    ^ Printf.sprintf "enum _auto_gen_prop {"
+    ^ "_BUFFER_SIZE "
+    ^ string_of_int (get_setting_int "rtm_buffer_size" helper)
+    ^ "\n\n class "
+    ^ String.uppercase_ascii monitor_name
+    ^ "{\n public:"
+    ^ Printf.sprintf "typedef enum _auto_gen_prop {"
     ^ Hashtbl.fold
         (fun x y str -> str ^ Printf.sprintf "%s = %i, " x y)
         (get_proposition_hashtbl helper)
         ""
-    ^ "};\n\n    typedef " ^ get_event_fulltype helper
-    ^ " buffer_t;\n\n\
-      \    typename T::error_t push(_auto_gen_prop s, timespan t) {\n\
+    ^ "} prop_t;\n\n typedef " ^ get_event_fulltype helper
+    ^ " buffer_t;\n\n};\n\n template<typename T, T& buffer>\nclass Writer_"
+    ^ String.uppercase_ascii monitor_name
+    ^ " : public "
+    ^ String.uppercase_ascii monitor_name
+    ^ " {\n\n  public:\n          typename T::error_t push("
+    ^ get_event_subtype helper
+    ^ " s, timespan t) {\n\
       \      typename T::event_t e = typename T::event_t(s,t);\n\
       \      return w.push(e);\n\
       \    };\n\n\
@@ -454,15 +467,19 @@ let synth_cpp11 compute helper =
       \    RTML_writer<T> w = RTML_writer<T>(buffer);\n\n\
        };\n\n\
        // buffer will be assigned at ld step\n\
-       extern RTML_buffer<Event<proposition>, "
-    ^ string_of_int (get_setting_int "rtm_buffer_size" helper)
-    ^ "> __buffer_"
+       extern RTML_buffer<Event<"
+    ^ String.uppercase_ascii monitor_name
+    ^ "::prop_t>, "
+    ^ String.uppercase_ascii monitor_name
+    ^ "_BUFFER_SIZE> __buffer_"
     ^ insert_string name "monitor" '#'
     ^ ";\n\nusing Writer_" ^ insert_string name "" '#' ^ " = Writer_"
     ^ String.uppercase_ascii monitor_name
-    ^ "<RTML_buffer<Event<proposition>, "
-    ^ string_of_int (get_setting_int "rtm_buffer_size" helper)
-    ^ ">,__buffer_"
+    ^ "<RTML_buffer<Event<"
+    ^ String.uppercase_ascii monitor_name
+    ^ "::prop_t>, "
+    ^ String.uppercase_ascii monitor_name
+    ^ "_BUFFER_SIZE>,__buffer_"
     ^ insert_string name "monitor" '#'
     ^ ">;\n\n    " ^ " #endif //"
     ^ String.uppercase_ascii monitor_name

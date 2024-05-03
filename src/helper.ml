@@ -382,9 +382,11 @@ let beautify_cpp_code code =
  *)
 let get_event_type helper = get_setting_string "rtm_event_type" helper
 
+let get_event_subtype helper = get_setting_string "rtm_event_subtype" helper
+
 let get_event_fulltype helper =
   get_event_type helper ^ "< "
-  ^ get_setting_string "rtm_event_subtype" helper
+  ^ get_event_subtype helper
   ^ " >"
 
 (*
