@@ -1,0 +1,8 @@
+{
+    "name": "rmtld3synth-dev",
+    "image": "docker.io/anmaped/rmtld3synth:v0.5-x",
+    "workspaceFolder": "/workspaces",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces,type=bind,Z",
+    "postCreateCommand": "uname -a",
+    "extensions": ["ocamllabs.ocaml-platform"],
+}
