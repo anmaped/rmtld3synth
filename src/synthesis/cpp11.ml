@@ -467,17 +467,17 @@ let synth_cpp11 compute helper =
       \    RTML_writer<T> w = RTML_writer<T>(buffer);\n\n\
        };\n\n\
        // buffer will be assigned at ld step\n\
-       extern RTML_buffer<Event<"
+       extern RTML_buffer<Event<std::underlying_type<"
     ^ String.uppercase_ascii monitor_name
-    ^ "::prop_t>, "
+    ^ "::prop_t>::type>, "
     ^ String.uppercase_ascii monitor_name
     ^ "_BUFFER_SIZE> __buffer_"
     ^ insert_string name "monitor" '#'
     ^ ";\n\nusing Writer_" ^ insert_string name "" '#' ^ " = Writer_"
     ^ String.uppercase_ascii monitor_name
-    ^ "<RTML_buffer<Event<"
+    ^ "<RTML_buffer<Event<std::underlying_type<"
     ^ String.uppercase_ascii monitor_name
-    ^ "::prop_t>, "
+    ^ "::prop_t>::type>, "
     ^ String.uppercase_ascii monitor_name
     ^ "_BUFFER_SIZE>,__buffer_"
     ^ insert_string name "monitor" '#'
