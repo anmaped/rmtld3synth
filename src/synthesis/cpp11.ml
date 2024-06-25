@@ -372,28 +372,27 @@ let synth_cpp11 compute helper =
     ^ "_BUFFER_TYPE, "
     ^ String.uppercase_ascii monitor_name
     ^ "_BUFFER_SIZE> __buffer_" ^ monitor_name
-    ^ ";\\\n\
-      \    int tzero = 0;\n\n\
+    ^ ";\n\
       \    #define RTML_BUFFER0_TRIGGER_PERIODIC_MONITORS() \\\n"
     ^ List.fold_right
         (fun (_, n) str ->
-          "\\\nRMTLD3_reader< \\\nRTML_reader<RTML_buffer<"
+          "RMTLD3_reader< \\\nRTML_reader<RTML_buffer<"
           ^ String.uppercase_ascii monitor_name
           ^ "_BUFFER_TYPE, "
           ^ String.uppercase_ascii monitor_name
-          ^ "_BUFFER_SIZE>>, int> \\\n__trace_" ^ monitor_name ^ "_" ^ n
+          ^ "_BUFFER_SIZE>>> \\\n__trace_" ^ monitor_name ^ "_" ^ n
           ^ " = RMTLD3_reader< \\\n    RTML_reader<RTML_buffer<"
           ^ String.uppercase_ascii monitor_name
           ^ "_BUFFER_TYPE, "
           ^ String.uppercase_ascii monitor_name
-          ^ "_BUFFER_SIZE>>,\\\n    int>(__buffer_" ^ monitor_name
-          ^ ", tzero); \\\n\\\n"
+          ^ "_BUFFER_SIZE>>>(__buffer_" ^ monitor_name
+          ^ "); \\\n\\\n"
           ^ String.capitalize_ascii monitor_name
           ^ "_" ^ n ^ "<RMTLD3_reader< \\\n        RTML_reader<RTML_buffer<"
           ^ String.uppercase_ascii monitor_name
           ^ "_BUFFER_TYPE, "
           ^ String.uppercase_ascii monitor_name
-          ^ "_BUFFER_SIZE>>, int>> \\\n        rtm_mon" ^ n ^ "("
+          ^ "_BUFFER_SIZE>>>> \\\n        rtm_mon" ^ n ^ "("
           ^ ( try string_of_int (get_setting_int "rtm_period" helper)
               with _ -> failwith "Set monitor period!" )
           ^ ", __trace_" ^ monitor_name ^ "_" ^ n ^ "); \\\n" ^ str )
@@ -412,25 +411,40 @@ let synth_cpp11 compute helper =
             \  private:\n\
             \    T &trace;\n\n\
             \  protected:\n\
+            \    three_valued_type _out = T_UNKNOWN;\n\
+            \    timespan tbegin;\n\n\
             \    void run(){\n\n\
-            \      timespan tzero = 0;\n\
-            \      three_valued_type _out = _"
+            \      trace.synchronize();\n\
+            \      if (trace.set(tbegin) == 0) {
+            \        _out = _"
           ^ insert_string name "compute" '#'
           ^ "_" ^ n
-          ^ "<T>(trace,tzero);\n\
-            \      DEBUG_RMTLD3(\"Status:%d\\n\", _out);\n\
+          ^ "<T>(trace,tbegin);\n\
+            \      }\n\
+            \      DEBUG_RMTLD3(\"status=%d, tbegin=%lu\\n\", _out, tbegin);\n\
             \    }\n\n\
             \  public:\n\
             \    "
           ^ String.capitalize_ascii monitor_name
           ^ "_" ^ n
-          ^ "(useconds_t p, T& trc): RTML_monitor(p,SCHED_FIFO,50), \
-             trace(trc) {}\n\
+          ^ "(useconds_t p, T& trc, timespan& t): RTML_monitor(p,DEFAULT_SCHED,DEFAULT_PRIORITY), \
+             trace(trc), tbegin(t) { }\n\
+            \    "
+          ^ String.capitalize_ascii monitor_name
+          ^ "_" ^ n
+          ^ "(useconds_t p, T& trc): RTML_monitor(p,DEFAULT_SCHED,DEFAULT_PRIORITY), \
+             trace(trc) { tbegin = clockgettime(); }\n\
             \    "
           ^ String.capitalize_ascii monitor_name
           ^ "_" ^ n
           ^ "(useconds_t p, T& trc, int sche, int prio): \
-             RTML_monitor(p,sche,prio), trace(trc) {}\n\n\
+             RTML_monitor(p,sche,prio), trace(trc) { tbegin = clockgettime(); }\n\
+            \    "
+          ^ String.capitalize_ascii monitor_name
+          ^ "_" ^ n
+          ^ "(useconds_t p, T& trc, int sche, int prio, timespan& t): \
+             RTML_monitor(p,sche,prio), trace(trc), tbegin(t) { }\n\
+            \   three_valued_type &getVeredict() { return _out; }\n\
             \  };\n" ^ str )
         cpp_monitor_lst ""
     ^ "\n  #endif //"
@@ -464,11 +478,18 @@ let synth_cpp11 compute helper =
     ^ String.uppercase_ascii monitor_name
     ^ " : public "
     ^ String.uppercase_ascii monitor_name
-    ^ " {\n\n  public:\n          typename T::error_t push("
+    ^ " {\n\n  public:\n\
+      \ typename T::error_t push("
+    ^ get_event_subtype helper
+    ^ " s) {\n\
+      \      typename T::event_t e = typename T::event_t(s,0);\n\
+      \      return w.push(e);\n\
+      \    };\n\n\
+      \ typename T::error_t push("
     ^ get_event_subtype helper
     ^ " s, timespan t) {\n\
       \      typename T::event_t e = typename T::event_t(s,t);\n\
-      \      return w.push(e);\n\
+      \      return w.push_all(e);\n\
       \    };\n\n\
       \  private:\n\
       \    RTML_writer<T> w = RTML_writer<T>(buffer);\n\n\
