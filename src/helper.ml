@@ -4,6 +4,8 @@ open Sexplib.Conv
 open Rmtld3
 include Js.Helper_
 
+let _ = Random.self_init
+
 (* global_int settings *)
 type global_int = string * int [@@deriving sexp]
 
@@ -174,12 +176,12 @@ let set_proposition_two_way_map p id helper =
 let get_until_counter (_, _, _, _, lst, _) =
   let _, count = get_counter_without_map "counter_until" lst in
   count := !count + 1;
-  !count
+  !count + Random.int 1000000 (* try to avoid same template id *)
 
 let get_duration_counter (_, _, _, _, lst, _) =
   let _, count = get_counter_without_map "counter_duration" lst in
   count := !count + 1;
-  !count
+  !count + Random.int 1000000 (* try to avoid same template id *)
 
 let get_inc_counter_test_cases (_, _, count, _, _, _) =
   count := !count + 1;

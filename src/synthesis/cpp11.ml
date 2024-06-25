@@ -272,15 +272,17 @@ let synth_cpp11 compute helper =
       expressions []
   in
   let pair_to_string ((x, y), z) = "((" ^ x ^ "," ^ y ^ "), " ^ z ^ ")" in
+  let id =
+    String.sub
+      ( Digest.string
+          (String.concat "" (List.map pair_to_string cpp_monitor_lst))
+      |> Digest.to_hex )
+      0 4
+  in
   let name =
     insert_string
       (get_setting_string "rtm_monitor_name_prefix" helper)
-      (String.sub
-         ( Digest.string
-             (String.concat "" (List.map pair_to_string cpp_monitor_lst))
-         |> Digest.to_hex )
-         0 4 )
-      '%'
+      id '%'
   in
   let monitor_name = insert_string name "compute" '#' in
   (* Synthesize ocaml formula evaluation algorithm into c++ *)
@@ -400,8 +402,13 @@ let synth_cpp11 compute helper =
         (fun (_, n) str ->
           "\n\n  template<class T>\n  class "
           ^ String.capitalize_ascii monitor_name
-          ^ "_" ^ n
-          ^ " : public RTML_monitor {\n\n\
+          ^ "_" ^ n ^ " : public RTML_monitor<"
+          ^ let quote v = "'" ^ v ^ "'" in
+          List.fold_left
+              (fun a b -> a ^ "," ^ (String.make 1 b |> quote))
+              (String.make 1 (List.hd (explode id)) |> quote)
+              (List.tl (explode id))
+          ^ "> {\n\n\
             \  private:\n\
             \    T &trace;\n\n\
             \  protected:\n\
