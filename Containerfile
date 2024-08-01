@@ -12,7 +12,8 @@ RUN \
   python3 \
   python3-distutils \
   dos2unix \
-  opam
+  opam \
+  pkg-config
 
 RUN opam init --disable-sandboxing -ya
 RUN opam switch create 4.14.1
