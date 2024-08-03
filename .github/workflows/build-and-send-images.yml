@@ -26,8 +26,17 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: anmaped/rmtld3synth
+
+      - name: Build and push slim image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          file: ./Containerfile.slim
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-slim
+          labels: ${{ steps.meta.outputs.labels }}
       
-      - name: Build and push Docker image
+      - name: Build and push dev image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
           context: .

@@ -1,0 +1,32 @@
+FROM docker.io/ocamlpro/ocaml:4.14.2 as base
+
+RUN sudo apk add python3 build-base bash
+
+RUN opam switch create . ocaml-system --deps-only --locked
+
+RUN opam pin add dolmen https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
+RUN opam pin add dolmen-export https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
+
+RUN git clone --branch v0.5-x https://github.com/anmaped/rmtld3synth.git
+RUN git clone --branch z3-4.12.3 https://github.com/Z3Prover/z3.git
+
+RUN opam install zarith ppx_sexp_conv sexplib bigarray-compat
+RUN cd z3 && eval $(opam env) && python scripts/mk_make.py --ml --staticlib && cd build && make
+
+# fix
+RUN sed -i "s~api/ml/libz3ml~api/ml/libz3ml-static~g" z3/build/Makefile
+RUN sed -i "s~api/ml/dllz3ml.so~api/ml/dllz3ml-static.so~g" z3/build/Makefile
+RUN ls -l z3/build && sudo cp z3/build/libz3-static.a /usr/lib/libz3-static.a
+
+RUN cd z3/build && eval $(opam env) && sudo make install
+
+RUN sed -i "s/-cclib -lstdc++/:standard -cclib -static -cclib -no-pie/g" rmtld3synth/src/dune
+RUN cd rmtld3synth && eval $(opam env) && ./configure --prefix=/usr && opam exec -- make all
+
+
+FROM docker.io/alpine:3.20
+
+COPY --from=base /home/ocaml/_opam/bin/rmtld3synth /usr/bin
+
+#ENTRYPOINT /bin/sh
+WORKDIR /root

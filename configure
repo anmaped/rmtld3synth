@@ -75,15 +75,15 @@ if [ -n "$Z3_VERSION" ] && [ "x$z3_solver" == "xtrue" ]; then
     echo "Z3 Version Found: $Z3_VERSION"
 
     if $(vercmp "$Z3_VERSION" "4.7.1" "<="); then
-        echo -e "\nz3: 
+        echo -e "\nzsolver: 
 \tcp src/interface/z3solver.ml src/interface/z3solver_.ml" >>Makefile
     else
-        echo -e "\nz3: 
+        echo -e "\nzsolver: 
 \tcp src/interface/z3solver_newAPI.ml src/interface/z3solver_.ml" >>Makefile
     fi
 
 else
-    echo -e "\nz3: 
+    echo -e "\nzsolver: 
 \tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml" >>Makefile
     sed -i 's/z3//' src/interface/dune
 fi

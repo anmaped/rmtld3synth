@@ -11,7 +11,7 @@ compile: setup
 	dune build --profile release @install
 	dune build --profile release @test
 
-setup: version z3
+setup: version zsolver
 	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
 	echo "(* dummy js interface *)" >> src/js/helper_.ml
 
