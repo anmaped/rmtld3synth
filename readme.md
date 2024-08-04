@@ -126,7 +126,7 @@ If the libz3 is not found then use the copy command to copy the `z3/build/libz3.
 
 ## Notes on rtmlib2
 
-The current version is [v2.0.5](https://github.com/anmaped/rtmlib/tags).
+The current version is [v2.1.0](https://github.com/anmaped/rtmlib/tags).
 
 ![build workflow](https://github.com/anmaped/rtmlib/actions/workflows/build-and-send-images.yml/badge.svg)
 
