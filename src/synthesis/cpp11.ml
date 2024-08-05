@@ -80,7 +80,7 @@ let convert_to_always_equal (sf2, b) gamma helper =
   (* get new id *)
   let id = get_until_counter helper in
   ( "always_equal<T, Eval_always_b_" ^ string_of_int id ^ "<T>, "
-    ^ string_of_int (int_of_float gamma)
+    ^ ((adjust_base gamma helper) |> int_of_float |> string_of_int)
     ^ ">"
   , b ^ "\n      template <typename T> class Eval_always_b_"
     ^ string_of_int id
@@ -97,7 +97,7 @@ let convert_to_always_equal (sf2, b) gamma helper =
       \  };\n\
       \  " )
 
-let convert_to_unbounded_eventually (sf2, b) gamma helper =
+let convert_to_unbounded_eventually (sf2, b) helper =
   print_endline
     "The unbounded until operator 'true U[infty] fm' is converted to \
      'Eventually[infty] fm' since cpp11 synthesis is enabled." ;
@@ -125,12 +125,12 @@ let synth_fm_uless gamma (sf1, a) (sf2, b) helper =
   if (sf1, a) = synth_fm_not (synth_fm_true helper) helper then
     convert_to_always_equal (sf2, b) gamma helper
   else if gamma = max_float && (sf1, a) = synth_fm_true helper then
-    convert_to_unbounded_eventually (sf2, b) gamma helper
+    convert_to_unbounded_eventually (sf2, b) helper
   else
     (* get new id *)
     let id = get_until_counter helper in
     ( "until_less<T, Eval_until_less_" ^ string_of_int id ^ "<T>, "
-      ^ string_of_int (int_of_float gamma)
+      ^ ((adjust_base gamma helper) |> int_of_float |> string_of_int)
       ^ ">(trace, t)"
     , a ^ b ^ "\n  template <typename T> class Eval_until_less_"
       ^ string_of_int id
@@ -155,10 +155,10 @@ let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
        Until (=): A Until (=a) B <-> Always(<a) A and Always(=a) B *)
     ( "[](T &trace, timespan &t){\n    auto x = always_less<T, Eval_always_a_"
       ^ string_of_int id ^ "<T>, "
-      ^ string_of_int (int_of_float gamma)
+      ^ ((adjust_base gamma helper) |> int_of_float |> string_of_int)
       ^ ">(trace, t);\n    auto y = always_equal<T, Eval_always_b_"
       ^ string_of_int id ^ "<T>, "
-      ^ string_of_int (int_of_float gamma)
+      ^ ((adjust_base gamma helper) |> int_of_float |> string_of_int)
       ^ ">(trace, t);\n    return b3_and(x,y);\n  }(trace, t)\n  "
     , a ^ b ^ "template <typename T> class Eval_always_a_" ^ string_of_int id
       ^ " {\n\
@@ -190,7 +190,7 @@ let synth_fm_sless gamma (sf1, a) (sf2, b) helper =
   (* get new id *)
   let id = get_until_counter helper in
   ( "since_less<T, Eval_since_less_" ^ string_of_int id ^ "<T>, "
-    ^ string_of_int (int_of_float gamma)
+    ^ ((adjust_base gamma helper) |> int_of_float |> string_of_int)
     ^ ">(trace, t)"
   , a ^ b ^ "\n  template <typename T> class Eval_since_less_"
     ^ string_of_int id
@@ -210,10 +210,10 @@ let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
   ( "[](T &trace, timespan &t){\n\
     \    auto x = historically_less<T, Eval_historically_a_"
     ^ string_of_int id ^ "<T>, "
-    ^ string_of_int (int_of_float gamma)
+    ^ ((adjust_base gamma helper) |> int_of_float |> string_of_int)
     ^ ">(trace, t);\n    auto y = historically_equal<T, Eval_historically_b_"
     ^ string_of_int id ^ "<T>, "
-    ^ string_of_int (int_of_float gamma)
+    ^ ((adjust_base gamma helper) |> int_of_float |> string_of_int)
     ^ ">(trace, t);\n    return b3_and(x,y);\n  }(trace, t)\n  "
   , a ^ b ^ "template <typename T> class Eval_historically_a_"
     ^ string_of_int id

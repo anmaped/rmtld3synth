@@ -104,10 +104,9 @@ let set_rtm_monitor_name_prefix v =
   set_setting "rtm_monitor_name_prefix" (Txt v) helper
 
 let set_rtm_monitor_time_unit v =
-  (* check if ns,us,ms,s *)
   if v = "ns" || v = "us" || v = "ms" || v = "s" then
     set_setting "rtm_monitor_time_unit" (Txt v) helper
-  else failwith "check if time units are ns, us, ms, s."
+  else failwith "check if time units are 'ns', 'us', 'ms', or 's'."
 
 (* general settings *)
 let set_gen_tests v = set_setting "gen_tests" (Sel v) helper
