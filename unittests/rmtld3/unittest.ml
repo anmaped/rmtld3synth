@@ -507,6 +507,7 @@ let _ =
      (rtm_event_subtype proposition)\n\
      (rtm_monitor_name_prefix rtm_#_%)\n\
      (gen_unit_tests true)\n\
+     (rtm_monitor_time_unit s)\n\
      (gen_paper_results false)"
   in
   (* convert settings *)

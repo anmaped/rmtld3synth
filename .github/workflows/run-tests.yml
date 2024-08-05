@@ -5,9 +5,8 @@ on:
     workflows:
       - Publish Docker image
     branches:
-      - v0.4
-      - v0.4-x
-      - v0.*
+      - v0.5-x
+      - v0.5
     types:
       - completed
 
@@ -30,7 +29,7 @@ jobs:
           docker run --rm \
           --entrypoint /bin/bash \
           -v ${PWD}:/workspace/source:z  \
-          docker.io/anmaped/rmtld3synth:v0.4 \
+          docker.io/anmaped/rmtld3synth:v0.5-x \
           -c 'cp -r /workspace/source /localsource && cd /localsource && \
           eval $(opam env) && \
           ./configure && make && make tests'

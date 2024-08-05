@@ -413,13 +413,3 @@ let pow base exponent =
   aux 1 base exponent
 
 let (%) f g x = fun x -> f(g x)
-
-let adjust_base gamma helper =
-  let conv = function
-  | "s" -> 1.
-  | "ms" -> 1_000.
-  | "us" -> 1_000_000.
-  | "ns" -> 1_000_000_000.
-  | _ -> failwith "adjust_base unavailable." in
-  let rst = (get_setting_string "rtm_monitor_time_unit" helper |> conv) *. gamma in
-  if rst < 1. then failwith "adjust_base loses precision. Please consider changing the monitor time units!" else rst

@@ -13,10 +13,10 @@ int main() {
   // using the new name
   Writer w;
 
-  // push symbol 'a' with timestamp 0
+  // push symbol 'a' with timestamp 0 seconds
   // Note that all propositions are defined inside the writer.
   // There is no way to send other symbols that are not defined there.
-  w.push(Writer::a, 0);
+  w.push(Writer::a, Writer::time_of_s(0));
 
   sample(); // run the sample monitor
 }
