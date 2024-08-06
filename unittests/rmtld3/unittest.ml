@@ -28,13 +28,12 @@ let rmtld3_unit_test_case_generation trace formula computed_value cpp11_compute
     ^ "; };"
   in
   (* do the map between event name and id numbers *)
-  let hasht = get_proposition_hashtbl helper in
   let code, _ =
     List.fold_left
       (fun (a, count) (p, (t1, t2)) ->
         ( a ^ "\ttmp_x = event_t("
           ^ string_of_int
-              (try Hashtbl.find hasht p
+              (try find_proposition_hashtbl p helper
                with Not_found ->
                  let cnt = get_proposition_counter helper in
                  set_proposition_two_way_map p cnt helper;
@@ -128,6 +127,7 @@ let rmtld3_unit_test_case_generation trace formula computed_value cpp11_compute
 exception TEST_FAIL of string
 
 let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
+  set_counter_test_cases 0 helper;
   (* a logic environment for all tests *)
   let t_u = logical_environment in
   let call_list = ref "" in
@@ -452,7 +452,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
     (beautify_cpp_code
        ("#include <rmtld3/rmtld3.h>\n// Propositions\n"
        ^ Hashtbl.fold
-           (fun x y str ->
+           (fun x y str -> let x,y = proposition_hashtbl_match x y in
              str ^ Printf.sprintf "const proposition PROP_%s = %i;\n  " x y)
            (get_proposition_hashtbl helper)
            ""

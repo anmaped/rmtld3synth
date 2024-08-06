@@ -62,8 +62,7 @@ let synth_tm_times cmptr1 cmptr2 helper =
 let synth_fm_true helper = ("(fun k s t -> True)", "")
 
 let synth_fm_p p helper =
-  let tbl = get_proposition_rev_hashtbl helper in
-  let p_id = Hashtbl.find tbl p in
+  let p_id = find_proposition_rev_hashtbl p helper in
   ("(fun k s t -> k.evaluate k.trace \"" ^ p_id ^ "\" t)", "")
 
 let synth_fm_not cmpfm helper =

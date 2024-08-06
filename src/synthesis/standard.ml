@@ -41,9 +41,8 @@ module Translate (T : Translate_sig) = struct
     match formula with
     | True () -> T.synth_fm_true helper
     | Prop p ->
-        let tbl = get_proposition_hashtbl helper in
         let id_num10, id_asciistr =
-          try (Hashtbl.find tbl p, "")
+          try (find_proposition_hashtbl p helper, "")
           with Not_found ->
             let cnt = get_proposition_counter helper in
             set_proposition_two_way_map p cnt helper;

@@ -33,16 +33,17 @@ let gen_adjust_base t helper =
     | "ns" -> 1_000_000_000.
     | _ -> failwith "adjust_base unavailable."
   in
-  if (conv t) <= (get_setting_string "rtm_monitor_time_unit" helper |> conv) then
-  "static timespan time_of_" ^ t ^ "(timespan v) {\n"
-  (* (float_of_int v) /. (conv t) *. (get_setting_string
-     "rtm_monitor_time_unit" helper |> conv) *)
-  ^ "float _v = v; \n _v /=  \n"
-  ^ string_of_float (conv t)
-  ^ "; _v *= "
-  ^ string_of_float
-      (get_setting_string "rtm_monitor_time_unit" helper |> conv)
-  ^ "; return _v; \n}\n"
+  if conv t <= (get_setting_string "rtm_monitor_time_unit" helper |> conv)
+  then
+    "static timespan time_of_" ^ t ^ "(timespan v) {\n"
+    (* (float_of_int v) /. (conv t) *. (get_setting_string
+       "rtm_monitor_time_unit" helper |> conv) *)
+    ^ "float _v = v; \n _v /=  \n"
+    ^ string_of_float (conv t)
+    ^ "; _v *= "
+    ^ string_of_float
+        (get_setting_string "rtm_monitor_time_unit" helper |> conv)
+    ^ "; return _v; \n}\n"
   else ""
 
 (*
@@ -84,9 +85,7 @@ let synth_tm_times (cmptr1, a) (cmptr2, b) helper =
 let synth_fm_true helper = ("T_TRUE", "")
 
 let synth_fm_p p helper =
-  ( "prop<T>(trace, PROP_"
-    ^ Hashtbl.find (get_proposition_rev_hashtbl helper) p
-    ^ ", t)"
+  ( "prop<T>(trace, PROP_" ^ find_proposition_rev_hashtbl p helper ^ ", t)"
   , "" )
 
 let synth_fm_not (cmpfm, a) helper =
@@ -342,7 +341,9 @@ let synth_cpp11 compute helper =
     ^ "\n  \n  // Propositions\n  "
     ^ Printf.sprintf "enum _auto_gen_prop {"
     ^ Hashtbl.fold
-        (fun x y str -> str ^ Printf.sprintf "PROP_%s = %i, " x y)
+        (fun x y str ->
+          let x, y = proposition_hashtbl_match x y in
+          str ^ Printf.sprintf "PROP_%s = %i, " x y )
         (get_proposition_hashtbl helper)
         ""
     ^ "}; \n  "
@@ -363,7 +364,9 @@ let synth_cpp11 compute helper =
       \  std::unordered_map<std::string, int> _mapsorttostring = {\n\
       \  "
     ^ Hashtbl.fold
-        (fun x y str -> str ^ Printf.sprintf "{\"%s\",PROP_%s},\n  " x x)
+        (fun x y str ->
+          let x, y = proposition_hashtbl_match x y in
+          str ^ Printf.sprintf "{\"%s\",PROP_%s},\n  " x x )
         (get_proposition_hashtbl helper)
         ""
     ^ "};\n\n\
@@ -371,7 +374,9 @@ let synth_cpp11 compute helper =
       \  std::unordered_map<int, std::string> _mapsorttoint = {\n\
       \  "
     ^ Hashtbl.fold
-        (fun x y str -> str ^ Printf.sprintf "{PROP_%s,\"%s\"},\n  " x x)
+        (fun x y str ->
+          let x, y = proposition_hashtbl_match x y in
+          str ^ Printf.sprintf "{PROP_%s,\"%s\"},\n  " x x )
         (get_proposition_hashtbl helper)
         ""
     ^ "};\n#endif\n\n  #endif //"
@@ -506,11 +511,12 @@ let synth_cpp11 compute helper =
     ^ "{\n public:"
     ^ Printf.sprintf "typedef enum _auto_gen_prop {"
     ^ Hashtbl.fold
-        (fun x y str -> str ^ Printf.sprintf "%s = %i, " x y)
+        (fun x y str ->
+          let x, y = proposition_hashtbl_match x y in
+          str ^ Printf.sprintf "%s = %i, " x y )
         (get_proposition_hashtbl helper)
         ""
-    ^ "} prop_t;\n\n typedef " ^ get_event_fulltype helper
-    ^ " buffer_t;\n\n"
+    ^ "} prop_t;\n\n typedef " ^ get_event_fulltype helper ^ " buffer_t;\n\n"
     ^ gen_adjust_base "ns" helper
     ^ gen_adjust_base "us" helper
     ^ gen_adjust_base "ms" helper

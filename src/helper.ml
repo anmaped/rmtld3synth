@@ -14,58 +14,54 @@ type global_string = string * string [@@deriving sexp]
 
 (* monitor setting entry*)
 type monitor = string * int * Rmtld3.fm [@@deriving sexp]
+
 type formula = Rmtld3.fm [@@deriving sexp]
 
 exception Settings_Not_Found of string
 
-(* reformulate this rmtld3synth state *)
-type counter_maps =
-  | Proposition_map of (string * int ref * (string, int) t)
-  | Proposition_map_reverse of (string * int ref * (int, string) t)
-  | Counter_without_map of string * int ref
+type values = N of int | S of string
 
-type settings = Num of int | Txt of string | Sel of bool | Fm of Rmtld3.fm
+type settings =
+  | Num of int
+  | Txt of string
+  | Sel of bool
+  | Fm of Rmtld3.fm
+  | Hash of (values, values) Hashtbl.t
 
-type helper =
-  string ref (* legacy *)
-  * string ref (* legacy *)
-  * int ref (* legacy *)
-  * (global_int list * global_string list * monitor list)
-  * (* legacy *)
-  counter_maps list (* legacy *)
-  * (string, settings) Hashtbl.t (* new settings structure *)
+type helper = (string, settings) Hashtbl.t (* new settings structure *)
 
 let verb_mode = ref 0
-let verb f = if !verb_mode >= 2 then f () else ()
-let verb_m mode f = if !verb_mode >= mode then f () else ()
 
-let default_counter_map =
-  [
-    Proposition_map ("prop", ref 0, Hashtbl.create 10);
-    Proposition_map_reverse ("prop", ref 0, Hashtbl.create 10);
-    Counter_without_map ("counter_until", ref 0);
-    Counter_without_map ("counter_duration", ref 0);
-  ]
+let verb f = if !verb_mode >= 2 then f () else ()
+
+let verb_m mode f = if !verb_mode >= mode then f () else ()
 
 let mk_helper =
   let tbl = Hashtbl.create 50 in
-  let _ = Hashtbl.add tbl "init" (Sel true) in
-  (ref "", ref "", ref 0, ([], [], []), default_counter_map, tbl)
+  Hashtbl.add tbl "init" (Sel true) ;
+  Hashtbl.add tbl "prop_map" (Hash (Hashtbl.create 10)) ;
+  Hashtbl.add tbl "prop_map_reverse" (Hash (Hashtbl.create 10)) ;
+  tbl
 
 (* new settings structure setters *)
-let set_setting name v (_, _, _, _, _, tbl) = Hashtbl.replace tbl name v
+let set_setting name v tbl = Hashtbl.replace tbl name v
 
-let get_setting_int name (_, _, _, _, _, tbl) =
+let get_setting_int name tbl =
   match Hashtbl.find tbl name with
   | Num a -> a
   | _ -> failwith "Error 'get_setting_int'!"
 
-let get_setting_string name (_, _, _, _, _, tbl) =
+let get_setting_string name tbl =
   match Hashtbl.find tbl name with
   | Txt a -> a
   | _ -> failwith "Error 'get_setting_string'!"
 
-let rec get_all_setting_string name (_, _, _, _, _, tbl) : string list =
+let get_setting_hash name tbl =
+  match Hashtbl.find tbl name with
+  | Hash a -> a
+  | _ -> failwith "Error 'get_setting_hash'!"
+
+let rec get_all_setting_string name tbl : string list =
   let rec _get_all_setting_string lst =
     match lst with
     | [] -> []
@@ -74,7 +70,7 @@ let rec get_all_setting_string name (_, _, _, _, _, tbl) : string list =
   in
   List.rev (_get_all_setting_string (Hashtbl.find_all tbl name))
 
-let rec get_all_setting_formula name (_, _, _, _, _, tbl) : Rmtld3.fm list =
+let rec get_all_setting_formula name tbl : Rmtld3.fm list =
   let rec _get_all_setting_formula lst =
     match lst with
     | [] -> []
@@ -89,106 +85,82 @@ let print_setting a =
   | Txt s -> print_string ("'" ^ s ^ "'")
   | Fm f -> print_plaintext_formula f
   | Sel b -> print_string (string_of_bool b)
+  | Hash h -> print_string "" (* do nothing *)
 
 let get_string_of_setting a =
   match a with
   | Num v -> string_of_int v
-  | Txt s -> ("'" ^ s ^ "'")
+  | Txt s -> "'" ^ s ^ "'"
   | Fm f -> string_of_rmtld_fm f
   | Sel b -> string_of_bool b
+  | Hash h -> "" (* do nothing *)
 
-let print_settings (_, _, _, _, _, tbl) =
+let print_settings tbl =
   Hashtbl.iter
     (fun a b ->
-      print_string a;
-      print_string " -> ";
-      print_setting b;
-      print_endline "")
+      print_string a ;
+      print_string " -> " ;
+      print_setting b ;
+      print_endline "" )
     tbl
 
-let get_string_of_settings (_, _, _, _, _, tbl) =
+let get_string_of_settings tbl =
   Hashtbl.fold
-    (fun a b lst ->
-      lst ^ (a ^ " -> " ^ get_string_of_setting b ^ "\n"))
+    (fun a b lst -> lst ^ a ^ " -> " ^ get_string_of_setting b ^ "\n")
     tbl ""
 
-let get_proposition_map id lst =
-  let fnd =
-    List.find
-      (fun a ->
-        match a with
-        | Proposition_map (id_m, _, _) -> if id_m = id then true else false
-        | _ -> false)
-      lst
-  in
-  match fnd with
-  | Proposition_map (a, b, c) -> (a, b, c)
-  | _ -> raise (Failure "proposition_map mismatch.")
+let get_proposition_hashtbl helper = get_setting_hash "prop_map" helper
 
-let get_proposition_map_rev id lst =
-  let fnd =
-    List.find
-      (fun a ->
-        match a with
-        | Proposition_map_reverse (id_m, _, _) ->
-            if id_m = id then true else false
-        | _ -> false)
-      lst
-  in
-  match fnd with
-  | Proposition_map_reverse (a, b, c) -> (a, b, c)
-  | _ -> raise (Failure "proposition_map mismatch.")
+let get_proposition_rev_hashtbl helper =
+  get_setting_hash "prop_map_reverse" helper
 
-let get_counter_without_map id lst =
-  let fnd =
-    List.find
-      (fun a ->
-        match a with
-        | Counter_without_map (id_m, _) -> if id_m = id then true else false
-        | _ -> false)
-      lst
-  in
-  match fnd with
-  | Counter_without_map (a, b) -> (a, b)
-  | _ -> raise (Failure "counter_without_map mismatch.")
+let find_proposition_hashtbl s helper =
+  match Hashtbl.find (get_proposition_hashtbl helper) (S s) with
+  | N v -> v
+  | _ -> failwith "find_proposition_hashtbl: values mismatch!"
 
-let get_proposition_hashtbl (_, _, _, _, lst, _) =
-  let _, _, tbl = get_proposition_map "prop" lst in
-  tbl
-
-let get_proposition_rev_hashtbl (_, _, _, _, lst, _) =
-  let _, _, tbl = get_proposition_map_rev "prop" lst in
-  tbl
-
-let get_proposition_counter (_, _, _, _, lst, _) =
-  let _, count, _ = get_proposition_map "prop" lst in
-  count := !count + 1;
-  !count
-
-let find_proposition_rev_hashtbl a helper =
-  try Hashtbl.find (get_proposition_rev_hashtbl helper) a
+let find_proposition_rev_hashtbl v helper =
+  try
+    match Hashtbl.find (get_proposition_rev_hashtbl helper) (N v) with
+    | S s -> s
+    | _ -> failwith "find_proposition_rev_hashtbl: values mismatch!"
   with Not_found -> "idle"
 
 let set_proposition_two_way_map p id helper =
-  Hashtbl.add (get_proposition_hashtbl helper) p id;
-  Hashtbl.add (get_proposition_rev_hashtbl helper) id p
+  Hashtbl.add (get_proposition_hashtbl helper) (S p) (N id) ;
+  Hashtbl.add (get_proposition_rev_hashtbl helper) (N id) (S p)
 
-let get_until_counter (_, _, _, _, lst, _) =
-  let _, count = get_counter_without_map "counter_until" lst in
-  count := !count + 1;
-  !count + Random.int 1000000 (* try to avoid same template id *)
+let proposition_hashtbl_match x y =
+  match (x, y) with
+  | S p, N id -> (p, id)
+  | _ -> failwith "proposition_hashtbl_match: values mismatch!"
 
-let get_duration_counter (_, _, _, _, lst, _) =
-  let _, count = get_counter_without_map "counter_duration" lst in
-  count := !count + 1;
-  !count + Random.int 1000000 (* try to avoid same template id *)
+let _get_counter name helper =
+  let count =
+    try get_setting_int name helper
+    with _ ->
+      set_setting name (Num 0) helper ;
+      0
+  in
+  let count = count + 1 in
+  set_setting name (Num count) helper ;
+  count
 
-let get_inc_counter_test_cases (_, _, count, _, _, _) =
-  count := !count + 1;
-  !count
+let get_proposition_counter helper = _get_counter "fm_num_prop" helper
 
-let get_counter_test_cases (_, _, count, _, _, _) = !count
-let set_counter_test_cases n (_, _, count, _, _, _) = count := n
+let get_until_counter helper =
+  let x = _get_counter "fm_num_until" helper in
+  x + Random.int 1000000 (* try to avoid same template id *)
+
+let get_duration_counter helper =
+  let x = _get_counter "fm_num_duration" helper in
+  x + Random.int 1000000 (* try to avoid same template id *)
+
+let get_inc_counter_test_cases = _get_counter "unittests_num_test_cases"
+
+let get_counter_test_cases = get_setting_int "unittests_num_test_cases"
+
+let set_counter_test_cases n = set_setting "unittests_num_test_cases" (Num n)
 
 (* BEGIN helper for settings *)
 
@@ -202,7 +174,7 @@ let settings_from_file filename =
         (Printf.sprintf
            "No default configuration file found on '%s'. Use --config-file \
             flag."
-           filename)
+           filename )
   else
     try Sexp.load_sexps default_dir
     with Sys_error _ ->
@@ -210,42 +182,47 @@ let settings_from_file filename =
         (Printf.sprintf
            "No default configuration file found on '%s'. Use --config-file \
             flag."
-           default_dir)
+           default_dir )
 
 (* gets settings from string *)
 let setting_from_string str = Sexp.of_string str
-let settings_from_string str = Sexp.scan_sexps (Stdlib.Lexing.from_string str)
 
-(* lets parsing configuration file into global_int and monitor type variables *)
+let settings_from_string str =
+  Sexp.scan_sexps (Stdlib.Lexing.from_string str)
+
+(* lets parsing configuration file into global_int and monitor type
+   variables *)
 let settings sexpression =
   let list_global_int_settings, sexpression =
     List.fold_left
       (fun (lst, lst2) sexp_el ->
         try (global_int_of_sexp sexp_el :: lst, lst2)
-        with _ -> (lst, sexp_el :: lst2))
+        with _ -> (lst, sexp_el :: lst2) )
       ([], []) sexpression
   in
   let list_global_string_settings, sexpression =
     List.fold_left
       (fun (lst, lst2) sexp_el ->
         try (global_string_of_sexp sexp_el :: lst, lst2)
-        with _ -> (lst, sexp_el :: lst2))
+        with _ -> (lst, sexp_el :: lst2) )
       ([], []) sexpression
   in
   let list_monitor_settings, sexpression =
     List.fold_left
       (fun (lst, lst2) sexp_el ->
         try (monitor_of_sexp sexp_el :: lst, lst2)
-        with _ -> (lst, sexp_el :: lst2))
+        with _ -> (lst, sexp_el :: lst2) )
       ([], []) sexpression
   in
   (* lets draw the settings that are not recognized *)
   List.fold_left
     (fun _ sexp_el ->
-      print_endline (Sexp.to_string_hum sexp_el ^ " setting is not recognized."))
-    () sexpression;
-  (list_global_int_settings, list_global_string_settings, list_monitor_settings)
-
+      print_endline
+        (Sexp.to_string_hum sexp_el ^ " setting is not recognized.") )
+    () sexpression ;
+  ( list_global_int_settings
+  , list_global_string_settings
+  , list_monitor_settings )
 
 (* END helper for settings *)
 
@@ -255,7 +232,8 @@ let rec calculate_heap_cost (formula : rmtld3_fm) =
   | True _ -> 1
   | Prop _ -> 1
   | Not sf -> 1 + calculate_heap_cost sf
-  | Or (sf1, sf2) -> 1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
+  | Or (sf1, sf2) ->
+      1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
   | Until (_, sf1, sf2) ->
       1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
   | LessThan (tr1, tr2) ->
@@ -263,9 +241,9 @@ let rec calculate_heap_cost (formula : rmtld3_fm) =
   | _ ->
       raise
         (Failure
-           ("ERROR: Calculating bound for unsupported formula ("
+           ( "ERROR: Calculating bound for unsupported formula ("
            ^ Sexp.to_string (sexp_of_fm formula)
-           ^ ")."))
+           ^ ")." ) )
 
 and calculate_heap_cost_term term =
   match term with
@@ -278,23 +256,24 @@ and calculate_heap_cost_term term =
   | _ ->
       raise
         (Failure
-           ("ERROR: Calculating bound for unsupported term ("
+           ( "ERROR: Calculating bound for unsupported term ("
            ^ Sexp.to_string (sexp_of_tm term)
-           ^ ")."))
+           ^ ")." ) )
 
 let rec calculate_cycle_cost (formula : rmtld3_fm) l =
   match formula with
   | True _ -> 0
   | Prop _ -> 0
   | Not sf -> 0 + calculate_cycle_cost sf l
-  | Or (sf1, sf2) -> 0 + calculate_cycle_cost sf1 l + calculate_cycle_cost sf2 l
+  | Or (sf1, sf2) ->
+      0 + calculate_cycle_cost sf1 l + calculate_cycle_cost sf2 l
   | Until (_, sf1, sf2) ->
       let lend i = if List.length i > 0 then List.tl i else [] in
       let x, _ =
         List.fold_left
           (fun (a, c) _ ->
-            ( a + calculate_cycle_cost sf1 c + calculate_cycle_cost sf2 c + 1,
-              lend c ))
+            ( a + calculate_cycle_cost sf1 c + calculate_cycle_cost sf2 c + 1
+            , lend c ) )
           (0, l) l
       in
       x + 0
@@ -302,9 +281,9 @@ let rec calculate_cycle_cost (formula : rmtld3_fm) l =
   | _ ->
       raise
         (Failure
-           ("ERROR: Calculating bound for unsupported formula ("
+           ( "ERROR: Calculating bound for unsupported formula ("
            ^ Sexp.to_string (sexp_of_fm formula)
-           ^ ")."))
+           ^ ")." ) )
 
 and calculate_cycle_cost_term term l =
   match term with
@@ -315,9 +294,9 @@ and calculate_cycle_cost_term term l =
   | _ ->
       raise
         (Failure
-           ("ERROR: Calculating bound for unsupported term ("
+           ( "ERROR: Calculating bound for unsupported term ("
            ^ Sexp.to_string (sexp_of_tm term)
-           ^ ")."))
+           ^ ")." ) )
 
 (* trace generation helpers *)
 
@@ -326,10 +305,9 @@ let rec strategic_uniform_trace value samples factor trace =
   let timestamp = factor +. value in
   if samples = 0 then ("B", (value, timestamp)) :: trace
   else
-    (*let trace_size =  List.length trace in
-      if samples <= trace_size then
-        strategic_uniform_trace timestamp (samples-1) factor (("B",(value,timestamp))::trace)
-      else*)
+    (*let trace_size = List.length trace in if samples <= trace_size then
+      strategic_uniform_trace timestamp (samples-1) factor
+      (("B",(value,timestamp))::trace) else*)
     strategic_uniform_trace timestamp (samples - 1) factor
       (("A", (value, timestamp)) :: trace)
 
@@ -337,7 +315,7 @@ let rec repeat_trace n pattern trace t tsize =
   if n <> 0 then
     repeat_trace (n - 1) pattern
       (List.append trace
-         (List.map (fun (a, (b, c)) -> (a, (b +. t, c +. t))) pattern))
+         (List.map (fun (a, (b, c)) -> (a, (b +. t, c +. t))) pattern) )
       (t +. tsize) tsize
   else trace
 
@@ -348,27 +326,29 @@ let insert_string str1 str2 ch =
     match str with
     | "" -> acc
     | s -> (
-        try
-          let index = String.index s ch in
-          let prefix = String.sub s 0 index in
-          let suffix = String.sub s (index + 1) (String.length s - index - 1) in
-          insert (acc ^ prefix ^ str2) suffix
-        with Not_found -> acc ^ s)
+      try
+        let index = String.index s ch in
+        let prefix = String.sub s 0 index in
+        let suffix =
+          String.sub s (index + 1) (String.length s - index - 1)
+        in
+        insert (acc ^ prefix ^ str2) suffix
+      with Not_found -> acc ^ s )
   in
   insert "" str1
 
 (* beautify cpp code if clang-format is available *)
 let beautify_cpp_code code =
   if Sys.command "command -v clang-format" <> 0 then (
-    print_endline ("Warning: " ^ "clang-format is missing!");
-    code)
+    print_endline ("Warning: " ^ "clang-format is missing!") ;
+    code )
   else
     let in_chan, out_chan, _ =
-      Unix.open_process_full "clang-format -style=GNU -assume-filename=.hpp" [| "" |]
+      Unix.open_process_full "clang-format -style=GNU -assume-filename=.hpp"
+        [|""|]
     in
-    output_string out_chan code;
-    close_out out_chan;
-
+    output_string out_chan code ;
+    close_out out_chan ;
     let rec read_lines line =
       try
         let line = line ^ input_line in_chan ^ "\n" in
@@ -376,40 +356,35 @@ let beautify_cpp_code code =
       with End_of_file -> line
     in
     let out = read_lines "" in
-    close_in in_chan;
-    out
+    close_in in_chan ; out
 
-(*
-  helper for monitor configuration of events
- *)
+(* helper for monitor configuration of events *)
 let get_event_type helper = get_setting_string "rtm_event_type" helper
 
 let get_event_subtype helper = get_setting_string "rtm_event_subtype" helper
 
 let get_event_fulltype helper =
-  get_event_type helper ^ "< "
-  ^ get_event_subtype helper
-  ^ " >"
+  get_event_type helper ^ "< " ^ get_event_subtype helper ^ " >"
 
-(*
-  auxiliar functions
- *)
+(* auxiliar functions *)
 let explode s = s |> String.to_seq |> List.of_seq
 
-let rec of_enum_ a b c = if a >= b then List.rev (a::c) else of_enum_ (a+1) b (a::c)
+let rec of_enum_ a b c =
+  if a >= b then List.rev (a :: c) else of_enum_ (a + 1) b (a :: c)
 
 let rec of_enum a b = of_enum_ a b []
 
-let is_even n = 
-  n mod 2 = 0
+let is_even n = n mod 2 = 0
 
 let pow base exponent =
-  if exponent < 0 then invalid_arg "exponent can not be negative" else
-  let rec aux accumulator base = function
-    | 0 -> accumulator
-    | 1 -> base * accumulator
-    | e when is_even e -> aux accumulator (base * base) (e / 2)
-    | e -> aux (base * accumulator) (base * base) ((e - 1) / 2) in
-  aux 1 base exponent
+  if exponent < 0 then invalid_arg "exponent can not be negative"
+  else
+    let rec aux accumulator base = function
+      | 0 -> accumulator
+      | 1 -> base * accumulator
+      | e when is_even e -> aux accumulator (base * base) (e / 2)
+      | e -> aux (base * accumulator) (base * base) ((e - 1) / 2)
+    in
+    aux 1 base exponent
 
-let (%) f g x = fun x -> f(g x)
+let ( % ) f g x x = f (g x)
