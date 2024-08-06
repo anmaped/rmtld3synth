@@ -150,11 +150,13 @@ let get_proposition_counter helper = _get_counter "fm_num_prop" helper
 
 let get_until_counter helper =
   let x = _get_counter "fm_num_until" helper in
-  x + Random.int 1000000 (* try to avoid same template id *)
+  let y = Random.int 1000000 in (* avoid same template id *)
+  if x >= y then (x * x) + x + y else (y * y) + x
 
 let get_duration_counter helper =
   let x = _get_counter "fm_num_duration" helper in
-  x + Random.int 1000000 (* try to avoid same template id *)
+  let y = Random.int 1000000 in (* avoid same template id *)
+  if x >= y then (x * x) + x + y else (y * y) + x
 
 let get_inc_counter_test_cases = _get_counter "unittests_num_test_cases"
 
