@@ -223,9 +223,6 @@ let synth_ocaml compute helper =
   print_settings helper;
 
   let expressions = get_all_setting_formula "input_exp" helper in
-  let expressions =
-    expressions @ get_all_setting_formula "input_exp_ltxeq" helper
-  in
 
   print_endline "Expression(s) selected to encode:";
   List.iter

@@ -10,10 +10,6 @@ open Dsl
 
 let helper = mk_helper
 
-let rmtld_formula = ref ""
-
-let rmtld_formula_ltxeq = ref ""
-
 let expression_rmdsl = ref ""
 
 let smtlibv2_lang = ref false
@@ -69,18 +65,18 @@ let set_out_dir v = set_setting "out_dir" (Txt v) helper
 
 (* input settings *)
 let set_exp v =
-  rmtld_formula := v ;
-  (* legacy *)
+  set_setting "input_exp_sexp" (Txt v) helper;
   set_setting "input_exp" (Fm (formula_of_sexp (Sexp.of_string v))) helper
 
 let set_exp_dsl v =
-  set_setting "input_exp_dsl"
+  set_setting "input_exp_dsl" (Txt v) helper;
+  set_setting "input_exp"
     (Fm (Dsl.Load.parse_string v |> Dsl.TranslateToRmtld3.conv_fm))
     helper
 
 let set_exp_ltxeq v =
-  rmtld_formula_ltxeq := v ;
-  set_setting "input_exp_ltxeq" (Fm (Tex.Texeqparser.texeqparser v)) helper
+  set_setting "input_exp_ltxeq" (Txt v) helper;
+  set_setting "input_exp" (Fm (Tex.Texeqparser.texeqparser v)) helper
 
 let set_exp_rmdsl v =
   expression_rmdsl := v ;
@@ -105,7 +101,7 @@ let set_rtm_monitor_name_prefix v =
 
 let set_rtm_monitor_time_unit v =
   if v = "ns" || v = "us" || v = "ms" || v = "s" then
-    set_setting "rtm_monitor_time_unit" (Txt v) helper
+    set_setting_replace "rtm_monitor_time_unit" (Txt v) helper
   else failwith "check if time units are 'ns', 'us', 'ms', or 's'."
 
 (* general settings *)
@@ -199,8 +195,7 @@ let synth_monitor fm =
               let value = int_of_float (calculate_t_upper_bound formula) in
               if value > v then value else v )
             0
-            ( get_all_setting_formula "input_exp" helper
-            @ get_all_setting_formula "input_exp_ltxeq" helper )
+            ( get_all_setting_formula "input_exp" helper )
         / get_setting_int "rtm_min_inter_arrival_time" helper )
     in
     verb (fun _ ->
@@ -407,12 +402,6 @@ let _ =
       print_endline "Current Configuration:" ;
       print_settings helper ) ;
   let expressions = get_all_setting_formula "input_exp" helper in
-  let expressions =
-    expressions @ get_all_setting_formula "input_exp_dsl" helper
-  in
-  let expressions =
-    expressions @ get_all_setting_formula "input_exp_ltxeq" helper
-  in
   if expressions = [] then (
     print_endline "no formula is available." ;
     exit 1 ) ;
@@ -426,9 +415,7 @@ let _ =
   (* selects the type of the input formula *)
   let input_fm =
     if expressions <> [] then
-      if List.length expressions > 1 then
-        failwith "more than one expression!"
-      else List.hd expressions
+      List.hd expressions
     else (* there is no imput formula *)
       mfalse
   in

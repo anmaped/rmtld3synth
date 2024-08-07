@@ -44,7 +44,9 @@ let mk_helper =
   tbl
 
 (* new settings structure setters *)
-let set_setting name v tbl = Hashtbl.replace tbl name v
+let set_setting name v tbl = Hashtbl.add tbl name v
+
+let set_setting_replace name v tbl = Hashtbl.replace tbl name v
 
 let get_setting_int name tbl =
   match Hashtbl.find tbl name with
@@ -85,7 +87,13 @@ let print_setting a =
   | Txt s -> print_string ("'" ^ s ^ "'")
   | Fm f -> print_plaintext_formula f
   | Sel b -> print_string (string_of_bool b)
-  | Hash h -> print_string "" (* do nothing *)
+  | Hash ht ->
+      print_string
+        (Hashtbl.fold
+           (fun x y a ->
+             let m v = match v with S a -> a | N v -> string_of_int v in
+             a ^ "(" ^ m x ^ "->" ^ m y ^ ") " )
+           ht "" )
 
 let get_string_of_setting a =
   match a with
@@ -93,7 +101,12 @@ let get_string_of_setting a =
   | Txt s -> "'" ^ s ^ "'"
   | Fm f -> string_of_rmtld_fm f
   | Sel b -> string_of_bool b
-  | Hash h -> "" (* do nothing *)
+  | Hash ht ->
+      Hashtbl.fold
+        (fun x y a ->
+          let m v = match v with S a -> a | N v -> string_of_int v in
+          a ^ "(" ^ m x ^ "->" ^ m y ^ ") " )
+        ht ""
 
 let print_settings tbl =
   Hashtbl.iter
@@ -143,19 +156,21 @@ let _get_counter name helper =
       0
   in
   let count = count + 1 in
-  set_setting name (Num count) helper ;
+  set_setting_replace name (Num count) helper ;
   count
 
 let get_proposition_counter helper = _get_counter "fm_num_prop" helper
 
 let get_until_counter helper =
   let x = _get_counter "fm_num_until" helper in
-  let y = Random.int 1000000 in (* avoid same template id *)
+  let y = Random.int 1000000 in
+  (* avoid same template id *)
   if x >= y then (x * x) + x + y else (y * y) + x
 
 let get_duration_counter helper =
   let x = _get_counter "fm_num_duration" helper in
-  let y = Random.int 1000000 in (* avoid same template id *)
+  let y = Random.int 1000000 in
+  (* avoid same template id *)
   if x >= y then (x * x) + x + y else (y * y) + x
 
 let get_inc_counter_test_cases = _get_counter "unittests_num_test_cases"
