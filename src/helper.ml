@@ -159,19 +159,27 @@ let _get_counter name helper =
   set_setting_replace name (Num count) helper ;
   count
 
+(* unsigned Szudzik's Pairing *)
+let pair (x, y) = if y > x then (y * y) + x else (x * x) + x + y
+
+let unpair z =
+  let q = int_of_float (floor (sqrt (float_of_int z))) in
+  let l = z - (q * q) in
+  if l < q then (l, q) else (q, l - q)
+
 let get_proposition_counter helper = _get_counter "fm_num_prop" helper
 
 let get_until_counter helper =
   let x = _get_counter "fm_num_until" helper in
-  let y = Random.int 1000000 in
   (* avoid same template id *)
-  if x >= y then (x * x) + x + y else (y * y) + x
+  let y = Random.int 1000000 in
+  pair (x, y)
 
 let get_duration_counter helper =
   let x = _get_counter "fm_num_duration" helper in
-  let y = Random.int 1000000 in
   (* avoid same template id *)
-  if x >= y then (x * x) + x + y else (y * y) + x
+  let y = Random.int 1000000 in
+  pair (x, y)
 
 let get_inc_counter_test_cases = _get_counter "unittests_num_test_cases"
 

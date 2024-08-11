@@ -107,8 +107,7 @@ let convert_to_always_equal (sf2, b) gamma helper =
   print_endline
     ( "The next operator 'false U[" ^ string_of_float gamma
     ^ "] fm' or false U[=" ^ string_of_float gamma
-    ^ "] fm' is converted to 'Always[="
-    ^ string_of_int (int_of_float gamma)
+    ^ "] fm' is converted to 'Always[=" ^ string_of_float gamma
     ^ "] fm' since cpp11 synthesis is enabled." ) ;
   (* get new id *)
   let id = get_until_counter helper in
@@ -219,23 +218,35 @@ let synth_fm_ueq gamma (sf1, a) (sf2, b) helper =
         \  };\n\
         \  " )
 
-let synth_fm_sless gamma (sf1, a) (sf2, b) helper =
-  (* get new id *)
-  let id = get_until_counter helper in
-  ( "since_less<T, Eval_since_less_" ^ string_of_int id ^ "<T>, "
-    ^ (adjust_base gamma helper |> int_of_float |> string_of_int)
-    ^ ">(trace, t)"
-  , a ^ b ^ "\n  template <typename T> class Eval_since_less_"
-    ^ string_of_int id
-    ^ " {\n\
-      \  public:\n\
-      \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
-      \      auto sf = " ^ sf1
-    ^ ";\n\
-      \      return sf;\n\
-      \    };\n\
-      \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
-      \      auto sf = " ^ sf2 ^ ";\n      return sf;\n    };\n  };\n" )
+let rec synth_fm_sless gamma (sf1, a) (sf2, b) helper =
+  (* unbounded mprev *)
+  if
+    gamma = max_float
+    && (sf1, a) = synth_fm_not (synth_fm_true helper) helper
+  then (
+    print_endline
+      "The unbounded previous 'prev[∞] ɸ' is converted to 'false \
+       since[<1.] ɸ' since cpp11 synthesis is enabled." ;
+    synth_fm_sless 1.
+      (synth_fm_not (synth_fm_true helper) helper)
+      (sf2, b) helper )
+  else
+    (* get new id *)
+    let id = get_until_counter helper in
+    ( "since_less<T, Eval_since_less_" ^ string_of_int id ^ "<T>, "
+      ^ (adjust_base gamma helper |> int_of_float |> string_of_int)
+      ^ ">(trace, t)"
+    , a ^ b ^ "\n  template <typename T> class Eval_since_less_"
+      ^ string_of_int id
+      ^ " {\n\
+        \  public:\n\
+        \    static three_valued_type eval_phi1(T &trace, timespan &t) {\n\
+        \      auto sf = " ^ sf1
+      ^ ";\n\
+        \      return sf;\n\
+        \    };\n\
+        \    static three_valued_type eval_phi2(T &trace, timespan &t) {\n\
+        \      auto sf = " ^ sf2 ^ ";\n      return sf;\n    };\n  };\n" )
 
 let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
   (* get new id *)

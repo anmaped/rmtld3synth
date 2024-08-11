@@ -739,6 +739,16 @@ let rec calculate_t_upper_bound (formula : rmtld3_fm) =
       Stdlib.max
         (calculate_t_upper_bound_term tr1)
         (calculate_t_upper_bound_term tr2)
+  | Since (gamma, sf1, sf2) ->
+    gamma
+    +. Stdlib.max
+         (calculate_t_upper_bound sf1)
+         (calculate_t_upper_bound sf2)
+  | Since_eq (gamma, sf1, sf2) ->
+    gamma
+    +. Stdlib.max
+         (calculate_t_upper_bound sf1)
+         (calculate_t_upper_bound sf2)
   | _ ->
       raise
         (Failure
