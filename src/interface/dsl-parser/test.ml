@@ -68,11 +68,9 @@ let parse s =
       eprintf "%s%!" msg ; exit 1
   | exception Parser.Error ->
       (* A syntax error has occurred. *)
-      SemanticCheck.attempt2 "stdin" s
+      Semantic.check "stdin" s
 
 (* função Main *)
 let () =
   let s = read_line () in
-  (*let r = Parser.main Lexer.token (Lexing.from_string s) in print_endline
-    (print_fm r);*)
   parse s

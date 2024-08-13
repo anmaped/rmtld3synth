@@ -545,7 +545,7 @@ main: FALSE TWODOTS
 ## temporal
 ##
 
-You are missing the operator.
+The operator is missing.
 
 main: FALSE UNTIL WITHIN
 ##
@@ -629,7 +629,7 @@ main: FALSE IMPLIES WITHIN
 ## implies IMPLIES
 ##
 
-You are missing the operand after the operator ->. Try <F> "->" <F>
+The operand is missing after the -> operator. Try <F> "->" <F>
 
 main: FALSE ON WITHIN
 ##
@@ -653,7 +653,7 @@ main: FALSE OR WITHIN
 ## disjunction OR
 ##
 
-You are missing an operand after the operator ||. Try <F> "||" <F>
+The operand is missing after the || operator. Try <F> "||" <F>
 
 main: FALSE AND WITHIN
 ##
@@ -665,7 +665,7 @@ main: FALSE AND WITHIN
 ## conjunction AND
 ##
 
-You are missing an operand after the operator &&. Try <F> "&&" <F>
+The operand is missing after the && operator. Try <F> "&&" <F>
 
 main: FALSE AND FALSE TWODOTS
 ##

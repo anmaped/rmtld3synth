@@ -1,5 +1,4 @@
 open Printf
-open SemanticCheck
 
 let parse_string s =
   (* Run the parser. *)
@@ -13,4 +12,4 @@ let parse_string s =
       exit 1
   | exception Parser.Error ->
       (* A syntax error has occurred. *)
-      SemanticCheck.attempt2 "stdin" s
+      Semantic.check "input" s

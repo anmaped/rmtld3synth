@@ -11,7 +11,7 @@
   (name           dsl)
   (public_name    rmtld3synth.interface.dsl)
   (libraries      rmtld3synth.rmtld3 menhirLib)
-  (modules        Lexer Parser Ast unitActionsParser parserMessages translateToRmtld3 semanticCheck load)
+  (modules        Lexer Parser Ast UnitActionsParser ParserMessages TranslateToRmtld3 Semantic Load)
   (modules_without_implementation ast)
 )
 
