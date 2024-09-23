@@ -288,13 +288,13 @@ let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
 
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11 compute helper =
-  print_endline "Current Configuration:" ;
+  print_endline "\x1b[33mCurrent Configuration:\x1b[0m" ;
   print_settings helper ;
   let expressions = get_all_setting_formula "input_exp" helper in
   if expressions = [] then (
     print_endline "no formula is available." ;
     exit 1 ) ;
-  print_endline "Expression(s) selected to encode:" ;
+  print_endline "\x1b[33mExpression(s) selected to encode:\x1b[0m" ;
   List.iter
     (fun exp ->
       print_plaintext_formula exp ;
@@ -563,7 +563,7 @@ let synth_cpp11 compute helper =
   in
   try
     let out_dir = get_setting_string "out_dir" helper in
-    print_endline "Generated Output Files:" ;
+    print_endline "\x1b[32mGenerated Output Files:\x1b[0m" ;
     let monitor_name =
       String.capitalize_ascii (insert_string name "compute" '#')
     in

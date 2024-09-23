@@ -22,7 +22,7 @@ let cpp11_lang = ref false
 
 let ocaml_lang = ref false
 
-let spark14_lang = ref false
+let spark2014_lang = ref false
 
 let smt_solver = ref ""
 
@@ -46,7 +46,7 @@ let set_ocaml_language f = ocaml_lang := true
 
 let set_cpp_language f = cpp11_lang := true
 
-let set_spark14_language f = spark14_lang := true
+let set_spark2014_language f = spark2014_lang := true
 
 let set_solve_statistics f = solver_statistics_flag := true
 
@@ -65,17 +65,17 @@ let set_out_dir v = set_setting "out_dir" (Txt v) helper
 
 (* input settings *)
 let set_exp v =
-  set_setting "input_exp_sexp" (Txt v) helper;
+  set_setting "input_exp_sexp" (Txt v) helper ;
   set_setting "input_exp" (Fm (formula_of_sexp (Sexp.of_string v))) helper
 
 let set_exp_dsl v =
-  set_setting "input_exp_dsl" (Txt v) helper;
+  set_setting "input_exp_dsl" (Txt v) helper ;
   set_setting "input_exp"
     (Fm (Dsl.Load.parse_string v |> Dsl.TranslateToRmtld3.conv_fm))
     helper
 
 let set_exp_ltxeq v =
-  set_setting "input_exp_ltxeq" (Txt v) helper;
+  set_setting "input_exp_ltxeq" (Txt v) helper ;
   set_setting "input_exp" (Fm (Tex.Texeqparser.texeqparser v)) helper
 
 let set_exp_rmdsl v =
@@ -114,19 +114,12 @@ let default_settings helper =
      (rtm_buffer_size 100)\n\
      (rtm_min_inter_arrival_time 1)\n\
      (rtm_max_period 2000000)\n\
-     (rtm_event_type Event)\n\
-     (rtm_event_subtype std::underlying_type<_auto_gen_prop>::type)\n\
      (rtm_monitor_name_prefix rtm_#_%)\n\
      (rtm_monitor_time_unit s)\n\
      (gen_tests false)"
   in
-  (* convert settings *)
-  let s_num, s_str, s_fm =
-    settings (settings_from_string default_settings)
-  in
-  List.iter (fun (a, b) -> set_setting a (Num b) helper) s_num ;
-  List.iter (fun (a, b) -> set_setting a (Txt b) helper) s_str ;
-  ()
+  (* apply settings *)
+  apply_settings default_settings helper
 
 open Unix
 open Sexplib
@@ -136,6 +129,7 @@ open Synthesis.Simplify
 open Synthesis.Smtlib2
 open Synthesis.Cpp11
 open Synthesis.Ocaml
+open Synthesis.Spark2014
 open Interface.Z3solver_
 
 let set_recursive_unrolling arg =
@@ -161,7 +155,7 @@ let set_solve_cvc4 f = Smtlib2.set_solver CVC4
 let chose_synthesis a b c =
   if !cpp11_lang then a ()
   else if !ocaml_lang then b ()
-  else if !spark14_lang then c ()
+  else if !spark2014_lang then c ()
 
 (** Calls and configures the synthesis of ocaml and cpp monitors. *)
 let synth_monitor fm =
@@ -195,7 +189,7 @@ let synth_monitor fm =
               let value = int_of_float (calculate_t_upper_bound formula) in
               if value > v then value else v )
             0
-            ( get_all_setting_formula "input_exp" helper )
+            (get_all_setting_formula "input_exp" helper)
         / get_setting_int "rtm_min_inter_arrival_time" helper )
     in
     verb (fun _ ->
@@ -208,6 +202,7 @@ let synth_monitor fm =
     (* Functors for synthesis *)
     let module Conv_cpp11 = Standard.Translate (Synthesis.Cpp11) in
     let module Conv_ocaml = Standard.Translate (Synthesis.Ocaml) in
+    let module Conv_spark2014 = Standard.Translate (Synthesis.Spark2014) in
     (* Chose syntheis for constructing monitors with a certain name and
        period *)
     chose_synthesis
@@ -218,8 +213,8 @@ let synth_monitor fm =
         (* performs monitor synthesis for ocaml *)
         synth_ocaml Conv_ocaml.synth helper )
       (fun _ ->
-        (* performs monitor synthesis for spark14 *)
-        () )
+        (* performs monitor synthesis for spark2014 *)
+        synth_spark2014 Conv_spark2014.synth helper )
 
 (** Formulates and configures the synthesis of rmtld into smtlibv2. *)
 let synth_sat_problem formula =
@@ -312,10 +307,12 @@ let _ =
       , " Enables synthesis for Ocaml language" )
     ; ( "--synth-cpp11"
       , Arg.Unit set_cpp_language
-      , " Enables synthesis for C++11 language\n\n Flags for solving: " )
-    ; (* ("--synth-spark2014" , Arg.Unit (set_spark14_language) , " Enables
-         synthesis for Spark2014 language (unsupported)"); *)
-      ( "--simpl-cad"
+      , " Enables synthesis for C++11 language" )
+    ; ( "--synth-spark2014"
+      , Arg.Unit set_spark2014_language
+      , " Enables synthesis for Spark2014 language (Experimental)\n\n\
+        \ Flags for solving: " )
+    ; ( "--simpl-cad"
       , Arg.Unit set_simplify_formula
       , " Simplify quantified RMTLD formulas using CAD (Experimental)" )
     ; ( "--solver-z3"
@@ -414,8 +411,7 @@ let _ =
         expressions ) ;
   (* selects the type of the input formula *)
   let input_fm =
-    if expressions <> [] then
-      List.hd expressions
+    if expressions <> [] then List.hd expressions
     else (* there is no imput formula *)
       mfalse
   in
@@ -460,6 +456,18 @@ let _ =
   else if !cpp11_lang then (
     verb_m 1 (fun _ ->
         print_endline "Synthesis for C++11 language" ;
+        print_endline
+          "--------------------------------------------------------------------------------\n" ) ;
+    let default_cpp11_settings =
+      "(rtm_event_type Event)\n\
+       (rtm_event_subtype std::underlying_type<_auto_gen_prop>::type)"
+    in
+    (* apply settings *)
+    apply_settings default_cpp11_settings helper ;
+    synth_monitor input_fm )
+  else if !spark2014_lang then (
+    verb_m 1 (fun _ ->
+        print_endline "Synthesis for SPARK 2014 language" ;
         print_endline
           "--------------------------------------------------------------------------------\n" ) ;
     synth_monitor input_fm )

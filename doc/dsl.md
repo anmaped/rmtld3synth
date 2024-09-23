@@ -36,16 +36,23 @@ The BNF representation of the domain specification language is provided below:
 | <I> ".." <I>                       (* [ I, I [ *)
 | <T>
 
-<U> ::==                             (* Units *)
+<U> ::==                             (* Time Units *)
 | "s"                                (* seconds *)
 | "ms"                               (* milisenconds *)
 | "us"                               (* microseconds *)
 | "ns"                               (* nanoseconds *)
 
-<C> ::==                             (* Time Constraint *)
-| "=" <integer> <U>
-| "<=" <integer> <U>
+<N> ::==                             (* Integer Time *)
 | <integer> <U>
+
+<C> ::==                             (* Timed Constraints *)
+| "="  <N>                           (* equal *)
+| "<"  <N>                           (* less *)
+| "<=" <N>                           (* less or equal *)
+| "range" "[" <N> "," <N> "]"        (* closed timed range *)
+| "range" "[" <N> "," <N> "["        (* semi-open timed range *)
+| "range" <N> ".." <N>               (* same as semi-open timed range *)
+| <N>                                (* unit *)
 ```
 
 ## Examples
@@ -94,3 +101,27 @@ The BNF representation of the domain specification language is provided below:
 
     - 3.d
         ![Wave 4](https://svg.wavedrom.com/github/anmaped/rmtld3synth/v0.4/doc/waves/wave4.json)
+
+
+4) A duration term can have the following syntax
+    ```
+    duration of a in 0 .. 2
+    ```
+    or in the closed form
+        ```
+        duration of a in [0, 2]
+        ```.
+    While a formula containing a duration term has the syntax
+        ```
+        duration of a in [0, 2] < 10
+        ```.
+
+
+5) (since version 0.5) Ranges on `within` expressions are supported. For example, the expressions
+    ```
+    a until b within range 10ns .. 1s
+    ```
+    or
+        ```
+        a until b within range [10ns, 1s]
+        ```.

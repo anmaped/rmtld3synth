@@ -40,6 +40,7 @@ rule token = parse
 | "fall" { FALL }
 | "rise" { RISE }
 | "duration" { DURATION }
+| "range" { RANGE }
 | "in" { IN }
 | "of" { OF }
 | "on" { ON }

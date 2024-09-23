@@ -2,16 +2,18 @@ type var_id = string
 
 type prop = string
 
-type time = Unbound | Bound of int
+type time = (* not a number *) NaN | N of int
 
 type value = float
 
-type units = S | Ms | Us | Ns | NoUnits
+type units = S | Ms | Us | Ns | (* not a unit *) NaU
 
 type kind =
   | Less of time * units
   | Equal of time * units
   | LessOrEqual of time * units
+  | RangeO of (time * units) * (time * units)
+  | RangeC of (time * units) * (time * units)
 
 type fm =
   | True

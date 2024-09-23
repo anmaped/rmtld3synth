@@ -76,10 +76,33 @@
 ;; by the programmer.
 
 (rule
-  (with-stdout-to parserMessages.check
+  (deps parserMessages.merged.messages)
+  (action  (with-stdout-to parserMessages.check
+    (run menhir
+      %{dep:parser.mly}
+      --compare-errors %{dep:parserMessages.auto.messages}
+      --compare-errors %{dep:parserMessages.messages}
+    )))
+)
+
+;;
+;; to generate the updated version (easy to use later)
+;;
+
+(rule
+  (with-stdout-to parserMessages.updated.messages
+    (run menhir
+       %{dep:parser.mly}
+       --update-errors %{dep:parserMessages.messages}
+    )
+  )
+)
+
+(rule
+  (with-stdout-to parserMessages.merged.messages
   (run menhir
     %{dep:parser.mly}
-    --compare-errors %{dep:parserMessages.auto.messages}
-    --compare-errors %{dep:parserMessages.messages}
+    --merge-errors %{dep:parserMessages.auto.messages}
+    --merge-errors %{dep:parserMessages.updated.messages}
   ))
 )

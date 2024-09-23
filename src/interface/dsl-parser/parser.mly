@@ -27,7 +27,7 @@
 %token LESSOREQUAL GREATEROREQUAL
 %token EQUAL
 
-%token PLUS TIMES
+%token PLUS TIMES RANGE
 
 %token WITHIN
 %token UNTIL
@@ -51,8 +51,8 @@
 main: f = scope EOF { f }
 
 scope:
-  | HISTORICALLY TWODOTS f = formula { Historically (Less (Unbound, NoUnits),f) }
-  | ALWAYS TWODOTS f = formula { Always (Less (Unbound, NoUnits),f) }
+  | HISTORICALLY TWODOTS f = formula { Historically (Less (NaN, NaU),f) }
+  | ALWAYS TWODOTS f = formula { Always (Less (NaN, NaU),f) }
   | r = formula { r }
 
 
@@ -80,19 +80,22 @@ temporal:
   | NEXT a = atom WITHIN t = time { Next(t,a) }
   | FALL f = atom WITHIN t = time { Fall(t,f) }
   | RISE f = atom WITHIN t = time { Rise(t,f) }
-  | FALL f = atom { Fall(Less(Unbound,NoUnits),f) }
-  | RISE f = atom { Rise(Less(Unbound,NoUnits),f) }
+  | FALL f = atom { Fall(Less(NaN,NaU),f) }
+  | RISE f = atom { Rise(Less(NaN,NaU),f) }
   | a = temporal UNTIL b = atom WITHIN t = time { Until (t,a,b) }
   | a = temporal SINCE b = atom WITHIN t = time { Since (t,a,b) }
-  | a = temporal ON t = TIME { Eventually (Equal (Bound (int_of_string (fst t)), map_u (snd t) ),a)  }
+  | a = temporal ON t = TIME { Eventually (Equal (N (int_of_string (fst t)), map_u (snd t) ),a)  }
   | r = atom { r }
 
 time:
-  | EQUAL t = TIME { Equal (Bound (int_of_string (fst t)), map_u (snd t) ) }
-  | LESSOREQUAL t = TIME { LessOrEqual (Bound (int_of_string (fst t)), map_u (snd t) ) }
-  | LESS t = TIME { Less (Bound (int_of_string (fst t)), map_u (snd t) ) }
-  | t = TIME { Less (Bound (int_of_string (fst t)), map_u (snd t) ) }
-  | DONTCARE { Less (Unbound, NoUnits) }
+  | EQUAL t = TIME { Equal (N (int_of_string (fst t)), map_u (snd t) ) }
+  | LESSOREQUAL t = TIME { LessOrEqual (N (int_of_string (fst t)), map_u (snd t) ) }
+  | LESS t = TIME { Less (N (int_of_string (fst t)), map_u (snd t) ) }
+  | RANGE LSQPAR t0 = TIME COMMA t1 = TIME RSQPAR { RangeC((N(int_of_string (fst t0)), map_u (snd t0) ), (N(int_of_string (fst t1)), map_u (snd t1) )) }
+  | RANGE LSQPAR t0 = TIME COMMA t1 = TIME LSQPAR { RangeO((N(int_of_string (fst t0)), map_u (snd t0) ), (N(int_of_string (fst t1)), map_u (snd t1) )) }
+  | RANGE t0 = TIME DOTS t1 = TIME { RangeO((N(int_of_string (fst t0)), map_u (snd t0) ), (N(int_of_string (fst t1)), map_u (snd t1) )) }
+  | t = TIME { Less (N (int_of_string (fst t)), map_u (snd t) ) }
+  | DONTCARE { Less (NaN, NaU) }
 
 atom:
 | LPAR r = formula RPAR { r }

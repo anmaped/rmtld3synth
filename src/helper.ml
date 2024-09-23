@@ -249,6 +249,11 @@ let settings sexpression =
   , list_global_string_settings
   , list_monitor_settings )
 
+let apply_settings s helper =
+  let s_num, s_str, s_fm = settings (settings_from_string s) in
+  List.iter (fun (a, b) -> set_setting a (Num b) helper) s_num ;
+  List.iter (fun (a, b) -> set_setting a (Txt b) helper) s_str
+
 (* END helper for settings *)
 
 (* compute the heap cost of a formula *)
