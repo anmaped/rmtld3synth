@@ -5,8 +5,7 @@ on:
     workflows:
       - Publish Docker image
     branches:
-      - v0.5-x
-      - v0.5
+      - v0.*
     types:
       - completed
 
