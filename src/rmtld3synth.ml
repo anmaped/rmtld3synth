@@ -56,6 +56,15 @@ let set_trace_style f = trace_style := f
 
 let set_gen_rmtld_formula f = gen_rmtld_formula := true
 
+let set_eval f = failwith "!"
+
+let set_env v =
+  let json =
+    (* check whether this is a filename or a json string *)
+    Yojson.Safe.from_string v
+  in
+  failwith "!"
+
 (* output settings *)
 let set_out_file v =
   out_file := v ;
@@ -251,8 +260,7 @@ let synth_sat_problem formula =
               (fun (cnt, a) b ->
                 let cnte = cnt +. 1. in
                 ( cnte
-                , a ^ " (\"" ^ b ^ "\",(" ^ string_of_float cnt ^ ","
-                  ^ string_of_float cnte ^ ")); " ) )
+                , a ^ " (\"" ^ b ^ "\",(" ^ string_of_float cnt ^ ")); " ) )
               (0., "") scheduler_trace
           in
           print_endline trc_str
@@ -333,8 +341,17 @@ let _ =
     ; ("--get-trace", Arg.Unit set_get_schedule, " Returns the schedule")
     ; ( "--trace-style"
       , Arg.String set_trace_style
-      , " Sets the trace style\n\n Input:" )
-    ; (* input models *)
+      , " Sets the trace style\n\n Evaluation:" )
+    ; (* evaluate formula on a given environment *)
+      ( "--eval"
+      , Arg.Unit set_eval
+      , " Enables evaluation of a formula on an environment" )
+    ; (* input environments *)
+      ( "--include"
+      , Arg.String set_env
+      , " Includes a given environment (e.g., --include 'filename.env')\n\n\
+        \ Input:" )
+    ; (* input expressions *)
       ( "--input-sexp"
       , Arg.String set_exp
       , " Inputs sexp expression (RMTLD3 formula)" )
@@ -405,9 +422,7 @@ let _ =
   verb_m 1 (fun _ ->
       print_endline "Expression(s) selected to encode:" ;
       List.iter
-        (fun exp ->
-          print_plaintext_formula exp ;
-          print_endline "" )
+        (fun exp -> print_endline (string_of_rmtld_fm exp))
         expressions ) ;
   (* selects the type of the input formula *)
   let input_fm =
@@ -475,9 +490,9 @@ let _ =
     let inn = input_fm in
     if inn <> mfalse then
       let smp = to_simplify inn in
-      print_latex_formula smp
+      slatex_of_rmtld_fm smp |> print_endline
     else raise (Failure "Cannot simplify the specified input.")
   else if !gen_rmtld_formula then
     let fm = gen_formula_default () in
-    print_latex_formula fm
+    slatex_of_rmtld_fm fm |> print_endline
   else print_endline "Nothing to do. Type --help"

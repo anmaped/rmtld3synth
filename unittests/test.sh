@@ -16,7 +16,7 @@ WHITE='\033[1;37m'
 
 [ -f "$(ocamlfind query z3)/libz3.dylib" ] && export DYLD_LIBRARY_PATH=$(ocamlfind query z3)
 
-TEST_DIR=_gtest
+TEST_DIR=_alltests
 
 mkdir -p $TEST_DIR
 mkdir -p $TEST_DIR/cpp
@@ -163,12 +163,12 @@ declare -a arrayrmtld_sat_expected_result=(
 
   sleep 10
 
-  #cat $TEST_DIR/../_cluster/tests/unit_test_cases.h
-  #cat $TEST_DIR/../_cluster/tests/tests.cpp
+  #cat $TEST_DIR/../_unittests_ml/tests/unit_test_cases.h
+  #cat $TEST_DIR/../_unittests_ml/tests/tests.cpp
 
-  make -C $TEST_DIR/../_cluster/tests
+  make -C $TEST_DIR/../_unittests_ml/tests
 
-  ./$TEST_DIR/../_cluster/tests/tests
+  ./$TEST_DIR/../_unittests_ml/tests/tests
 
   sleep 10
 
@@ -251,6 +251,7 @@ clean:
 
   # copy auxiliar files for ocaml synthesis
   cp ../src/rmtld3.ml $TEST_DIR/rmtld3.ml
+  cp ../src/rmtld3_eval.ml $TEST_DIR/rmtld3_eval.ml
 
   printf "${WHITE}Compiling Ocaml and Cpp11 monitors...${NC}\n"
 

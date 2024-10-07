@@ -30,7 +30,7 @@ let rmtld3_unit_test_case_generation trace formula computed_value cpp11_compute
   (* do the map between event name and id numbers *)
   let code, _ =
     List.fold_left
-      (fun (a, count) (p, (t1, t2)) ->
+      (fun (a, count) (p, t1) ->
         ( a ^ "\ttmp_x = event_t("
           ^ string_of_int
               (try find_proposition_hashtbl p helper
@@ -129,13 +129,13 @@ exception TEST_FAIL of string
 let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
   set_counter_test_cases 0 helper;
   (* a logic environment for all tests *)
-  let t_u = logical_environment in
+  let t_u = lenv in
   let call_list = ref "" in
   let call_code = ref "" in
   (* this function will generate the test case for a formula *)
   let pass_test_n expected_value lb trace formula n =
     let rec repeat model formula s =
-      let ex = compute model formula in
+      let ex = eval model formula in
       if s = 0 then ex else repeat model formula (s - 1)
     in
     Printf.printf "%s -> " lb;
@@ -148,14 +148,14 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
     let d = 10 in
     let time_start = Sys.time () in
     (*for rep = 1 to d do
-      	compute (k, t_u, 0.) formula;
+      	eval (k, t_u, 0.) formula;
       done;*)
     let _t_value = repeat (k, t_u, 0.) formula d in
     let time_end = Sys.time () in
     let delta_t = (time_end -. time_start) /. float_of_int d in
     (* end of the measure part *)
     count := 0;
-    let t_value = compute (k, t_u, 0.) formula in
+    let t_value = eval (k, t_u, 0.) formula in
     if t_value = expected_value then (
       let id = string_of_int (get_counter_test_cases helper) in
       Printf.printf "\x1b[32m[Sucess]\x1b[0m (%s) \n" (b3_to_string t_value);
@@ -187,38 +187,38 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
     (* basic tests for RMTLD3 *)
     let test1_trace =
       [
-        ("A", (0., 1.));
-        ("B", (1., 2.));
-        ("A", (2., 3.));
-        ("B", (3., 4.));
-        ("B", (4., 5.));
-        ("A", (5., 6.));
-        ("C", (6., 7.));
-        ("E", (7., 9.));
+        ("A", 0.);
+        ("B", 1.);
+        ("A", 2.);
+        ("B", 3.);
+        ("B", 4.);
+        ("A", 5.);
+        ("C", 6.);
+        ("E", 7.);
       ]
     in
     let test2_trace =
       [
-        ("A", (0., 1.));
-        ("C", (1., 2.));
-        ("A", (2., 3.));
-        ("B", (3., 4.));
-        ("B", (4., 5.));
-        ("A", (5., 6.));
-        ("C", (6., 7.));
+        ("A", 0.);
+        ("C", 1.);
+        ("A", 2.);
+        ("B", 3.);
+        ("B", 4.);
+        ("A", 5.);
+        ("C", 6.);
       ]
     in
     let test3_trace =
       [
-        ("A", (0., 1.));
-        ("A", (1., 2.));
-        ("A", (2., 3.));
-        ("A", (3., 4.));
-        ("A", (4., 5.));
-        ("A", (5., 6.));
-        ("A", (6., 9.));
-        ("B", (9., 20.));
-        ("E", (20., 21.));
+        ("A", 0.);
+        ("A", 1.);
+        ("A", 2.);
+        ("A", 3.);
+        ("A", 4.);
+        ("A", 5.);
+        ("A", 6.);
+        ("B", 9.);
+        ("E", 20.);
       ]
     in
     (* basic tests set *)
@@ -231,7 +231,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
     pass_test True "int 5 A < 3.0(0)1  " test1_trace
       (LessThan
          ( Duration (Constant 5., Prop "A"),
-           Constant (3. +. (epsilon_float *. 3.)) ));
+           Constant (3. +. (epsilon_float)) ));
     pass_test True "~(int 5 A < 2)     " test1_trace
       (Not (LessThan (Duration (Constant 5., Prop "A"), Constant 2.)));
 
@@ -243,7 +243,7 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
     pass_test True "~(F 6 C)    " test1_trace (Not (meventually 6. (Prop "C")));
     pass_test True "~(F 5 C)    " test1_trace (Not (meventually 5. (Prop "C")));
     pass_test True "F 7.0(0)1 C " test1_trace
-      (meventually (7. +. (epsilon_float *. 3.)) (Prop "C"));
+      (meventually (7. +. (epsilon_float)) (Prop "C"));
     pass_test True "F_2.0(0)1 ~A" test1_trace
       (meventually (2. +. epsilon_float) (Not (Prop "A")));
 
@@ -307,14 +307,14 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
   if get_setting_string "gen_paper_results" helper = "true" then (
     let sample_trace =
       [
-        ("B", (0., 1.));
-        ("B", (1., 2.));
-        ("B", (2., 3.));
-        ("A", (3., 4.));
-        ("B", (4., 5.));
-        ("B", (5., 6.));
-        ("B", (6., 9.));
-        ("B", (9., 20.));
+        ("B", 0.);
+        ("B", 1.);
+        ("B", 2.);
+        ("A", 3.);
+        ("B", 4.);
+        ("B", 5.);
+        ("B", 6.);
+        ("B", 9.);
       ]
     in
     let lst = [ 10; 100; 1000 ] in
@@ -414,14 +414,14 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
     close_out oc;*)
   let trc =
     [
-      ("B", (0., 1.));
-      ("A", (1., 2.));
-      ("A", (2., 3.));
-      ("A", (3., 4.));
-      ("A", (4., 5.));
-      ("A", (5., 6.));
-      ("B", (6., 9.));
-      ("A", (9., 20.));
+      ("B", 0.);
+      ("A", 1.);
+      ("A", 2.);
+      ("A", 3.);
+      ("A", 4.);
+      ("A", 5.);
+      ("B", 6.);
+      ("A", 9.);
     ]
   in
   pass_test Unknown (string_of_rmtld_fm usecase1_formula) trc usecase1_formula;
@@ -495,7 +495,7 @@ let generate_auxiliar_files cluster_name helper =
 
 let _ =
   (* ask test parameters *)
-  let cluster_name = "_cluster" in
+  let cluster_name = "_unittests_ml" in
   let helper = mk_helper in
 
   let default_settings =

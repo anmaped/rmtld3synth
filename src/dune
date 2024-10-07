@@ -11,9 +11,9 @@
 (library
   (name            rmtld3)
   (public_name     rmtld3synth.rmtld3)
-  (libraries       bigarray-compat sexplib ppx_sexp_conv)
-  (modules         Rmtld3)
-  (preprocess      (pps ppx_sexp_conv))
+  (libraries       bigarray-compat sexplib ppx_sexp_conv yojson ppx_yojson_conv)
+  (modules         Rmtld3 Rmtld3_eval)
+  (preprocess      (pps ppx_sexp_conv ppx_yojson_conv))
 )
 
 (library

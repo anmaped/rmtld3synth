@@ -8,7 +8,9 @@ open Res${i}
 module T$i : Trace = struct let trc = [$(dos2unix $TEST_DIR/res$i.trace; cat $TEST_DIR/res$i.trace)] end;;
 module M$i = Res${i}.Res${i}_0(T$i);;
 print_string \"$i) \";;
-if M$i.mon = Rmtld3.True then print_endline (\"\x1b[32m[true]\x1b[0m\") else (if M$i.mon = Rmtld3.False then print_endline (\"\x1b[31m[false]\x1b[0m\") else print_endline (\"\x1b[33m[unknown]\x1b[0m\"))
+if M$i.mon = Rmtld3_eval.True then print_endline (\"\x1b[32m[true]\x1b[0m\") 
+else (if M$i.mon = Rmtld3_eval.False then print_endline (\"\x1b[31m[false]\x1b[0m\")
+      else print_endline (\"\x1b[33m[unknown]\x1b[0m\"))
 "
 done
 
@@ -29,9 +31,8 @@ echo "
 (executable
   (name            unittests)
   (public_name     unittests)
-  (libraries       bigarray-compat sexplib ppx_sexp_conv)
-  (modules         Rmtld3 Unittests Mon1 Mon2 Mon3 $modules)
-  (preprocess      (pps ppx_sexp_conv))
+  (libraries       bigarray-compat)
+  (modules         Rmtld3_eval Unittests Mon1 Mon2 Mon3 $modules)
 )
 " > $TEST_DIR/dune
 

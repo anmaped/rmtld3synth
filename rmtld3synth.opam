@@ -17,6 +17,8 @@ depends: [
   "sexplib" {build}
   "ppx_sexp_conv" {build}
   "dolmen" {build}
+  "yojson" {build}
+  "ppx_yojson_conv" {build}
 ]
 
 build: [

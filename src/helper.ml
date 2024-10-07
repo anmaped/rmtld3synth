@@ -85,7 +85,7 @@ let print_setting a =
   match a with
   | Num v -> print_string (string_of_int v)
   | Txt s -> print_string ("'" ^ s ^ "'")
-  | Fm f -> print_plaintext_formula f
+  | Fm f -> print_string (string_of_rmtld_fm f)
   | Sel b -> print_string (string_of_bool b)
   | Hash ht ->
       print_string
@@ -333,19 +333,19 @@ and calculate_cycle_cost_term term l =
 let rec strategic_uniform_trace value samples factor trace =
   (*let timestamp = (Random.float factor) +. value in*)
   let timestamp = factor +. value in
-  if samples = 0 then ("B", (value, timestamp)) :: trace
+  if samples = 0 then ("B", (value(*, timestamp*))) :: trace
   else
     (*let trace_size = List.length trace in if samples <= trace_size then
       strategic_uniform_trace timestamp (samples-1) factor
       (("B",(value,timestamp))::trace) else*)
     strategic_uniform_trace timestamp (samples - 1) factor
-      (("A", (value, timestamp)) :: trace)
+      (("A", (value(*, timestamp*))) :: trace)
 
 let rec repeat_trace n pattern trace t tsize =
   if n <> 0 then
     repeat_trace (n - 1) pattern
       (List.append trace
-         (List.map (fun (a, (b, c)) -> (a, (b +. t, c +. t))) pattern) )
+         (List.map (fun (a, b) -> (a, (b +. t ))) pattern) )
       (t +. tsize) tsize
   else trace
 
