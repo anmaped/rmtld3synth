@@ -684,16 +684,16 @@ and eval (env, lg_env, t) formula =
   | Not sf -> b3_not (eval (env, lg_env, t) sf)
   | Or (sf1, sf2) ->
       b3_or (eval (env, lg_env, t) sf1) (eval (env, lg_env, t) sf2)
-  | Until (gamma, sf1, sf2) -> eval_uless (env, lg_env, t) gamma sf1 sf2
   | LessThan (tr1, tr2) ->
       b3_lessthan
         (eval_term (env, lg_env) t tr1)
         (eval_term (env, lg_env) t tr2)
-  | _ ->
-      raise
-        (Failure
-           ( "eval: the formula definition is missing "
-           ^ Sexp.to_string_hum (sexp_of_rmtld3_fm formula) ) )
+  | Until (gamma, sf1, sf2) -> eval_uless (env, lg_env, t) gamma sf1 sf2
+  | Until_eq (gamma, sf1, sf2) -> eval_ueq (env, lg_env, t) gamma sf1 sf2
+  | Since (gamma, sf1, sf2) -> failwith "eval of since is not implemented!"
+  | Since_eq (gamma, sf1, sf2) -> failwith "eval of since_eq is not implemented!"
+  | Exists (_, sf) -> failwith "eval of exists is not implemented!"
+
 
 and eval_uless m gamma phi1 phi2 =
   let k, u, t = m in
@@ -702,6 +702,14 @@ and eval_uless m gamma phi1 phi2 =
        (fun k u t -> of_tree_valued (eval (of_rmtld3_eval_env k, u, t) phi1))
        (fun k u t -> of_tree_valued (eval (of_rmtld3_eval_env k, u, t) phi2))
        (of_env k) u t )
+
+and eval_ueq m gamma phi1 phi2 =
+let k, u, t = m in
+of_rmtld3_eval_tree_valued
+  (Rmtld3_eval.eval_ueq gamma
+      (fun k u t -> of_tree_valued (eval (of_rmtld3_eval_env k, u, t) phi1))
+      (fun k u t -> of_tree_valued (eval (of_rmtld3_eval_env k, u, t) phi2))
+      (of_env k) u t )
 
 (* 
  * compute the temporal upper bound of a RMTLD3 term and formula (if exists)

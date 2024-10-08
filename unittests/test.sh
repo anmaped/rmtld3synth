@@ -41,6 +41,30 @@ CMDSAT_DEBUG="rmtld3synth --synth-smtlibv2 $UNROLLING_SETTINGS"
 CMDSAT_NO_TRACE="rmtld3synth --synth-smtlibv2 --solver-z3 $UNROLLING_SETTINGS"
 CMDSAT="$CMDSAT_NO_TRACE --get-trace"
 
+# dsl expressions
+declare -a dsl_expressions=(
+  "a"
+  "a or b"
+  "not a"
+  "a until b within 10s"
+  "a on 10s"
+
+   # got from documentation
+  "always (a until b within 3s) within 10s"
+  "always ((rise a) -> (eventually b within 3s)) within 10s"
+  "always ((rise a) -> (b on 3s)) within 10s"
+  "always ((rise a) -> (eventually b within =3s)) within 10s"
+  "duration of a in 0 .. 2"
+  "duration of a in [0, 2]"
+  "duration of a in [0, 2] < 10"
+  "a until b within range 10ns .. 1s"
+  "a until b within range [10ns, 1s]"
+
+)
+
+dsl_expressions_length=${#dsl_expressions[@]}
+
+
 # "(\eventually_{<2} a) \land (\eventually_{<2} b) \land (\eventually_{<6} c)" SAT (1-assumption)
 # "(\eventually_{<1} a) \land (\eventually_{<1} b)"                            UNSAT (1-assumption)
 # "(\eventually_{<1} a) \land (\eventually_{<2} b)"                            SAT (1-assumption)
@@ -125,11 +149,53 @@ declare -a arrayrmtld_sat_expected_result=(
 
 [ "$1" = "" ] && {
 
-  echo -e "unknown command\nUsage: test.sh [quickcpp/sat/crosscheck/allchecks]"
+  echo -e "unknown command\nUsage: test.sh [quickcheck/evalcheck/satcheck/crosscheck/allchecks]"
   exit 1
 }
 
-[ "$1" = "sat" ] || [ "$1" = "allchecks" ] && {
+[ "$1" = "quickcheck" ] || [ "$1" = "allchecks" ] && {
+
+  echo "Executing rmtld3synth-unittest..."
+
+  rmtld3synth-unittest
+
+  sleep 10
+
+  echo "Executing generated cpp test..."
+
+  make -C $TEST_DIR/../_unittests_ml/tests
+
+  ./$TEST_DIR/../_unittests_ml/tests/tests
+
+  sleep 10
+
+  echo "Executing rtmlib2 integration test..."
+
+  ./integration/run.sh
+
+  sleep 10
+
+}
+
+
+[ "$1" = "evalcheck" ] || [ "$1" = "allchecks" ] && {
+
+  echo "Executing eval tests..."
+
+  # get test.sh directory
+  DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";
+
+  for ((i = 1; i < ${dsl_expressions_length} + 1; i++)); do
+    echo "expression: '${dsl_expressions[$i - 1]}'"
+    #rmtld3synth --eval --include "$DIR/../examples/environment/env1.json" --input-dsl ${dsl_expressions[$i - 1]}
+  done
+
+  sleep 10
+
+}
+
+
+[ "$1" = "satcheck" ] || [ "$1" = "allchecks" ] && {
 
   echo "Satisfiability check of rmtld3 formulas"
 
@@ -149,30 +215,6 @@ declare -a arrayrmtld_sat_expected_result=(
   done
 }
 
-[ "$1" = "quickcpp" ] || [ "$1" = "allchecks" ] && {
-
-  echo "Executing rtmlib2 integration test..."
-
-  ./integration/run.sh
-
-  sleep 10
-
-  echo "Executing quick cpp test..."
-
-  rmtld3synth-unittest
-
-  sleep 10
-
-  #cat $TEST_DIR/../_unittests_ml/tests/unit_test_cases.h
-  #cat $TEST_DIR/../_unittests_ml/tests/tests.cpp
-
-  make -C $TEST_DIR/../_unittests_ml/tests
-
-  ./$TEST_DIR/../_unittests_ml/tests/tests
-
-  sleep 10
-
-}
 
 [ "$1" = "crosscheck" ] || [ "$1" = "allchecks" ] && {
 

@@ -28,4 +28,4 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 
-run-test: [make "tests"]
+run-test: [make "tests" "allchecks"]
