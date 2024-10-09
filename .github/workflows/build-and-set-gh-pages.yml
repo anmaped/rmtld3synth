@@ -23,7 +23,7 @@ jobs:
           docker run --rm \
           --entrypoint /bin/bash \
           -v ${PWD}:/workspace/source:z  \
-          docker.io/anmaped/rmtld3synth:v0.4 \
+          docker.io/anmaped/rmtld3synth:v0.6-x \
           -c 'cp -r /workspace/source /localsource && cd /localsource && \
           eval $(opam env) && \
           ./configure --js_of_ocaml --without-z3-solver && make js && \

@@ -1,13 +1,7 @@
 name: Run Unit Tests
 
 on:
-  workflow_run:
-    workflows:
-      - Publish Docker image
-    branches:
-      - v0.*
-    types:
-      - completed
+  workflow_call:
 
 jobs:
   run_tests:
@@ -28,7 +22,7 @@ jobs:
           docker run --rm \
           --entrypoint /bin/bash \
           -v ${PWD}:/workspace/source:z  \
-          docker.io/anmaped/rmtld3synth:${GITHUB_REF#refs/*/} \
+          docker.io/anmaped/rmtld3synth:${{ github.ref_name }} \
           -c 'cp -r /workspace/source /localsource && cd /localsource && \
           eval $(opam env) && \
           ./configure && make && make tests'
