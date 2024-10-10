@@ -54,113 +54,113 @@ and conv_fm : fm -> Rmtld3.fm = function
   | LessOrEqualThan (a, b) -> less_or_equal (conv_tm a) (conv_tm b)
   | GreaterThan (a, b) -> greater (conv_tm a) (conv_tm b)
   | GreaterOrEqualThan (a, b) -> greater_or_equal (conv_tm a) (conv_tm b)
-  | Until ((Less (t, u) as k), a, b) ->
+  | Until ((Less (_, _) as k), a, b) ->
       Until (conv_kind k, conv_fm a, conv_fm b)
-  | Until ((Equal (t, u) as k), a, b) ->
+  | Until ((Equal (_, _) as k), a, b) ->
       Until_eq (conv_kind k, conv_fm a, conv_fm b)
-  | Until ((LessOrEqual (t, u) as k), a, b) ->
+  | Until ((LessOrEqual (_, _) as k), a, b) ->
       Or
         ( Until (conv_kind k, conv_fm a, conv_fm b)
         , Until_eq (conv_kind k, conv_fm a, conv_fm b) )
   | Until ((RangeC ((t0, u0), (t1, u1)) as k), a, b) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Until (LessOrEqual (t1, u1), a, b)) in
       if n0 = 0. then fm else meventually_eq (conv_kind (Equal (t0, u0))) fm
   | Until ((RangeO ((t0, u0), (t1, u1)) as k), a, b) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Until (Less (t1, u1), a, b)) in
       if n0 = 0. then fm else meventually_eq (conv_kind (Equal (t0, u0))) fm
-  | Since ((Less (t, u) as k), a, b) ->
+  | Since ((Less (_, _) as k), a, b) ->
       Since (conv_kind k, conv_fm a, conv_fm b)
-  | Since ((Equal (t, u) as k), a, b) ->
+  | Since ((Equal (_, _) as k), a, b) ->
       Since_eq (conv_kind k, conv_fm a, conv_fm b)
-  | Since ((LessOrEqual (t, u) as k), a, b) ->
+  | Since ((LessOrEqual (_, _) as k), a, b) ->
       Or
         ( Since (conv_kind k, conv_fm a, conv_fm b)
         , Since_eq (conv_kind k, conv_fm a, conv_fm b) )
   | Since ((RangeC ((t0, u0), (t1, u1)) as k), a, b) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Since (LessOrEqual (t1, u1), a, b)) in
       if n0 = 0. then fm
       else mpasteventually_eq (conv_kind (Equal (t0, u0))) fm
   | Since ((RangeO ((t0, u0), (t1, u1)) as k), a, b) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Since (Less (t1, u1), a, b)) in
       if n0 = 0. then fm
       else mpasteventually_eq (conv_kind (Equal (t0, u0))) fm
   | Rise (k, f) -> mand (mprev (conv_kind k) (conv_fm (Not f))) (conv_fm f)
   | Fall (k, f) -> mand (mprev (conv_kind k) (conv_fm f)) (conv_fm (Not f))
-  | Next ((Less (t, u) as k), f) -> mnext (conv_kind k) (conv_fm f)
-  | Next ((Equal (t, u) as k), f) -> mnext_eq (conv_kind k) (conv_fm f)
-  | Next ((LessOrEqual (t, u) as k), f) ->
+  | Next ((Less (_, _) as k), f) -> mnext (conv_kind k) (conv_fm f)
+  | Next ((Equal (_, _) as k), f) -> mnext_eq (conv_kind k) (conv_fm f)
+  | Next ((LessOrEqual (_, _) as k), f) ->
       mnext_leq (conv_kind k) (conv_fm f)
-  | Next (RangeC (p0, p1), f) ->
+  | Next (RangeC (_, _), _) ->
       failwith "conv_fm does not support ranges for the Next operator!"
-  | Next (RangeO (p0, p1), f) ->
+  | Next (RangeO (_, _), _) ->
       failwith "conv_fm does not support ranges for the Next operator!"
-  | Prev ((Less (t, u) as k), f) -> mprev (conv_kind k) (conv_fm f)
-  | Prev ((Equal (t, u) as k), f) -> mprev_eq (conv_kind k) (conv_fm f)
-  | Prev ((LessOrEqual (t, u) as k), f) ->
+  | Prev ((Less (_, _) as k), f) -> mprev (conv_kind k) (conv_fm f)
+  | Prev ((Equal (_, _) as k), f) -> mprev_eq (conv_kind k) (conv_fm f)
+  | Prev ((LessOrEqual (_, _) as k), f) ->
       mprev_leq (conv_kind k) (conv_fm f)
-  | Prev (RangeC (p0, p1), f) ->
+  | Prev (RangeC (_, _), _) ->
       failwith "conv_fm does not support ranges for the Prev operator!"
-  | Prev (RangeO (p0, p1), f) ->
+  | Prev (RangeO (_, _), _) ->
       failwith "conv_fm does not support ranges for the Prev operator!"
-  | Always ((Less (t, u) as k), f) -> malways (conv_kind k) (conv_fm f)
-  | Always ((Equal (t, u) as k), f) -> malways_eq (conv_kind k) (conv_fm f)
-  | Always ((LessOrEqual (t, u) as k), f) ->
+  | Always ((Less (_, _) as k), f) -> malways (conv_kind k) (conv_fm f)
+  | Always ((Equal (_, _) as k), f) -> malways_eq (conv_kind k) (conv_fm f)
+  | Always ((LessOrEqual (_, _) as k), f) ->
       malways_leq (conv_kind k) (conv_fm f)
   | Always ((RangeC ((t0, u0), (t1, u1)) as k), f) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Always (LessOrEqual (t1, u1), f)) in
       if n0 = 0. then fm else meventually_eq (conv_kind (Equal (t0, u0))) fm
   | Always ((RangeO ((t0, u0), (t1, u1)) as k), f) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Always (Less (t1, u1), f)) in
       if n0 = 0. then fm else meventually_eq (conv_kind (Equal (t0, u0))) fm
-  | Historically ((Less (t, u) as k), f) ->
+  | Historically ((Less (_, _) as k), f) ->
       mhistorically (conv_kind k) (conv_fm f)
-  | Historically ((Equal (t, u) as k), f) ->
+  | Historically ((Equal (_, _) as k), f) ->
       mhistorically_eq (conv_kind k) (conv_fm f)
-  | Historically ((LessOrEqual (t, u) as k), f) ->
+  | Historically ((LessOrEqual (_, _) as k), f) ->
       mhistorically_leq (conv_kind k) (conv_fm f)
   | Historically ((RangeC ((t0, u0), (t1, u1)) as k), f) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Historically (LessOrEqual (t1, u1), f)) in
       if n0 = 0. then fm
       else mpasteventually_eq (conv_kind (Equal (t0, u0))) fm
   | Historically ((RangeO ((t0, u0), (t1, u1)) as k), f) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Historically (Less (t1, u1), f)) in
       if n0 = 0. then fm
       else mpasteventually_eq (conv_kind (Equal (t0, u0))) fm
-  | Eventually ((Less (t, u) as k), f) ->
+  | Eventually ((Less (_, _) as k), f) ->
       meventually (conv_kind k) (conv_fm f)
-  | Eventually ((Equal (t, u) as k), f) ->
+  | Eventually ((Equal (_, _) as k), f) ->
       meventually_eq (conv_kind k) (conv_fm f)
-  | Eventually ((LessOrEqual (t, u) as k), f) ->
+  | Eventually ((LessOrEqual (_, _) as k), f) ->
       meventually_leq (conv_kind k) (conv_fm f)
   | Eventually ((RangeC ((t0, u0), (t1, u1)) as k), f) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Eventually (LessOrEqual (t1, u1), f)) in
       if n0 = 0. then fm else meventually_eq (conv_kind (Equal (t0, u0))) fm
   | Eventually ((RangeO ((t0, u0), (t1, u1)) as k), f) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (Eventually (Less (t1, u1), f)) in
       if n0 = 0. then fm else meventually_eq (conv_kind (Equal (t0, u0))) fm
-  | PastEventually ((Less (t, u) as k), f) ->
+  | PastEventually ((Less (_, _) as k), f) ->
       mpasteventually (conv_kind k) (conv_fm f)
-  | PastEventually ((Equal (t, u) as k), f) ->
+  | PastEventually ((Equal (_, _) as k), f) ->
       mpasteventually_eq (conv_kind k) (conv_fm f)
-  | PastEventually ((LessOrEqual (t, u) as k), f) ->
+  | PastEventually ((LessOrEqual (_, _) as k), f) ->
       mpasteventually_leq (conv_kind k) (conv_fm f)
   | PastEventually ((RangeC ((t0, u0), (t1, u1)) as k), f) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (PastEventually (LessOrEqual (t1, u1), f)) in
       if n0 = 0. then fm
       else mpasteventually_eq (conv_kind (Equal (t0, u0))) fm
   | PastEventually ((RangeO ((t0, u0), (t1, u1)) as k), f) ->
-      let n0, n1 = conv_kind_pair k in
+      let n0, _ = conv_kind_pair k in
       let fm = conv_fm (PastEventually (Less (t1, u1), f)) in
       if n0 = 0. then fm
       else mpasteventually_eq (conv_kind (Equal (t0, u0))) fm

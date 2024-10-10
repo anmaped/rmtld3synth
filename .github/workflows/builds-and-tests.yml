@@ -1,0 +1,30 @@
+name: Linux and macOS builds
+
+on:
+  - push
+  - pull_request
+
+permissions: read-all
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout tree
+        uses: actions/checkout@v4
+
+      - name: Set-up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 4
+
+      - run: opam install . --deps-only --with-test

@@ -6,9 +6,7 @@ open Z3
 open Z3.SMT
 open Z3.Solver
 open Z3.Model
-open Z3.Model.FuncInterp
 open Z3.Expr
-open Z3.AST
 open Z3.FuncDecl
 open Z3enums
 open Z3.Symbol
@@ -36,7 +34,7 @@ let solve_ ctx exp =
   verb (fun _ -> print_endline (Statistics.to_string (get_statistics solver)));
   sol
 
-let get_model ctx solver =
+let get_model _ solver =
   let model =
     match get_model solver with
     | Some x -> x

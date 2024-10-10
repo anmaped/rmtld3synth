@@ -1,4 +1,3 @@
-open Hashtbl
 open Sexplib
 open Sexplib.Conv
 open Rmtld3
@@ -63,7 +62,7 @@ let get_setting_hash name tbl =
   | Hash a -> a
   | _ -> failwith "Error 'get_setting_hash'!"
 
-let rec get_all_setting_string name tbl : string list =
+let get_all_setting_string name tbl : string list =
   let rec _get_all_setting_string lst =
     match lst with
     | [] -> []
@@ -72,7 +71,7 @@ let rec get_all_setting_string name tbl : string list =
   in
   List.rev (_get_all_setting_string (Hashtbl.find_all tbl name))
 
-let rec get_all_setting_formula name tbl : Rmtld3.fm list =
+let get_all_setting_formula name tbl : Rmtld3.fm list =
   let rec _get_all_setting_formula lst =
     match lst with
     | [] -> []
@@ -250,7 +249,7 @@ let settings sexpression =
   , list_monitor_settings )
 
 let apply_settings s helper =
-  let s_num, s_str, s_fm = settings (settings_from_string s) in
+  let s_num, s_str, _ = settings (settings_from_string s) in
   List.iter (fun (a, b) -> set_setting a (Num b) helper) s_num ;
   List.iter (fun (a, b) -> set_setting a (Txt b) helper) s_str
 
@@ -402,7 +401,7 @@ let explode s = s |> String.to_seq |> List.of_seq
 let rec of_enum_ a b c =
   if a >= b then List.rev (a :: c) else of_enum_ (a + 1) b (a :: c)
 
-let rec of_enum a b = of_enum_ a b []
+let of_enum a b = of_enum_ a b []
 
 let is_even n = n mod 2 = 0
 
@@ -417,4 +416,4 @@ let pow base exponent =
     in
     aux 1 base exponent
 
-let ( % ) f g x x = f (g x)
+let ( % ) f g x = f (g x)

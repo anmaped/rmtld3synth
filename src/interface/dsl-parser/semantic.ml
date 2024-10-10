@@ -52,7 +52,7 @@ let get text checkpoint i =
    table-based parser is invoked only when we know that there is a syntax
    error in the input file. *)
 
-let succeed v = assert false
+let succeed _ = assert false
 
 (* [fail text buffer checkpoint] is invoked when parser has encountered a
    syntax error. *)

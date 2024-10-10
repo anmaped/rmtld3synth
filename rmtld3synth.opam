@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name:         "rmtld3synth"
-version:      "0.4-dev"
+version:      "0.5-dev"
 maintainer:   "André Pedro <apedro.1@gmail.com>"
 authors:      "André Pedro <apedro.1@gmail.com>"
 homepage:     "https://github.com/anmaped/rmtld3synth"
@@ -19,6 +19,13 @@ depends: [
   "dolmen" {build}
   "yojson" {build}
   "ppx_yojson_conv" {build}
+  "z3" {="4.12.3"}
+  "dolmen-export" {build}
+]
+
+pin-depends: [
+  ["dolmen.dev" "git+https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b"]
+  ["dolmen-export.dev" "git+https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b"]
 ]
 
 build: [

@@ -9,7 +9,6 @@
 (* ------------------------------------------------------------------------- *)
 
 open List
-open Str
 open Sexplib
 open Sexplib.Conv
 
