@@ -1,0 +1,51 @@
+name: Windows build
+
+on:
+  - push
+  - pull_request
+
+permissions: read-all
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout tree
+        uses: actions/checkout@v3
+
+      - name: Set-up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 4
+
+      - name: Set-up Python3
+        run: |
+          $env:Path = 'D:\cygwin\bin;' + $env:Path; setx /m PATH "$env:PATH"
+          opam install conf-python-3
+          opam exec -- python3 --version
+          cp D:\cygwin\bin\python3.9.exe D:\cygwin\bin\python3.exe
+          opam exec -- python3 --version
+          ls D:\cygwin ; ls D:\cygwin\bin ; $env:Path
+
+      - name: Set-up opam package z3
+        run: |
+          eval $(opam env) #
+          env #
+          cd "D:\.opam" #
+          cd ./repo/default/packages/z3 #
+          mkdir -p z3.4.11.2 #
+          cd z3.4.11.2 #
+          curl -O https://raw.githubusercontent.com/fdopen/opam-repository-mingw/refs/heads/opam2/packages/z3/z3.4.11.2/opam #
+          CC=$(ocamlc -config | awk -F '[\t\r ]+' '/^bytecomp_c_compiler/ {print $2}' ) #
+          sed -i "s~AR=~CC=$CC AR=~g" opam #
+          mkdir -p files #
+          curl -O https://raw.githubusercontent.com/fdopen/opam-repository-mingw/refs/heads/opam2/packages/z3/z3.4.11.2/files/z3-z3-4.11.2.patch #
+          mv z3-z3-4.11.2.patch files/ #
+          rm ../../../../*.cache #
+        shell: bash
+
+      - name: Set-up Z3
+        run: opam install z3=4.11.2
+
+      - name: Build rmtld3synth
+        run: opam install . --with-test

@@ -12,9 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
+          - ubuntu-22.04
+          - macos-14
 
     runs-on: ${{ matrix.os }}
 
@@ -27,4 +26,4 @@ jobs:
         with:
           ocaml-compiler: 4
 
-      - run: opam install . --deps-only --with-test
+      - run: opam install . --with-test

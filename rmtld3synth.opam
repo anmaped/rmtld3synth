@@ -9,6 +9,7 @@ dev-repo:     "git+https://github.com/anmaped/rmtld3synth.git"
 doc:          "https://github.com/anmaped/rmtld3synth#documentation"
 synopsis:     "Runtime Verification toolchain"
 description:  "Runtime Verification toolchain for generating monitors based on the restricted Metric Temporal Logic with Durations."
+license:      "LGPL-3.0-only WITH OCaml-LGPL-linking-exception"
 
 depends: [
   "ocamlfind" {build}
@@ -19,7 +20,7 @@ depends: [
   "dolmen" {build}
   "yojson" {build}
   "ppx_yojson_conv" {build}
-  "z3" {="4.12.3"}
+  "z3" {<="4.12.3"}
   "dolmen-export" {build}
 ]
 
