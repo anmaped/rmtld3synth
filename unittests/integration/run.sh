@@ -12,11 +12,11 @@ SCRIPT_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
 SCRIPT_PATH="$(realpath -e -- "$SCRIPT_PATH")"
 echo $SCRIPT_PATH
 
-OUTPUT_DIR=$SCRIPT_PATH/../../_build_tests/_integration
-mkdir -p $OUTPUT_DIR
+OUTPUT_DIR=$SCRIPT_PATH/../../_build_tests
 OUTPUT_DIR="$(realpath -e -- "$OUTPUT_DIR")"
+mkdir -p $OUTPUT_DIR/_integration
 
-rmtld3synth --synth-cpp11 --input-dsl "a" --out-src $OUTPUT_DIR
+rmtld3synth --synth-cpp11 --input-dsl "a" --out-src "$OUTPUT_DIR"
 
 cp "$SCRIPT_PATH/sample_monitor.cpp" "$OUTPUT_DIR"
 cp "$SCRIPT_PATH/sample_instrumentation.cpp" "$OUTPUT_DIR"
