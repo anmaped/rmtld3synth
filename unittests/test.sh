@@ -9,6 +9,14 @@ err_report() {
 
 trap 'err_report $LINENO' ERR
 
+function path(){
+if [[ $(uname -s) == CYGWIN* ]];then
+  cygpath -w $1
+else 
+  echo $1
+fi
+}
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -220,19 +228,19 @@ declare -a arrayrmtld_sat_expected_result=(
 
   echo "Generating Test Units for Monitor Generation using Ocaml"
 
-  $CMDGENOCAML --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-file="$TEST_DIR/mon1.ml"
+  $CMDGENOCAML --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-file="$(path "$TEST_DIR/mon1.ml")"
 
-  $CMDGENOCAML --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-file="$TEST_DIR/mon2.ml"
+  $CMDGENOCAML --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-file="$(path "$TEST_DIR/mon2.ml")"
 
-  $CMDGENOCAML --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-file="$TEST_DIR/mon3.ml"
+  $CMDGENOCAML --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-file="$(path "$TEST_DIR/mon3.ml")"
 
   echo "Generating Test Units for Cpp11"
 
-  $CMDGENCPP --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-src="$TEST_DIR/mon1" --verbose 2 >/dev/null 2>&1
+  $CMDGENCPP --input-sexp "(Or (Until 10 (Prop D) (Or (Prop A) (Not (Prop B)))) (LessThan (Duration (Constant 2) (Prop S) ) (FPlus (Constant 3) (Constant 4)) ))" --out-src="$(path "$TEST_DIR/mon1")" --verbose 2 >/dev/null 2>&1
 
-  $CMDGENCPP --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-src="$TEST_DIR/mon2" --verbose 2 >/dev/null 2>&1
+  $CMDGENCPP --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --out-src="$(path "$TEST_DIR/mon2")" --verbose 2 >/dev/null 2>&1
 
-  $CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-src="$TEST_DIR/mon3" --verbose 2 >/dev/null 2>&1
+  $CMDGENCPP --input-latexeq "\always_{< 4} a \rightarrow \eventually_{= 2} b" --out-src="$(path "$TEST_DIR/mon3")" --verbose 2 >/dev/null 2>&1
 
   # Automatic generation of monitors from a set of formulas
   sample=10 # this sample can be changed
@@ -240,7 +248,7 @@ declare -a arrayrmtld_sat_expected_result=(
     REP=${arrayrmtld[$i - 1]//b1/$sample}
     REPP=${REP//b2/$sample}
     $CMDSAT --trace-style "tcum" --input-latexeq "$REPP" >$TEST_DIR/cpp/res$i.trace
-    $CMDGENCPP --input-latexeq "$REPP" --out-src="$TEST_DIR/cpp/mon$i" >/dev/null 2>&1
+    $CMDGENCPP --input-latexeq "$REPP" --out-src="$(path "$TEST_DIR/cpp/mon$i")" >/dev/null 2>&1
   done
 
   echo "Generating Unit tests for smtlibv2"
@@ -251,7 +259,7 @@ declare -a arrayrmtld_sat_expected_result=(
     REPP=${REP//b2/$sample}
     $CMDSAT_DEBUG --input-latexeq "$REPP" >$TEST_DIR/res$i.smt2
     $CMDSAT --trace-style "tinterval" --input-latexeq "$REPP" >$TEST_DIR/res$i.trace
-    $CMDGENOCAML --input-latexeq "$REPP" --out-file="$TEST_DIR/res$i.ml"
+    $CMDGENOCAML --input-latexeq "$REPP" --out-file="$(path "$TEST_DIR/res$i.ml")"
   done
 
   echo "Generating the Makefile...."

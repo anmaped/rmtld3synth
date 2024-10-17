@@ -63,7 +63,7 @@ Alternatively, you may explore the [Documentation](#documentation) section of rm
 ## Building from Git
 
 ![builds and tests workflow](https://github.com/anmaped/rmtld3synth/actions/workflows/builds-and-tests.yml/badge.svg)
-
+![Windows build](https://github.com/anmaped/rmtld3synth/actions/workflows/windows-build.yml/badge.svg)
 
 ### To compile rmtld3synth for Linux and macOS using Opam and Ocaml version >= 4.04.0
 
