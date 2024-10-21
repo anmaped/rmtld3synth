@@ -51,7 +51,7 @@ echo -e "
 $CHECK_GCC
 
 all:
-	$CXX_INC -Wall -Wextra -std=gnu++11 $DEBUG -I"$(path "$SCRIPT_PATH/../../rtmlib2/src/")" "sample_monitor.cpp" "sample_instrumentation.cpp" -o test -latomic
+	$CXX_INC -Wall -Wextra -std=gnu++11 $DEBUG -I\"$SCRIPT_PATH/../../rtmlib2/src/\" \"sample_monitor.cpp\" \"sample_instrumentation.cpp\" -o test -latomic
 
 clean:
 	rm test

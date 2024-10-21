@@ -283,7 +283,7 @@ $CHECK_GCC
 all:
 	dune build -p unittests @install
 	dune install -p unittests --prefix=./
-	$CXX_INC -Wall -Wextra -std=gnu++11 -DRTMLIB_ENABLE_MAP_SORT $DEBUG -I"$(path "$(pwd)/../rtmlib2/src")" cpptest.cpp -o cpptest -pthread -latomic
+	$CXX_INC -Wall -Wextra -std=gnu++11 -DRTMLIB_ENABLE_MAP_SORT $DEBUG -I\"$(pwd)/../rtmlib2/src\" cpptest.cpp -o cpptest -pthread -latomic
 
 clean:
 	ocamlbuild -clean
