@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #set -x
 set -e
@@ -9,12 +9,12 @@ err_report() {
 
 trap 'err_report $LINENO' ERR
 
-function path(){
-if [[ $(uname -s) == CYGWIN* ]];then
-  cygpath -w $1
-else 
-  echo $1
-fi
+function path() {
+  if [[ $(uname -s) == CYGWIN* ]]; then
+    cygpath -w $1
+  else
+    echo $1
+  fi
 }
 
 RED='\033[0;31m'
@@ -57,7 +57,7 @@ declare -a dsl_expressions=(
   "a until b within 10s"
   "a on 10s"
 
-   # got from documentation
+  # got from documentation
   "always (a until b within 3s) within 10s"
   "always ((rise a) -> (eventually b within 3s)) within 10s"
   "always ((rise a) -> (b on 3s)) within 10s"
@@ -71,7 +71,6 @@ declare -a dsl_expressions=(
 )
 
 dsl_expressions_length=${#dsl_expressions[@]}
-
 
 # "(\eventually_{<2} a) \land (\eventually_{<2} b) \land (\eventually_{<6} c)" SAT (1-assumption)
 # "(\eventually_{<1} a) \land (\eventually_{<1} b)"                            UNSAT (1-assumption)
@@ -185,13 +184,12 @@ declare -a arrayrmtld_sat_expected_result=(
 
 }
 
-
 [ "$1" = "evalcheck" ] || [ "$1" = "allchecks" ] && {
 
   echo "Executing eval tests..."
 
   # get test.sh directory
-  DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";
+  DIR="$(dirname -- "${BASH_SOURCE[0]}")"
 
   for ((i = 1; i < ${dsl_expressions_length} + 1; i++)); do
     echo "expression: '${dsl_expressions[$i - 1]}'"
@@ -201,7 +199,6 @@ declare -a arrayrmtld_sat_expected_result=(
   sleep 10
 
 }
-
 
 [ "$1" = "satcheck" ] || [ "$1" = "allchecks" ] && {
 
@@ -222,7 +219,6 @@ declare -a arrayrmtld_sat_expected_result=(
     fi
   done
 }
-
 
 [ "$1" = "crosscheck" ] || [ "$1" = "allchecks" ] && {
 
@@ -287,7 +283,7 @@ $CHECK_GCC
 all:
 	dune build -p unittests @install
 	dune install -p unittests --prefix=./
-	$CXX_INC -Wall -Wextra -std=gnu++11 -DRTMLIB_ENABLE_MAP_SORT $DEBUG -I$(pwd)/../rtmlib2/src cpptest.cpp -o cpptest -pthread -latomic
+	$CXX_INC -Wall -Wextra -std=gnu++11 -DRTMLIB_ENABLE_MAP_SORT $DEBUG -I"$(path "$(pwd)/../rtmlib2/src")" cpptest.cpp -o cpptest -pthread -latomic
 
 clean:
 	ocamlbuild -clean
