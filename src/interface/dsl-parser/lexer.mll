@@ -11,11 +11,11 @@ rule token = parse
 | "false" { FALSE }
 | "->" { IMPLIES }
 (*| '-' { MINUS }*)
-| "~" { NEGATION } 
+| "~" | "not" { NEGATION } 
 | '+' { PLUS }
 | '*' { TIMES }
-| "&&" { AND }
-| "||" { OR }
+| "&&" | "and" { AND }
+| "||" | "or" { OR }
 | '<' { LESS }
 | '>' { GREATER }
 | "<=" {LESSOREQUAL }

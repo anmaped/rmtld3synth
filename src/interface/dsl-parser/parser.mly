@@ -39,8 +39,8 @@
 %token DURATION IN COMMA ON
 %token DOTS OF
 
-%left PLUS
-%left TIMES
+%nonassoc SINGLE_FALL SINGLE_RISE
+%nonassoc WITHIN
 
 %start main
 %type <Ast.fm> main
@@ -72,18 +72,18 @@ conjunction:
   | r = temporal { r }
 
 temporal:
-  | HISTORICALLY a = atom WITHIN t = time { Historically (t,a)  }
-  | ALWAYS a = atom WITHIN t = time { Always (t,a)  }
-  | EVENTUALLY a = atom WITHIN t = time { Eventually (t,a)  }
-  | PAST EVENTUALLY a = atom WITHIN t = time { PastEventually (t,a) }
+  | HISTORICALLY a = formula WITHIN t = time { Historically (t,a)  }
+  | ALWAYS a = formula WITHIN t = time { Always (t,a)  }
+  | EVENTUALLY a = formula WITHIN t = time { Eventually (t,a)  }
+  | PAST EVENTUALLY a = formula WITHIN t = time { PastEventually (t,a) }
   | PREV a = atom WITHIN t = time { Prev(t,a) }
   | NEXT a = atom WITHIN t = time { Next(t,a) }
-  | FALL f = atom WITHIN t = time { Fall(t,f) }
-  | RISE f = atom WITHIN t = time { Rise(t,f) }
-  | FALL f = atom { Fall(Less(NaN,NaU),f) }
-  | RISE f = atom { Rise(Less(NaN,NaU),f) }
-  | a = temporal UNTIL b = atom WITHIN t = time { Until (t,a,b) }
-  | a = temporal SINCE b = atom WITHIN t = time { Since (t,a,b) }
+  | FALL a = atom WITHIN t = time { Fall(t,a) }
+  | RISE a = atom WITHIN t = time { Rise(t,a) }
+  | FALL a = atom { Fall(Less(NaN,NaU),a) } %prec SINGLE_FALL
+  | RISE a = atom { Rise(Less(NaN,NaU),a) } %prec SINGLE_RISE
+  | a = temporal UNTIL b = formula WITHIN t = time { Until (t,a,b) }
+  | a = temporal SINCE b = formula WITHIN t = time { Since (t,a,b) }
   | a = temporal ON t = TIME { Eventually (Equal (N (int_of_string (fst t)), map_u (snd t) ),a)  }
   | r = atom { r }
 
@@ -110,14 +110,17 @@ atom:
 
 term:
   | DURATION OF f = formula IN i = interval { Duration(i,f) }
-  | a = term PLUS b = term { FPlus(a,b) } (* benign conflicts here ... *)
-  | a = term TIMES b = term { FTimes(a,b) } (* benign conflicts here ... *)
-  | LPAR a = term RPAR { a }
-  | r = term_atom { r } 
+  | a = term PLUS b = term_atom1 { FPlus(a,b) }
+  | a = term TIMES b = term_atom1 { FTimes(a,b) }
+  | r = term_atom1 { r }
 
 %inline interval:
   | LSQPAR a = term_atom COMMA b = term_atom  RSQPAR { Interval(a,b) }
   | a = term_atom DOTS b = term_atom { Interval(a,b) }
+
+%inline term_atom1:
+  | LPAR a = term RPAR { a }
+  | r = term_atom { r }
 
 %inline term_atom:
   | c = NUM { Constant( float_of_string c) }

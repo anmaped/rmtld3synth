@@ -87,6 +87,39 @@
 )
 
 (rule
+  (with-outputs-to test09.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test09.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test09.exp test09.out))
+)
+
+(rule
+  (with-outputs-to test10.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test10.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test10.exp test10.out))
+)
+
+(rule
+  (with-outputs-to test11.out
+  (with-accepted-exit-codes 0
+    (run bash -c "cat %{dep:test11.in} | %{exe:../test.exe}")
+)))
+
+(rule
+  (alias test)
+  (action (diff test11.exp test11.out))
+)
+
+(rule
 (with-outputs-to error00.out
 (with-accepted-exit-codes 0
 (run bash -c "cat %{dep:error00.in} | %{exe:../test.exe} || true")

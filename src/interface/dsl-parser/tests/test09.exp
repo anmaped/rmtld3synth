@@ -1,0 +1,1 @@
+eventually[<300ms] ((a||b)&&c)

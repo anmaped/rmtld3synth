@@ -14,8 +14,8 @@ main: RISE WITHIN
 ##
 ## Ends in an error in state: 3.
 ##
-## temporal -> RISE . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## temporal -> RISE . atom [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> RISE . atom WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> RISE . atom [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RISE
@@ -52,7 +52,7 @@ main: PREV WITHIN
 ##
 ## Ends in an error in state: 8.
 ##
-## temporal -> PREV . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> PREV . atom WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## PREV
@@ -103,7 +103,7 @@ main: PAST WITHIN
 ##
 ## Ends in an error in state: 12.
 ##
-## temporal -> PAST . EVENTUALLY atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> PAST . EVENTUALLY formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## PAST
@@ -115,7 +115,7 @@ main: PAST EVENTUALLY WITHIN
 ##
 ## Ends in an error in state: 13.
 ##
-## temporal -> PAST EVENTUALLY . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> PAST EVENTUALLY . formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## PAST EVENTUALLY
@@ -125,14 +125,18 @@ Missing formula after eventually. Try "past eventually" <F> "within" <C>
 
 main: NUM WITHIN
 ##
-## Ends in an error in state: 14.
+## Ends in an error in state: 15.
 ##
 ## atom -> term . LESS term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ## atom -> term . GREATER term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ## atom -> term . LESSOREQUAL term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ## atom -> term . GREATEROREQUAL term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## term -> term . PLUS term [ TIMES PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
-## term -> term . TIMES term [ TIMES PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . PLUS LPAR term RPAR [ TIMES PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . PLUS NUM [ TIMES PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . PLUS TIME [ TIMES PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . TIMES LPAR term RPAR [ TIMES PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . TIMES NUM [ TIMES PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . TIMES TIME [ TIMES PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
 ##
 ## The known suffix of the stack is as follows:
 ## term
@@ -142,9 +146,11 @@ Missing operator after the number.
 
 main: NUM TIMES WITHIN
 ##
-## Ends in an error in state: 15.
+## Ends in an error in state: 16.
 ##
-## term -> term TIMES . term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term TIMES . LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term TIMES . NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term TIMES . TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## term TIMES
@@ -154,9 +160,9 @@ Missing term after the '*' operator. Try <T> "*" <T>
 
 main: NUM GREATER LPAR WITHIN
 ##
-## Ends in an error in state: 16.
+## Ends in an error in state: 20.
 ##
-## term -> LPAR . term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> LPAR . term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## LPAR
@@ -166,11 +172,15 @@ Ill-formed expression.
 
 main: NUM GREATER LPAR NUM WITHIN
 ##
-## Ends in an error in state: 17.
+## Ends in an error in state: 21.
 ##
-## term -> term . PLUS term [ TIMES RPAR PLUS ]
-## term -> term . TIMES term [ TIMES RPAR PLUS ]
-## term -> LPAR term . RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term . PLUS LPAR term RPAR [ TIMES RPAR PLUS ]
+## term -> term . PLUS NUM [ TIMES RPAR PLUS ]
+## term -> term . PLUS TIME [ TIMES RPAR PLUS ]
+## term -> term . TIMES LPAR term RPAR [ TIMES RPAR PLUS ]
+## term -> term . TIMES NUM [ TIMES RPAR PLUS ]
+## term -> term . TIMES TIME [ TIMES RPAR PLUS ]
+## term -> LPAR term . RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## LPAR term
@@ -180,9 +190,11 @@ Ill-formed expression.
 
 main: NUM PLUS WITHIN
 ##
-## Ends in an error in state: 19.
+## Ends in an error in state: 23.
 ##
-## term -> term PLUS . term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term PLUS . LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term PLUS . NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term PLUS . TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## term PLUS
@@ -190,23 +202,9 @@ main: NUM PLUS WITHIN
 
 Missing term after the '+' operator. Try <T> "+" <T>
 
-main: NUM PLUS NUM TWODOTS
-##
-## Ends in an error in state: 20.
-##
-## term -> term . PLUS term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
-## term -> term PLUS term . [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
-## term -> term . TIMES term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## term PLUS term
-##
-
-Ill-formed expression.
-
 main: NUM LESSOREQUAL WITHIN
 ##
-## Ends in an error in state: 22.
+## Ends in an error in state: 31.
 ##
 ## atom -> term LESSOREQUAL . term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
@@ -218,11 +216,15 @@ Missing term after the '<=' operator. Try <T> "<=" <T>
 
 main: NUM LESSOREQUAL NUM TWODOTS
 ##
-## Ends in an error in state: 23.
+## Ends in an error in state: 32.
 ##
 ## atom -> term LESSOREQUAL term . [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## term -> term . PLUS term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
-## term -> term . TIMES term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## term LESSOREQUAL term
@@ -232,7 +234,7 @@ The addition of ':' doesn't make sense.
 
 main: NUM LESS WITHIN
 ##
-## Ends in an error in state: 24.
+## Ends in an error in state: 33.
 ##
 ## atom -> term LESS . term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
@@ -244,11 +246,15 @@ Missing term after the '<' operator. Try <T> "<" <T>
 
 main: NUM LESS NUM TWODOTS
 ##
-## Ends in an error in state: 25.
+## Ends in an error in state: 34.
 ##
 ## atom -> term LESS term . [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## term -> term . PLUS term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
-## term -> term . TIMES term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## term LESS term
@@ -258,7 +264,7 @@ The addition of ':' doesn't make sense.
 
 main: NUM GREATEROREQUAL WITHIN
 ##
-## Ends in an error in state: 26.
+## Ends in an error in state: 35.
 ##
 ## atom -> term GREATEROREQUAL . term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
@@ -270,11 +276,15 @@ Missing term after the '>=' operator. Try <T> ">=" <T>
 
 main: NUM GREATEROREQUAL NUM TWODOTS
 ##
-## Ends in an error in state: 27.
+## Ends in an error in state: 36.
 ##
 ## atom -> term GREATEROREQUAL term . [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## term -> term . PLUS term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
-## term -> term . TIMES term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## term GREATEROREQUAL term
@@ -284,7 +294,7 @@ The addition of ':' doesn't make sense.
 
 main: NUM GREATER WITHIN
 ##
-## Ends in an error in state: 28.
+## Ends in an error in state: 37.
 ##
 ## atom -> term GREATER . term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
@@ -296,11 +306,15 @@ Missing term after the '>' operator. Try <T> ">" <T>
 
 main: NUM GREATER NUM TWODOTS
 ##
-## Ends in an error in state: 29.
+## Ends in an error in state: 38.
 ##
 ## atom -> term GREATER term . [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## term -> term . PLUS term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
-## term -> term . TIMES term [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## term GREATER term
@@ -308,35 +322,24 @@ main: NUM GREATER NUM TWODOTS
 
 The addition of ':' doesn't make sense.
 
-main: PAST EVENTUALLY FALSE UNTIL
-##
-## Ends in an error in state: 30.
-##
-## temporal -> PAST EVENTUALLY atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## PAST EVENTUALLY atom
-##
-
-Missing the rest of the exp. Try "past eventually" <F> "within" <C>
 
 main: PAST EVENTUALLY FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 31.
+## Ends in an error in state: 98.
 ##
-## temporal -> PAST EVENTUALLY atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> PAST EVENTUALLY formula WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
-## PAST EVENTUALLY atom WITHIN
+## PAST EVENTUALLY formula WITHIN
 ##
 
-Missing the rest of the exp. Try "past eventually" <F> "within" <C>
+Missing a constraint. Try "past eventually" <F> "within" <C>
 
 main: ALWAYS FALSE WITHIN LESSOREQUAL WITHIN
 ##
-## Ends in an error in state: 43.
+## Ends in an error in state: 52.
 ##
-## time -> LESSOREQUAL . TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> LESSOREQUAL . TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## LESSOREQUAL
@@ -346,9 +349,9 @@ The expression is incomplete. Try "always" <F> "within" "<=" <integer> <U>
 
 main: ALWAYS FALSE WITHIN LESS WITHIN
 ##
-## Ends in an error in state: 45.
+## Ends in an error in state: 54.
 ##
-## time -> LESS . TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> LESS . TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## LESS
@@ -358,9 +361,9 @@ The expression is incomplete. Try "always" <F> "within" "<" <integer> <U>
 
 main: ALWAYS FALSE WITHIN EQUAL WITHIN
 ##
-## Ends in an error in state: 47.
+## Ends in an error in state: 56.
 ##
-## time -> EQUAL . TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> EQUAL . TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## EQUAL
@@ -370,9 +373,9 @@ The expression is incomplete. Try "always" <F> "within" "=" <integer> <U>
 
 main: NEXT WITHIN
 ##
-## Ends in an error in state: 51.
+## Ends in an error in state: 14.
 ##
-## temporal -> NEXT . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> NEXT . atom WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## NEXT
@@ -382,9 +385,9 @@ Ill-formed expression. Try "next" <F> "within" <C>
 
 main: NEXT FALSE UNTIL
 ##
-## Ends in an error in state: 52.
+## Ends in an error in state: 39.
 ##
-## temporal -> NEXT atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> NEXT atom . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## NEXT atom
@@ -394,9 +397,9 @@ Ill-formed expression. Try "next" <F> "within" <C>
 
 main: NEXT FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 53.
+## Ends in an error in state: 40.
 ##
-## temporal -> NEXT atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> NEXT atom WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## NEXT atom WITHIN
@@ -406,9 +409,9 @@ Ill-formed expression. Try "next" <F> "within" <C>
 
 main: LPAR HISTORICALLY WITHIN
 ##
-## Ends in an error in state: 55.
+## Ends in an error in state: 60.
 ##
-## temporal -> HISTORICALLY . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> HISTORICALLY . formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## HISTORICALLY
@@ -416,36 +419,25 @@ main: LPAR HISTORICALLY WITHIN
 
 Ill-formed expression. Try ( "historically" <F> "within" <C> )
 
-main: HISTORICALLY FALSE UNTIL
-##
-## Ends in an error in state: 56.
-##
-## temporal -> HISTORICALLY atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## HISTORICALLY atom
-##
-
-The exp. is badly written. Try "historically" <F> "within" <C>
 
 main: HISTORICALLY FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 57.
+## Ends in an error in state: 95.
 ##
-## temporal -> HISTORICALLY atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> HISTORICALLY formula WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
-## HISTORICALLY atom WITHIN
+## HISTORICALLY formula WITHIN
 ##
 
 Ill-formed expression. Try "historically" <F> "within" <C>
 
 main: FALL WITHIN
 ##
-## Ends in an error in state: 59.
+## Ends in an error in state: 61.
 ##
-## temporal -> FALL . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## temporal -> FALL . atom [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> FALL . atom WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> FALL . atom [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## FALL
@@ -455,22 +447,22 @@ Ill-formed expression. Try "fall" <F> "within" <C>
 
 main: FALL FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 61.
+## Ends in an error in state: 63.
 ##
-## temporal -> FALL atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> FALL atom WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## FALL atom WITHIN
 ##
 
-Ill-formed expression. Try "fall" <F> "within" <C>
+Missing a constraint. Try "fall" <F> "within" <C>
 
 main: FALL FALSE TWODOTS
 ##
-## Ends in an error in state: 60.
+## Ends in an error in state: 62.
 ##
-## temporal -> FALL atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## temporal -> FALL atom . [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> FALL atom . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> FALL atom . [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## FALL atom
@@ -480,9 +472,9 @@ Ill-formed expression.
 
 main: EVENTUALLY WITHIN
 ##
-## Ends in an error in state: 63.
+## Ends in an error in state: 65.
 ##
-## temporal -> EVENTUALLY . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> EVENTUALLY . formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## EVENTUALLY
@@ -490,35 +482,24 @@ main: EVENTUALLY WITHIN
 
 Ill-formed expression. Try "eventually" <F> "within" <C>
 
-main: EVENTUALLY FALSE UNTIL
-##
-## Ends in an error in state: 64.
-##
-## temporal -> EVENTUALLY atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## EVENTUALLY atom
-##
-
-Ill-formed expression. Try "eventually" <F> "within" <C>
 
 main: EVENTUALLY FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 65.
+## Ends in an error in state: 92.
 ##
-## temporal -> EVENTUALLY atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> EVENTUALLY formula WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
-## EVENTUALLY atom WITHIN
+## EVENTUALLY formula WITHIN
 ##
 
 Ill-formed expression. Try "eventually" <F> "within" <C>
 
 main: LPAR ALWAYS WITHIN
 ##
-## Ends in an error in state: 67.
+## Ends in an error in state: 66.
 ##
-## temporal -> ALWAYS . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> ALWAYS . formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## ALWAYS
@@ -526,50 +507,39 @@ main: LPAR ALWAYS WITHIN
 
 The exp. is incomplete. Try "(" "always" <F> "within" <C> ")"
 
-main: ALWAYS FALSE UNTIL
-##
-## Ends in an error in state: 68.
-##
-## temporal -> ALWAYS atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## ALWAYS atom
-##
-
-Ill-formed expression. Try "always" <F> "within" <C>
 
 main: ALWAYS FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 69.
+## Ends in an error in state: 89.
 ##
-## temporal -> ALWAYS atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> ALWAYS formula WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
-## ALWAYS atom WITHIN
+## ALWAYS formula WITHIN
 ##
 
 Ill-formed expression. Try "always" <F> "within" <C>
 
 main: FALSE TWODOTS
 ##
-## Ends in an error in state: 71.
+## Ends in an error in state: 67.
 ##
-## conjunction -> temporal . [ RPAR OR IN IMPLIES EOF AND ]
-## temporal -> temporal . UNTIL atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## temporal -> temporal . SINCE atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## temporal -> temporal . ON TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## conjunction -> temporal . [ WITHIN RPAR OR IN IMPLIES EOF AND ]
+## temporal -> temporal . UNTIL formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal . SINCE formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal . ON TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## temporal
 ##
 
-The operator or brackets are missing.
+Ill-formed expression.
 
 main: FALSE UNTIL WITHIN
 ##
-## Ends in an error in state: 72.
+## Ends in an error in state: 68.
 ##
-## temporal -> temporal UNTIL . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal UNTIL . formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## temporal UNTIL
@@ -577,35 +547,24 @@ main: FALSE UNTIL WITHIN
 
 Ill-formed expression. Try <F> "until" <F> "within" <C>
 
-main: FALSE UNTIL FALSE UNTIL
-##
-## Ends in an error in state: 73.
-##
-## temporal -> temporal UNTIL atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## temporal UNTIL atom
-##
-
-Ill-formed expression. Try <F> "until" <F> "within" <C>
 
 main: FALSE UNTIL FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 74.
+## Ends in an error in state: 71.
 ##
-## temporal -> temporal UNTIL atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal UNTIL formula WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
-## temporal UNTIL atom WITHIN
+## temporal UNTIL formula WITHIN
 ##
 
 Ill-formed expression. Try <F> "until" <F> "within" <C>
 
 main: FALSE SINCE WITHIN
 ##
-## Ends in an error in state: 76.
+## Ends in an error in state: 78.
 ##
-## temporal -> temporal SINCE . atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal SINCE . formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## temporal SINCE
@@ -613,35 +572,24 @@ main: FALSE SINCE WITHIN
 
 Ill-formed expression. Try <F> "since" <F> "within" <C>
 
-main: FALSE SINCE FALSE UNTIL
-##
-## Ends in an error in state: 77.
-##
-## temporal -> temporal SINCE atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-##
-## The known suffix of the stack is as follows:
-## temporal SINCE atom
-##
-
-Ill-formed expression. Try <F> "since" <F> "within" <C>
 
 main: FALSE SINCE FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 78.
+## Ends in an error in state: 80.
 ##
-## temporal -> temporal SINCE atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal SINCE formula WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
-## temporal SINCE atom WITHIN
+## temporal SINCE formula WITHIN
 ##
 
 Ill-formed expression. Try <F> "since" <F> "within" <C>
 
 main: FALSE IMPLIES WITHIN
 ##
-## Ends in an error in state: 112.
+## Ends in an error in state: 86.
 ##
-## implies -> disjunction IMPLIES . implies [ RPAR IN EOF ]
+## implies -> disjunction IMPLIES . implies [ WITHIN RPAR IN EOF ]
 ##
 ## The known suffix of the stack is as follows:
 ## disjunction IMPLIES
@@ -651,9 +599,9 @@ The operand is missing after the -> operator. Try <F> "->" <F>
 
 main: FALSE ON WITHIN
 ##
-## Ends in an error in state: 80.
+## Ends in an error in state: 84.
 ##
-## temporal -> temporal ON . TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal ON . TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## temporal ON
@@ -663,9 +611,9 @@ Ill-formed expression.
 
 main: FALSE OR WITHIN
 ##
-## Ends in an error in state: 107.
+## Ends in an error in state: 74.
 ##
-## disjunction -> disjunction OR . conjunction [ RPAR OR IN IMPLIES EOF ]
+## disjunction -> disjunction OR . conjunction [ WITHIN RPAR OR IN IMPLIES EOF ]
 ##
 ## The known suffix of the stack is as follows:
 ## disjunction OR
@@ -675,9 +623,9 @@ The operand is missing after the || operator. Try <F> "||" <F>
 
 main: FALSE AND WITHIN
 ##
-## Ends in an error in state: 109.
+## Ends in an error in state: 76.
 ##
-## conjunction -> conjunction AND . temporal [ RPAR OR IN IMPLIES EOF AND ]
+## conjunction -> conjunction AND . temporal [ WITHIN RPAR OR IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## conjunction AND
@@ -687,12 +635,12 @@ The operand is missing after the && operator. Try <F> "&&" <F>
 
 main: FALSE AND FALSE TWODOTS
 ##
-## Ends in an error in state: 110.
+## Ends in an error in state: 77.
 ##
-## conjunction -> conjunction AND temporal . [ RPAR OR IN IMPLIES EOF AND ]
-## temporal -> temporal . UNTIL atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## temporal -> temporal . SINCE atom WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## temporal -> temporal . ON TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## conjunction -> conjunction AND temporal . [ WITHIN RPAR OR IN IMPLIES EOF AND ]
+## temporal -> temporal . UNTIL formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal . SINCE formula WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> temporal . ON TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## conjunction AND temporal
@@ -702,7 +650,7 @@ Try removing ':'
 
 main: DURATION OF FALSE RPAR
 ##
-## Ends in an error in state: 83.
+## Ends in an error in state: 100.
 ##
 ## term -> DURATION OF formula . IN LSQPAR NUM COMMA NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula . IN LSQPAR NUM COMMA TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -720,17 +668,17 @@ main: DURATION OF FALSE RPAR
 ## This implies that, although the LR(1) items shown above provide an
 ## accurate view of the past (what has been recognized so far), they
 ## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 71, spurious reduction of production conjunction -> temporal
-## In state 114, spurious reduction of production disjunction -> conjunction
-## In state 106, spurious reduction of production implies -> disjunction
-## In state 82, spurious reduction of production formula -> implies
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
 ##
 
 Ill-formed expression. Try "duration of" <F> "in" <I>
 
 main: DURATION OF FALSE IN WITHIN
 ##
-## Ends in an error in state: 84.
+## Ends in an error in state: 101.
 ##
 ## term -> DURATION OF formula IN . LSQPAR NUM COMMA NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN . LSQPAR NUM COMMA TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -749,7 +697,7 @@ Ill-formed expression. Try "duration of" <F> "in" <I>
 
 main: DURATION OF FALSE IN LSQPAR WITHIN
 ##
-## Ends in an error in state: 93.
+## Ends in an error in state: 110.
 ##
 ## term -> DURATION OF formula IN LSQPAR . NUM COMMA NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN LSQPAR . NUM COMMA TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -764,7 +712,7 @@ Ill-formed expression. Try "duration of" <F> "in" "[" <I> "," <I> "]"
 
 main: DURATION OF FALSE IN LSQPAR NUM WITHIN
 ##
-## Ends in an error in state: 100.
+## Ends in an error in state: 117.
 ##
 ## term -> DURATION OF formula IN LSQPAR NUM . COMMA NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN LSQPAR NUM . COMMA TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -777,7 +725,7 @@ Ill-formed expression. Try "duration of" <F> "in" "[" <I> "," <I> "]"
 
 main: DURATION OF FALSE IN TIME WITHIN
 ##
-## Ends in an error in state: 85.
+## Ends in an error in state: 102.
 ##
 ## term -> DURATION OF formula IN TIME . DOTS NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN TIME . DOTS TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -790,7 +738,7 @@ Ill-formed expression.
 
 main: DURATION OF FALSE IN TIME DOTS WITHIN
 ##
-## Ends in an error in state: 86.
+## Ends in an error in state: 103.
 ##
 ## term -> DURATION OF formula IN TIME DOTS . NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN TIME DOTS . TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -803,7 +751,7 @@ Ill-formed expression.
 
 main: DURATION OF FALSE IN LSQPAR NUM COMMA WITHIN
 ##
-## Ends in an error in state: 101.
+## Ends in an error in state: 118.
 ##
 ## term -> DURATION OF formula IN LSQPAR NUM COMMA . NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN LSQPAR NUM COMMA . TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -816,7 +764,7 @@ Ill-formed expression. Try "duration of" <F> "in" "[" <I> "," <I> "]"
 
 main: DURATION OF FALSE IN LSQPAR NUM COMMA NUM WITHIN
 ##
-## Ends in an error in state: 104.
+## Ends in an error in state: 121.
 ##
 ## term -> DURATION OF formula IN LSQPAR NUM COMMA NUM . RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ##
@@ -828,7 +776,7 @@ Ill-formed expression. Try "duration of" <F> "in" "[" <I> "," <I> "]"
 
 main: DURATION OF FALSE IN NUM WITHIN
 ##
-## Ends in an error in state: 89.
+## Ends in an error in state: 106.
 ##
 ## term -> DURATION OF formula IN NUM . DOTS NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN NUM . DOTS TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -841,7 +789,7 @@ Ill-formed expression. Try "duration of" <F> "in" <I>
 
 main: DURATION OF FALSE IN NUM DOTS WITHIN
 ##
-## Ends in an error in state: 90.
+## Ends in an error in state: 107.
 ##
 ## term -> DURATION OF formula IN NUM DOTS . NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN NUM DOTS . TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -854,7 +802,7 @@ Ill-formed expression. Try "duration of" <F> "in" <I> ".." <I>
 
 main: DURATION OF FALSE IN LSQPAR TIME WITHIN
 ##
-## Ends in an error in state: 94.
+## Ends in an error in state: 111.
 ##
 ## term -> DURATION OF formula IN LSQPAR TIME . COMMA NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN LSQPAR TIME . COMMA TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -867,7 +815,7 @@ Ill-formed expression.
 
 main: DURATION OF FALSE IN LSQPAR TIME COMMA WITHIN
 ##
-## Ends in an error in state: 95.
+## Ends in an error in state: 112.
 ##
 ## term -> DURATION OF formula IN LSQPAR TIME COMMA . NUM RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ## term -> DURATION OF formula IN LSQPAR TIME COMMA . TIME RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
@@ -880,7 +828,7 @@ Ill-formed expression.
 
 main: DURATION OF FALSE IN LSQPAR TIME COMMA TIME WITHIN
 ##
-## Ends in an error in state: 96.
+## Ends in an error in state: 113.
 ##
 ## term -> DURATION OF formula IN LSQPAR TIME COMMA TIME . RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ##
@@ -892,7 +840,7 @@ Ill-formed expression.
 
 main: DURATION OF FALSE IN LSQPAR TIME COMMA NUM WITHIN
 ##
-## Ends in an error in state: 98.
+## Ends in an error in state: 115.
 ##
 ## term -> DURATION OF formula IN LSQPAR TIME COMMA NUM . RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ##
@@ -904,9 +852,9 @@ Ill-formed expression.
 
 main: PREV FALSE UNTIL
 ##
-## Ends in an error in state: 115.
+## Ends in an error in state: 123.
 ##
-## temporal -> PREV atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> PREV atom . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## PREV atom
@@ -916,9 +864,9 @@ Ill-formed expression. Try "previous" <F> "within" <C>
 
 main: PREV FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 116.
+## Ends in an error in state: 124.
 ##
-## temporal -> PREV atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> PREV atom WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## PREV atom WITHIN
@@ -928,7 +876,7 @@ Ill-formed expression. Try "previous" <F> "within" <C>
 
 main: DURATION OF FALSE IN LSQPAR NUM COMMA TIME WITHIN
 ##
-## Ends in an error in state: 102.
+## Ends in an error in state: 119.
 ##
 ## term -> DURATION OF formula IN LSQPAR NUM COMMA TIME . RSQPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
 ##
@@ -940,14 +888,18 @@ Ill-formed expression.
 
 main: LPAR NUM WITHIN
 ##
-## Ends in an error in state: 118.
+## Ends in an error in state: 126.
 ##
 ## atom -> term . LESS term [ UNTIL SINCE RPAR OR ON IMPLIES AND ]
 ## atom -> term . GREATER term [ UNTIL SINCE RPAR OR ON IMPLIES AND ]
 ## atom -> term . LESSOREQUAL term [ UNTIL SINCE RPAR OR ON IMPLIES AND ]
 ## atom -> term . GREATEROREQUAL term [ UNTIL SINCE RPAR OR ON IMPLIES AND ]
-## term -> term . PLUS term [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
-## term -> term . TIMES term [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . PLUS LPAR term RPAR [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . PLUS NUM [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . PLUS TIME [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . TIMES LPAR term RPAR [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . TIMES NUM [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
+## term -> term . TIMES TIME [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
 ## term -> LPAR term . RPAR [ TIMES RPAR PLUS LESSOREQUAL LESS GREATEROREQUAL GREATER ]
 ##
 ## The known suffix of the stack is as follows:
@@ -958,7 +910,7 @@ Ill-formed expression.
 
 main: LPAR FALSE IN
 ##
-## Ends in an error in state: 119.
+## Ends in an error in state: 127.
 ##
 ## atom -> LPAR formula . RPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
@@ -969,20 +921,20 @@ main: LPAR FALSE IN
 ## This implies that, although the LR(1) items shown above provide an
 ## accurate view of the past (what has been recognized so far), they
 ## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 71, spurious reduction of production conjunction -> temporal
-## In state 114, spurious reduction of production disjunction -> conjunction
-## In state 106, spurious reduction of production implies -> disjunction
-## In state 82, spurious reduction of production formula -> implies
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
 ##
 
-Missing the right parenthesis.
+Ill-formed expression. Missing the right bracket?
 
 main: HISTORICALLY WITHIN
 ##
-## Ends in an error in state: 125.
+## Ends in an error in state: 133.
 ##
 ## scope -> HISTORICALLY . TWODOTS formula [ EOF ]
-## temporal -> HISTORICALLY . atom WITHIN time [ UNTIL SINCE OR ON IMPLIES EOF AND ]
+## temporal -> HISTORICALLY . formula WITHIN time [ UNTIL SINCE OR ON IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## HISTORICALLY
@@ -992,7 +944,7 @@ Ill-formed expression. Try "historically" <F> "within" <C>
 
 main: HISTORICALLY TWODOTS WITHIN
 ##
-## Ends in an error in state: 126.
+## Ends in an error in state: 134.
 ##
 ## scope -> HISTORICALLY TWODOTS . formula [ EOF ]
 ##
@@ -1004,23 +956,23 @@ Try removing ':'
 
 main: ALWAYS WITHIN
 ##
-## Ends in an error in state: 128.
+## Ends in an error in state: 136.
 ##
 ## scope -> ALWAYS . TWODOTS formula [ EOF ]
-## temporal -> ALWAYS . atom WITHIN time [ UNTIL SINCE OR ON IMPLIES EOF AND ]
+## temporal -> ALWAYS . formula WITHIN time [ UNTIL SINCE OR ON IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## ALWAYS
 ##
 
-Wrong expression after "always". Missing brackets?
+Ill-formed sub-expression after the 'always' operator.
 
 main: RISE FALSE TWODOTS
 ##
-## Ends in an error in state: 122.
+## Ends in an error in state: 130.
 ##
-## temporal -> RISE atom . WITHIN time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## temporal -> RISE atom . [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> RISE atom . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> RISE atom . [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RISE atom
@@ -1030,9 +982,9 @@ Ill-formed expression.
 
 main: RISE FALSE WITHIN WITHIN
 ##
-## Ends in an error in state: 123.
+## Ends in an error in state: 131.
 ##
-## temporal -> RISE atom WITHIN . time [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## temporal -> RISE atom WITHIN . time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RISE atom WITHIN
@@ -1042,7 +994,7 @@ Ill-formed expression. Try "rise" <F> or "rise" <F> "within" <C>
 
 main: ALWAYS TWODOTS WITHIN
 ##
-## Ends in an error in state: 129.
+## Ends in an error in state: 137.
 ##
 ## scope -> ALWAYS TWODOTS . formula [ EOF ]
 ##
@@ -1054,7 +1006,7 @@ Try removing ':'
 
 main: FALSE RPAR
 ##
-## Ends in an error in state: 131.
+## Ends in an error in state: 139.
 ##
 ## main -> scope . EOF [ # ]
 ##
@@ -1065,101 +1017,287 @@ main: FALSE RPAR
 ## This implies that, although the LR(1) items shown above provide an
 ## accurate view of the past (what has been recognized so far), they
 ## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 71, spurious reduction of production conjunction -> temporal
-## In state 114, spurious reduction of production disjunction -> conjunction
-## In state 106, spurious reduction of production implies -> disjunction
-## In state 82, spurious reduction of production formula -> implies
-## In state 134, spurious reduction of production scope -> formula
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
+## In state 142, spurious reduction of production scope -> formula
 ##
 
-Missing the right parenthesis before the formula.
+Ill-formed expression. Missing left bracket?
+
+main: NUM TIMES LPAR WITHIN
+##
+## Ends in an error in state: 19.
+##
+## term -> term TIMES LPAR . term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term TIMES LPAR
+##
+
+Ill-formed expression. Missing term or right bracket?
+
+main: NUM PLUS LPAR WITHIN
+##
+## Ends in an error in state: 26.
+##
+## term -> term PLUS LPAR . term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term PLUS LPAR
+##
+
+Ill-formed expression. Missing term or right bracket?
+
+main: NUM PLUS LPAR NUM WITHIN
+##
+## Ends in an error in state: 27.
+##
+## term -> term . PLUS LPAR term RPAR [ TIMES RPAR PLUS ]
+## term -> term PLUS LPAR term . RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term . PLUS NUM [ TIMES RPAR PLUS ]
+## term -> term . PLUS TIME [ TIMES RPAR PLUS ]
+## term -> term . TIMES LPAR term RPAR [ TIMES RPAR PLUS ]
+## term -> term . TIMES NUM [ TIMES RPAR PLUS ]
+## term -> term . TIMES TIME [ TIMES RPAR PLUS ]
+##
+## The known suffix of the stack is as follows:
+## term PLUS LPAR term
+##
+
+Ill-formed expression.
+
+main: NUM TIMES LPAR NUM WITHIN
+##
+## Ends in an error in state: 29.
+##
+## term -> term . PLUS LPAR term RPAR [ TIMES RPAR PLUS ]
+## term -> term . PLUS NUM [ TIMES RPAR PLUS ]
+## term -> term . PLUS TIME [ TIMES RPAR PLUS ]
+## term -> term . TIMES LPAR term RPAR [ TIMES RPAR PLUS ]
+## term -> term TIMES LPAR term . RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON LESSOREQUAL LESS IN IMPLIES GREATEROREQUAL GREATER EOF AND ]
+## term -> term . TIMES NUM [ TIMES RPAR PLUS ]
+## term -> term . TIMES TIME [ TIMES RPAR PLUS ]
+##
+## The known suffix of the stack is as follows:
+## term TIMES LPAR term
+##
+
+Ill-formed expression.
 
 main: ALWAYS FALSE WITHIN RANGE WITHIN
 ##
-## Ends in an error in state: 33.
+## Ends in an error in state: 42.
 ##
-## time -> RANGE . LSQPAR TIME COMMA TIME RSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## time -> RANGE . LSQPAR TIME COMMA TIME LSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## time -> RANGE . TIME DOTS TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE . LSQPAR TIME COMMA TIME RSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE . LSQPAR TIME COMMA TIME LSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE . TIME DOTS TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RANGE
 ##
 
-<YOUR SYNTAX ERROR MESSAGE HERE>
+Ill-formed expression. Missing range interval ?
 
 main: ALWAYS FALSE WITHIN RANGE TIME WITHIN
 ##
-## Ends in an error in state: 34.
+## Ends in an error in state: 43.
 ##
-## time -> RANGE TIME . DOTS TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE TIME . DOTS TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RANGE TIME
 ##
 
-<YOUR SYNTAX ERROR MESSAGE HERE>
+Ill-formed expression. Missing dots ?
 
 main: ALWAYS FALSE WITHIN RANGE TIME DOTS WITHIN
 ##
-## Ends in an error in state: 35.
+## Ends in an error in state: 44.
 ##
-## time -> RANGE TIME DOTS . TIME [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE TIME DOTS . TIME [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RANGE TIME DOTS
 ##
 
-<YOUR SYNTAX ERROR MESSAGE HERE>
+Ill-formed expression. Missing time ?
 
 main: ALWAYS FALSE WITHIN RANGE LSQPAR WITHIN
 ##
-## Ends in an error in state: 37.
+## Ends in an error in state: 46.
 ##
-## time -> RANGE LSQPAR . TIME COMMA TIME RSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## time -> RANGE LSQPAR . TIME COMMA TIME LSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE LSQPAR . TIME COMMA TIME RSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE LSQPAR . TIME COMMA TIME LSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RANGE LSQPAR
 ##
 
-<YOUR SYNTAX ERROR MESSAGE HERE>
+Ill-formed expression. Missing time ?
 
 main: ALWAYS FALSE WITHIN RANGE LSQPAR TIME WITHIN
 ##
-## Ends in an error in state: 38.
+## Ends in an error in state: 47.
 ##
-## time -> RANGE LSQPAR TIME . COMMA TIME RSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## time -> RANGE LSQPAR TIME . COMMA TIME LSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE LSQPAR TIME . COMMA TIME RSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE LSQPAR TIME . COMMA TIME LSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RANGE LSQPAR TIME
 ##
 
-<YOUR SYNTAX ERROR MESSAGE HERE>
+Ill-formed expression. Missing comma ?
 
 main: ALWAYS FALSE WITHIN RANGE LSQPAR TIME COMMA WITHIN
 ##
-## Ends in an error in state: 39.
+## Ends in an error in state: 48.
 ##
-## time -> RANGE LSQPAR TIME COMMA . TIME RSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## time -> RANGE LSQPAR TIME COMMA . TIME LSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE LSQPAR TIME COMMA . TIME RSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE LSQPAR TIME COMMA . TIME LSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RANGE LSQPAR TIME COMMA
 ##
 
-<YOUR SYNTAX ERROR MESSAGE HERE>
+Ill-formed expression. Missing time ?
 
 main: ALWAYS FALSE WITHIN RANGE LSQPAR TIME COMMA TIME WITHIN
 ##
-## Ends in an error in state: 40.
+## Ends in an error in state: 49.
 ##
-## time -> RANGE LSQPAR TIME COMMA TIME . RSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
-## time -> RANGE LSQPAR TIME COMMA TIME . LSQPAR [ UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE LSQPAR TIME COMMA TIME . RSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## time -> RANGE LSQPAR TIME COMMA TIME . LSQPAR [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
 ##
 ## The known suffix of the stack is as follows:
 ## RANGE LSQPAR TIME COMMA TIME
 ##
 
-<YOUR SYNTAX ERROR MESSAGE HERE>
+Ill-formed expression. Missing bracket ?
+
+main: FALSE UNTIL FALSE RPAR
+##
+## Ends in an error in state: 70.
+##
+## temporal -> temporal UNTIL formula . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal UNTIL formula
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
+##
+
+Ill-formed expression. Try <F> "until" <F> "within" <C>
+
+main: FALSE SINCE FALSE RPAR
+##
+## Ends in an error in state: 79.
+##
+## temporal -> temporal SINCE formula . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## temporal SINCE formula
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
+##
+
+Ill-formed expression. Try <F> "since" <F> "within" <C>
+
+main: ALWAYS FALSE RPAR
+##
+## Ends in an error in state: 88.
+##
+## temporal -> ALWAYS formula . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## ALWAYS formula
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
+##
+
+Ill-formed expression. Try "always" <F> "within" <C>
+
+main: EVENTUALLY FALSE RPAR
+##
+## Ends in an error in state: 91.
+##
+## temporal -> EVENTUALLY formula . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## EVENTUALLY formula
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
+##
+
+Ill-formed expression. Try "eventually" <F> "within" <C>
+
+main: HISTORICALLY FALSE RPAR
+##
+## Ends in an error in state: 94.
+##
+## temporal -> HISTORICALLY formula . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## HISTORICALLY formula
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
+##
+
+Ill-formed expression.
+
+main: PAST EVENTUALLY FALSE RPAR
+##
+## Ends in an error in state: 97.
+##
+## temporal -> PAST EVENTUALLY formula . WITHIN time [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## PAST EVENTUALLY formula
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 67, spurious reduction of production conjunction -> temporal
+## In state 82, spurious reduction of production disjunction -> conjunction
+## In state 73, spurious reduction of production implies -> disjunction
+## In state 69, spurious reduction of production formula -> implies
+##
+
+Ill-formed expression. Try "past eventually" <F> "within" <C>
