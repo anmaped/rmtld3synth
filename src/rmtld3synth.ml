@@ -56,14 +56,19 @@ let set_trace_style f = trace_style := f
 
 let set_gen_rmtld_formula f = gen_rmtld_formula := true
 
-let set_eval f = failwith "!"
+let set_eval _ = set_setting "evaluate" (Sel true) helper
 
 let set_env v =
   let json =
     (* check whether this is a filename or a json string *)
-    Yojson.Safe.from_string v
+    let re = Str.regexp "^\\([.]?/[^/ ]*\\)+/?$" in
+    if Str.string_match re v 0 then
+      Yojson.Safe.from_file v
+    else
+      Yojson.Safe.from_string v
   in
-  failwith "!"
+  let x = (json |> Yojson.Safe.to_string) in
+  set_setting "environment" (Txt x) helper
 
 (* output settings *)
 let set_out_file v =
@@ -495,4 +500,15 @@ let _ =
   else if !gen_rmtld_formula then
     let fm = gen_formula_default () in
     slatex_of_rmtld_fm fm |> print_endline
+  else if get_setting_bool "evaluate" helper then
+    (* get trc *)
+    let json = get_setting_string "environment" helper |> Yojson.Safe.from_string in
+    let json_trc = json |> Yojson.Safe.Util.member "trc" in
+    let json_t = json |> Yojson.Safe.Util.member "t" in
+    let trc = if json_trc <> `Null then trace_of_yojson json_trc else failwith "No 'trc' available!" in
+    let env = Rmtld3.environment trc in
+    let lg_env = Rmtld3.lenv in
+    let t = if json_t <> `Null then Rmtld3.time_of_yojson json_t else 0. in
+    let res = Rmtld3.eval (env, lg_env, t) input_fm in
+    res |> b3_to_string |> print_endline
   else print_endline "Nothing to do. Type --help"

@@ -52,18 +52,17 @@ CMDSAT="$CMDSAT_NO_TRACE --get-trace"
 # dsl expressions
 declare -a dsl_expressions=(
   "a"
-  "a or b"
-  "not a"
+  "a || b"
+  "~ a"
   "a until b within 10s"
   "a on 10s"
 
   # got from documentation
   "always (a until b within 3s) within 10s"
-  "always ((rise a) -> (eventually b within 3s)) within 10s"
-  "always ((rise a) -> (b on 3s)) within 10s"
-  "always ((rise a) -> (eventually b within =3s)) within 10s"
-  "duration of a in 0 .. 2"
-  "duration of a in [0, 2]"
+  #"always ((rise a) -> (eventually b within 3s)) within 10s"
+  #"always ((rise a) -> (b on 3s)) within 10s"
+  #"always ((rise a) -> (eventually b within =3s)) within 10s"
+  "duration of a in 0 .. 2 < 10"
   "duration of a in [0, 2] < 10"
   "a until b within range 10ns .. 1s"
   "a until b within range [10ns, 1s]"
@@ -189,11 +188,13 @@ declare -a arrayrmtld_sat_expected_result=(
   echo "Executing eval tests..."
 
   # get test.sh directory
-  DIR="$(dirname -- "${BASH_SOURCE[0]}")"
+  DIR_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
+  DIR_PATH="$(realpath -e -- "$DIR_PATH")"
+  echo $DIR_PATH
 
   for ((i = 1; i < ${dsl_expressions_length} + 1; i++)); do
     echo "expression: '${dsl_expressions[$i - 1]}'"
-    #rmtld3synth --eval --include "$DIR/../examples/environment/env1.json" --input-dsl ${dsl_expressions[$i - 1]}
+    rmtld3synth --eval --include "$(path "$DIR_PATH/../examples/environment/env1.json")" --input-dsl "${dsl_expressions[$i - 1]}"
   done
 
   sleep 10

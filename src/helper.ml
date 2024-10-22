@@ -47,6 +47,13 @@ let set_setting name v tbl = Hashtbl.add tbl name v
 
 let set_setting_replace name v tbl = Hashtbl.replace tbl name v
 
+let get_setting_bool name tbl =
+  try
+  match Hashtbl.find tbl name with
+  | Sel a -> a
+  | _ -> false
+  with _ -> false
+
 let get_setting_int name tbl =
   match Hashtbl.find tbl name with
   | Num a -> a

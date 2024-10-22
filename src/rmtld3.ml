@@ -611,6 +611,16 @@ let of_rmtld3_eval_env ({trc= i; evaluate= operator} : Rmtld3_eval.env) : env
 let of_env ({trc= i; evaluate= operator} : env) : Rmtld3_eval.env =
   {trc= i; evaluate= of_trace operator}
 
+let of_rmtld3_eval_duration (a : Rmtld3_eval.duration) : duration =
+  match a with 
+  | Rmtld3_eval.Dnone ->  Dnone
+  | Rmtld3_eval.Dsome n -> Dsome n
+
+let of_duration (a: duration) : Rmtld3_eval.duration =
+  match a with 
+  | Dnone ->  Rmtld3_eval.Dnone
+  | Dsome n -> Rmtld3_eval.Dsome n
+
 (* 
  * Interpretation of RMTLD3 terms and formulas
  * 
@@ -627,7 +637,7 @@ let of_env ({trc= i; evaluate= operator} : env) : Rmtld3_eval.env =
 let rec eval_term m t term =
   match term with
   | Constant value -> Dsome value
-  | Duration (di, phi) -> eval_term_duration m (t, eval_term m t di) phi
+  | Duration (di, phi) -> eval_term_duration m t di phi
   | FPlus (tr1, tr2) -> (
     match (eval_term m t tr1, eval_term m t tr2) with
     | Dsome v1, Dsome v2 -> Dsome (v1 +. v2)
@@ -638,41 +648,12 @@ let rec eval_term m t term =
     | _ -> Dnone )
   | _ -> raise (Failure "eval_term: the term definition is missing")
 
-and eval_term_duration (k, u) dt formula =
-  let indicator_function (k, u) t phi =
-    if eval (k, u, t) phi = True then 1. else 0.
-  in
-  let riemann_sum m dt (i, i') phi =
-    (* dt=(t,t') and t in ]i,i'] or t' in ]i,i'] *)
-    count_duration := !count_duration + 1 ;
-    let t, t' = dt in
-    if i <= t && t < i' then
-      (* lower bound *)
-      (i' -. t) *. indicator_function m t phi
-    else if i <= t' && t' < i' then
-      (* upper bound *)
-      (t' -. i) *. indicator_function m t' phi
-    else (i' -. i) *. indicator_function m i phi
-  in
-  let eval_eta m dt phi x =
-    (* fold_left (fun s (_, (i, t')) -> riemann_sum m dt (i, t') phi +. s) 0.
-       x *)
-    let rec f lst acc =
-      if length lst <= 1 then acc
-      else
-        let _, i = hd lst in
-        if tl lst = [] then acc
-        else f (tl lst) (riemann_sum m dt (i, snd (hd (tl lst))) phi +. acc)
-    in
-    f x 0.
-  in
-  match dt with
-  | t, Dsome t'
-    when List.exists
-           (fun (_, a) -> a >= t +. t')
-           k.trc (*when k.duration_of_trace >= t +. t'*) ->
-      Dsome (eval_eta (k, u) (t, t') formula (sub_k (k, u, t) t'))
-  | _ -> Dnone
+and eval_term_duration (k, u) t tm fm =
+  of_rmtld3_eval_duration
+    (Rmtld3_eval.eval_tm_duration
+       (fun k u t -> of_duration (eval_term (of_rmtld3_eval_env k, u) t tm))
+       (fun k u t -> of_tree_valued (eval (of_rmtld3_eval_env k, u, t) fm))
+       (of_env k) u t )
 
 and eval (env, lg_env, t) formula =
   match formula with
