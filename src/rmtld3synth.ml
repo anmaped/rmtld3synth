@@ -61,8 +61,9 @@ let set_eval _ = set_setting "evaluate" (Sel true) helper
 let set_env v =
   let json =
     (* check whether this is a filename or a json string *)
-    let re = Str.regexp "^\\([.]?/[^/ ]*\\)+/?$" in
-    if Str.string_match re v 0 then
+    let re_path_unix = Str.regexp "^\\([.]?/[^/ ]*\\)+/?$" in
+    let re_path_windows = Str.regexp {|^[a-zA-Z]:\(\\[a-zA-Z0-9_\.-]+\)*\([\\]\|[\.][a-zA-Z]+\)?$|} in
+    if Str.string_match re_path_unix v 0 || Str.string_match re_path_windows v 0 then
       Yojson.Safe.from_file v
     else
       Yojson.Safe.from_string v
