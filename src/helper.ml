@@ -47,11 +47,14 @@ let set_setting name v tbl = Hashtbl.add tbl name v
 
 let set_setting_replace name v tbl = Hashtbl.replace tbl name v
 
-let get_setting_bool name tbl =
+let is_setting name tbl =
   try
-  match Hashtbl.find tbl name with
-  | Sel a -> a
-  | _ -> false
+    let _ = Hashtbl.find tbl name in
+    true
+  with Not_found -> false
+
+let get_setting_bool name tbl =
+  try match Hashtbl.find tbl name with Sel a -> a | _ -> false
   with _ -> false
 
 let get_setting_int name tbl =
@@ -339,19 +342,18 @@ and calculate_cycle_cost_term term l =
 let rec strategic_uniform_trace value samples factor trace =
   (*let timestamp = (Random.float factor) +. value in*)
   let timestamp = factor +. value in
-  if samples = 0 then ("B", (value(*, timestamp*))) :: trace
+  if samples = 0 then ("B", value (*, timestamp*)) :: trace
   else
     (*let trace_size = List.length trace in if samples <= trace_size then
       strategic_uniform_trace timestamp (samples-1) factor
       (("B",(value,timestamp))::trace) else*)
     strategic_uniform_trace timestamp (samples - 1) factor
-      (("A", (value(*, timestamp*))) :: trace)
+      (("A", value (*, timestamp*)) :: trace)
 
 let rec repeat_trace n pattern trace t tsize =
   if n <> 0 then
     repeat_trace (n - 1) pattern
-      (List.append trace
-         (List.map (fun (a, b) -> (a, (b +. t ))) pattern) )
+      (List.append trace (List.map (fun (a, b) -> (a, b +. t)) pattern))
       (t +. tsize) tsize
   else trace
 

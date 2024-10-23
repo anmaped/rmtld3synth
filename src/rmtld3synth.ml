@@ -10,13 +10,9 @@ open Dsl
 
 let helper = mk_helper
 
-let expression_rmdsl = ref ""
-
 let smtlibv2_lang = ref false
 
 let simplify_formula = ref false
-
-let out_file = ref ""
 
 let cpp11_lang = ref false
 
@@ -61,20 +57,22 @@ let set_eval _ = set_setting "evaluate" (Sel true) helper
 let set_env v =
   let json =
     (* check whether this is a filename or a json string *)
-    let re_path_unix = Str.regexp "^\\([.]?/[^/ ]*\\)+/?$" in
-    let re_path_windows = Str.regexp {|^[a-zA-Z]:\(\\[a-zA-Z0-9_\.-]+\)*\([\\]\|[\.][a-zA-Z]+\)?$|} in
-    if Str.string_match re_path_unix v 0 || Str.string_match re_path_windows v 0 then
-      Yojson.Safe.from_file v
-    else
-      Yojson.Safe.from_string v
+    let re_path_unix = Str.regexp {|^\([\.]?/[^/ ]*\)+/?$|} in
+    let re_path_windows =
+      Str.regexp
+        {|^[a-zA-Z]:\(\\[a-zA-Z0-9_\.-]+\)*\([\\]\|[\.][a-zA-Z]+\)?$|}
+    in
+    if
+      Str.string_match re_path_unix v 0
+      || Str.string_match re_path_windows v 0
+    then Yojson.Safe.from_file v
+    else Yojson.Safe.from_string v
   in
-  let x = (json |> Yojson.Safe.to_string) in
+  let x = json |> Yojson.Safe.to_string in
   set_setting "environment" (Txt x) helper
 
 (* output settings *)
-let set_out_file v =
-  out_file := v ;
-  (* legacy *) set_setting "out_file" (Txt v) helper
+let set_out_file v = set_setting "out_file" (Txt v) helper
 
 let set_out_dir v = set_setting "out_dir" (Txt v) helper
 
@@ -94,8 +92,11 @@ let set_exp_ltxeq v =
   set_setting "input_exp" (Fm (Tex.Texeqparser.texeqparser v)) helper
 
 let set_exp_rmdsl v =
-  expression_rmdsl := v ;
-  set_setting "input_exp_rmdsl" (Txt v) helper
+  set_setting "input_exp_rmdsl" (Txt v) helper ;
+  let lst =
+    Rmdslparser.rmtld3_fm_lst_of_rmdsl_lst (Rmdslparser.rmdslparser v)
+  in
+  List.iter (fun a -> set_setting "input_exp" (Fm a) helper) lst
 
 (* rtm settings *)
 let set_rtm_period v = set_setting "rtm_period" (Num v) helper
@@ -265,8 +266,8 @@ let synth_sat_problem formula =
             List.fold_left
               (fun (cnt, a) b ->
                 let cnte = cnt +. 1. in
-                ( cnte
-                , a ^ " (\"" ^ b ^ "\",(" ^ string_of_float cnt ^ ")); " ) )
+                (cnte, a ^ " (\"" ^ b ^ "\",(" ^ string_of_float cnt ^ ")); ")
+                )
               (0., "") scheduler_trace
           in
           print_endline trc_str
@@ -286,12 +287,15 @@ let synth_sat_problem formula =
           print_endline
             (Sexp.to_string (sexp_of_trace_untimed scheduler_trace)) ;
         () ) ) ) ;
-  if (*String.exists !out_file ".smt2"*) false (* TODO *) then (
-    let stream = open_out !out_file in
+  if
+    is_setting "out_file" helper
+    && Filename.check_suffix (get_setting_string "out_file" helper) ".smt2"
+  then (
+    let out_file = get_setting_string "out_file" helper in
+    let stream = open_out out_file in
     Printf.fprintf stream "%s\n" smtlib2_str ;
     close_out stream ;
-    verb (fun _ -> print_endline ("SMTLIBv2 file " ^ !out_file ^ " saved."))
-    )
+    verb (fun _ -> print_endline ("SMTLIBv2 file " ^ out_file ^ " saved.")) )
   else if
     (* it does print nothing if z3 solver is enabled *)
     not (isZ3SolverEnabled ())
@@ -452,8 +456,10 @@ let _ =
     if input_fm <> mfalse then synth_sat_problem (to_simplify input_fm)
     else (
       verb (fun _ -> print_endline "Rmdsl parsing enabled.") ;
-      let ex = Rmdslparser.rmdslparser !expression_rmdsl in
-      let fm_lst = Rmdslparser.rmtld3_fm_lst_of_rmdsl_lst ex in
+      let fm_lst =
+        get_all_setting_formula "input_exp"
+          helper (* list of expressions with input_exp tag *)
+      in
       verb (fun _ ->
           print_endline
             "--------------------------------------------------------------------------------\n" ;
@@ -503,10 +509,15 @@ let _ =
     slatex_of_rmtld_fm fm |> print_endline
   else if get_setting_bool "evaluate" helper then
     (* get trc *)
-    let json = get_setting_string "environment" helper |> Yojson.Safe.from_string in
+    let json =
+      get_setting_string "environment" helper |> Yojson.Safe.from_string
+    in
     let json_trc = json |> Yojson.Safe.Util.member "trc" in
     let json_t = json |> Yojson.Safe.Util.member "t" in
-    let trc = if json_trc <> `Null then trace_of_yojson json_trc else failwith "No 'trc' available!" in
+    let trc =
+      if json_trc <> `Null then trace_of_yojson json_trc
+      else failwith "No 'trc' available!"
+    in
     let env = Rmtld3.environment trc in
     let lg_env = Rmtld3.lenv in
     let t = if json_t <> `Null then Rmtld3.time_of_yojson json_t else 0. in

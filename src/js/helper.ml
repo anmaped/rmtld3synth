@@ -47,6 +47,9 @@ let print_endline s =
 
 let caml_ml_output_char = print_char
 
+let exit s =
+  s |> string_of_int |> print_endline
+
 (*let printf fmt = Printf.bprintf output_buffer_ fmt
   module Printf = struct
       include Printf
