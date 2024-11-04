@@ -50,38 +50,65 @@ let gen_adjust_base t helper =
  * Compute terms
  *)
 let synth_tm_constant value helper =
-  ("make_duration(" ^ string_of_int (int_of_float value) ^ ",false)", "")
+  let id = helper |> get_unique_id |> string_of_int in
+  ( "Cons_" ^ id
+  , "function Cons_" ^ id ^ " is new X_rmtld3.Cons (Value => "
+    ^ Printf.sprintf "%.324f" value
+    ^ ");" )
 
 let synth_tm_variable name helper =
   failwith "Free variables are not possible."
 
 let synth_tm_duration (di, a) (tf, b) helper =
+  failwith "unimplemented!" ;
   let id = get_duration_counter helper in
   (* [TODO: check di; unknown is not implemented!; nested duration may be a
      problem!] *)
   ("", "")
 
 let synth_tm_plus (cmptr1, a) (cmptr2, b) helper =
-  ("sum_dur(" ^ cmptr1 ^ ", " ^ cmptr2 ^ ")", a ^ b)
+  let id = helper |> get_unique_id |> string_of_int in
+  ( "Sum_" ^ id
+  , a ^ "\n" ^ b ^ "\nfunction Sum_" ^ id ^ " is new X_rmtld3.Sum ( tm1 =>"
+    ^ cmptr1 ^ ", tm2 => " ^ cmptr2 ^ ");" )
 
 let synth_tm_times (cmptr1, a) (cmptr2, b) helper =
-  ("mult_dur(" ^ cmptr1 ^ ", " ^ cmptr2 ^ ")", a ^ b)
+  let id = helper |> get_unique_id |> string_of_int in
+  ( "Times_" ^ id
+  , a ^ "\n" ^ b ^ "\nfunction Times_" ^ id
+    ^ " is new X_rmtld3.Times ( tm1 =>" ^ cmptr1 ^ ", tm2 => " ^ cmptr2
+    ^ ");" )
 
 (*
  * compute formulas
  *)
-let synth_fm_true helper = ("T_TRUE", "")
+let synth_fm_true helper = ("X_rmtld3.mk_true", "")
 
 let synth_fm_p p helper =
-   ( "prop<T>(trace, PROP_" ^ find_proposition_rev_hashtbl p helper ^ ", t)"
-  , "" )
+  let id = helper |> get_unique_id |> string_of_int in
+  ( "Prop_" ^ id
+  , "function Prop_" ^ id ^ " is new X_rmtld3.Prop (Proposition => P'Pos (P_"
+    ^ find_proposition_rev_hashtbl p helper
+    ^ "));" )
 
-let synth_fm_not (cmpfm, a) helper = failwith "unimplemented!" ("", "")
+let synth_fm_not (cmpfm, a) helper =
+  let id = helper |> get_unique_id |> string_of_int in
+  ( "Not3_" ^ id
+  , a ^ "\nfunction Not3_" ^ id ^ " is new X_rmtld3.Not3 (fm => " ^ cmpfm
+    ^ ");" )
 
 let synth_fm_or (cmpfm1, a) (cmpfm2, b) helper =
-  failwith "unimplemented!" ("", "")
+  let id = helper |> get_unique_id |> string_of_int in
+  ( "Or3_" ^ id
+  , a ^ "\n" ^ b ^ "\nfunction Or3_" ^ id ^ " is new X_rmtld3.Or3 (fm1 => "
+    ^ cmpfm1 ^ ", fm2 => " ^ cmpfm2 ^ ");" )
 
-let synth_fm_less (cmptr1, a) (cmptr2, b) helper = ("", "")
+let synth_fm_less (cmptr1, a) (cmptr2, b) helper =
+  let id = helper |> get_unique_id |> string_of_int in
+  ( "Less3_" ^ id
+  , a ^ "\n" ^ b ^ "\nfunction Less3_" ^ id
+    ^ " is new X_rmtld3.Less3 (tm1 => " ^ cmptr1 ^ ", tm2 => " ^ cmptr2
+    ^ ");" )
 
 let convert_to_always_equal (sf2, b) gamma helper =
   print_endline
@@ -184,6 +211,30 @@ let synth_spark2014 compute helper =
       id '%'
   in
   let monitor_name = insert_string name "compute" '#' in
-  ()
+  let code1 =
+    List.fold_right
+      (fun ((function_call, body), n) str ->
+        str ^ "\n-- "
+        ^ string_of_rmtld_fm
+            (List.nth (List.rev expressions) (int_of_string n))
+        ^ "\n\
+           with Reader;\n\
+           with Reader.Rmtld3;\n\
+           with Rmtld3;\n\n\
+           generic\n\
+          \   with package X_rmtld3 is new Rmtld3 (<>);\n\
+           package " ^ monitor_name ^ "_" ^ n ^ " is\n" ^ "type P is ("
+        ^ Hashtbl.fold
+            (fun a b c ->
+              match (a, b) with
+              | N a, S b -> "P_" ^ b ^ if c = "" then "" else "," ^ c
+              | _ -> failwith "Error!" )
+            (get_proposition_rev_hashtbl helper)
+            ""
+        ^ ");\n" ^ body ^ "\n-- " ^ function_call ^ "\nend " ^ monitor_name
+        ^ "_" ^ n ^ ";" )
+      cpp_monitor_lst ""
+  in
+  print_endline code1 ; ()
 
 (* monitor dependent functions ends here *)

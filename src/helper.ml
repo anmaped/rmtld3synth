@@ -190,6 +190,12 @@ let get_duration_counter helper =
   let y = Random.int 1000000 in
   pair (x, y)
 
+let get_unique_id helper =
+  let x = _get_counter "fm_num_unique_id" helper in
+  (* avoid same template id *)
+  let y = Random.int 1000 in
+  pair (x, y)
+
 let get_inc_counter_test_cases = _get_counter "unittests_num_test_cases"
 
 let get_counter_test_cases = get_setting_int "unittests_num_test_cases"
