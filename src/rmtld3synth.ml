@@ -406,6 +406,9 @@ let _ =
       , " Set the output filename for synthesis" )
     ; ( "--out-src"
       , Arg.String set_out_dir
+      , " Set the output directory for synthesis" )
+    ; ( "--out-dir"
+      , Arg.String set_out_dir
       , " Set the output directory for synthesis\n\n Options:" )
     ; ("--verbose", Arg.Set_int verb_mode, " Enables verbose mode")
     ; ( "--version"

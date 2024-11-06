@@ -1,0 +1,14 @@
+with Rmtld3;
+-- ((~(a) or b) or true)
+generic
+   with package X_rmtld3 is new Rmtld3 (<>);
+package rtm_compute_1d96_0 is
+type P is (P_b, P_a);
+function Prop_469227 is new X_rmtld3.Prop (Proposition => P'Pos (P_a));
+function Not3_33127 is new X_rmtld3.Not3 (fm => Prop_469227);
+function Prop_118337 is new X_rmtld3.Prop (Proposition => P'Pos (P_b));
+function Or3_410885 is new X_rmtld3.Or3 (fm1 => Not3_33127, fm2 => Prop_118337);
+
+function Or3_192726 is new X_rmtld3.Or3 (fm1 => Or3_410885, fm2 => X_rmtld3.mk_true);
+-- Or3_192726
+end rtm_compute_1d96_0;

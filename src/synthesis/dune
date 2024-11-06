@@ -1,8 +1,10 @@
 
+(include_subdirs unqualified)
+
 (library
   (name            synthesis)
   (public_name     rmtld3synth.synthesis)
   (libraries       rmtld3synth.rmtld3.extension rmtld3synth.interface rmtld3synth.interface.dsl dolmen dolmen-export)
-  (modules         Standard Smtlib2 Simplify Cpp11 Ocaml Spark2014)
+  (modules         Standard Smtlib2 Simplify Cpp11 Ocaml Spark2014 Ada_pp)
   (preprocess      (pps ppx_sexp_conv))
 )
