@@ -6,7 +6,7 @@ type identifier = string
 
 type defining_identifier = string
 
-type subtype_mark = Integer | Float | Unsafe of string
+type subtype_mark = Integer | Float | UnsafeType of string
 
 type parameter = {name: identifier; typ: subtype_mark}
 
@@ -74,7 +74,7 @@ type basic_declaration =
   | GenericPackage of generic_declaration list * package_specification
   | GenericSubprogram of generic_declaration list * subprogram_specification
   | Comment of string
-  | Unsafe_inline of string
+  | UnsafeDeclaration of string
 
 and package_specification =
   {name: identifier; specification: basic_declaration list}
@@ -86,17 +86,36 @@ type subprogram_body =
 
 type package_body = {name: identifier; body: subprogram_body}
 
-type context_clause = Use of identifier | With of identifier
+type context_clause =
+  | Use of identifier
+  | With of identifier
+  | ContextComment of string
+
+type compilation_unit_body =
+  | B_Subprogram of context_clause list * subprogram_body
+  | B_Package of context_clause list * package_body
+
+type compilation_unit_declaration =
+  | D_Subprogram of subprogram_specification
+  | D_Package of context_clause list * package_specification
+  | D_GenericSubprogram of
+      context_clause list
+      * (generic_declaration list * subprogram_specification)
+  | D_GenericPackage of
+      context_clause list * (generic_declaration list * package_specification)
+(* library_unit_declaration *)
+(*| Unit_Generic_instantiation of context_clause list * generic_declaration
+  (* library_unit_declaration *) *)
 
 type compilation_unit =
-  | SubprogramBody of context_clause list * subprogram_body
-  | PackageBody of context_clause list * package_body
+  | Unit_Body of compilation_unit_body
+  | Unit_Declaration of compilation_unit_declaration
 
 (*
  * PrettyPrint (pp) functions
  *)
 let pp_subtype_mark (mark : subtype_mark) : string =
-  match mark with Integer -> "Integer" | Float -> "Float" | Unsafe s -> s
+  match mark with Integer -> "Integer" | Float -> "Float" | UnsafeType s -> s
 
 let rec pp_parameter_list (lst : parameter list) : string =
   let parameters =
@@ -204,7 +223,7 @@ let rec pp_basic_declaration (d : basic_declaration) : string =
       ^ pp_generic_declarations declaration
       ^ pp_subprogram_specification specification
   | Comment c -> "-- " ^ c
-  | Unsafe_inline c -> c
+  | UnsafeDeclaration c -> c
 
 and pp_basic_declarations (d : basic_declaration list) : string =
   List.fold_left
@@ -236,20 +255,53 @@ let pp_package_body (package : package_body) : string =
   ^ "\nend " ^ package.name ^ ";"
 
 let pp_context_clause (c : context_clause) : string =
-  match c with Use u -> "use " ^ u ^ ";" | With w -> "with " ^ w ^ ";"
+  match c with
+  | Use u -> "use " ^ u ^ ";"
+  | With w -> "with " ^ w ^ ";"
+  | ContextComment c -> "-- " ^ c
 
-let pp_compilation_unit (unit : compilation_unit) : string =
+let pp_compilation_unit_body (unit : compilation_unit_body) : string =
   match unit with
-  | SubprogramBody (context, body) ->
+  | B_Subprogram (context, body) ->
       List.fold_left
         (fun acc c -> acc ^ pp_context_clause c ^ "\n")
         "" context
       ^ pp_subprogram body
-  | PackageBody (context, body) ->
+  | B_Package (context, body) ->
       List.fold_left
         (fun acc c -> acc ^ pp_context_clause c ^ "\n")
         "" context
       ^ pp_package_body body
+
+let pp_compilation_unit_declaration (unit : compilation_unit_declaration) :
+    string =
+  match unit with
+  | D_Subprogram s -> pp_subprogram_specification s
+  | D_Package (context, body) ->
+      List.fold_left
+        (fun acc c -> acc ^ pp_context_clause c ^ "\n")
+        "" context
+      ^ pp_package_declaration body
+  | D_GenericSubprogram (context, (declaration, specification)) ->
+      List.fold_left
+        (fun acc c -> acc ^ pp_context_clause c ^ "\n")
+        "" context
+      ^ "generic\n"
+      ^ pp_generic_declarations declaration
+      ^ pp_subprogram_specification specification
+  | D_GenericPackage (context, (declaration, specification)) ->
+      List.fold_left
+        (fun acc c -> acc ^ pp_context_clause c ^ "\n")
+        "" context
+      ^ "generic\n"
+      ^ pp_generic_declarations declaration
+      ^ pp_package_declaration specification
+
+let pp_compilation_unit (unit : compilation_unit) : string =
+  match unit with
+  | Unit_Body body -> pp_compilation_unit_body body
+  | Unit_Declaration declaration ->
+      pp_compilation_unit_declaration declaration
 
 (*
  * Make (mk) functions
@@ -261,11 +313,17 @@ let mk_list_append a b = a :: b
 
 let mk_comment str = Comment str
 
+let mk_context_comment str = ContextComment str
+
 let mk_int i : expression = IntLiteral i
 
 let mk_float f : expression = FloatLiteral f
 
 let mk_string s : expression = StringLiteral s
+
+let mk_enumeration_item name : expression = Name name
+
+let ml_unsafe_type s : subtype_mark = UnsafeType s
 
 let mk_name str : expression = Name str
 
@@ -319,8 +377,38 @@ let mk_formal_subprogram_declaration name new_name formal_specification :
 
 let mk_use_declaration name = UsePackage name
 
-let mk_compilation_unit_package_body context body : compilation_unit =
-  PackageBody (context, body)
+let mk_compilation_unit_package_body context body : compilation_unit_body =
+  B_Package (context, body)
 
-let mk_compilation_unit_subprogram_body context body : compilation_unit =
-  SubprogramBody (context, body)
+let mk_compilation_unit_subprogram_body context body : compilation_unit_body
+    =
+  B_Subprogram (context, body)
+
+let mk_compilation_unit_declaration_subprogram specification :
+    compilation_unit_declaration =
+  D_Subprogram specification
+
+let mk_compilation_unit_declaration_package context
+    (basic : basic_declaration) : compilation_unit_declaration =
+  match basic with
+  | Package specification -> D_Package (context, specification)
+  | _ -> failwith "Not a package"
+
+let mk_compilation_unit_declaration_generic_package context
+    (basic : basic_declaration) : compilation_unit_declaration =
+  match basic with
+  | GenericPackage (declaration, specification) ->
+      D_GenericPackage (context, (declaration, specification))
+  | _ -> failwith "Not a generic package"
+
+let mk_compilation_unit_declaration_generic_subprogram context
+    (basic : basic_declaration) : compilation_unit_declaration =
+  match basic with
+  | GenericSubprogram (declaration, specification) ->
+      D_GenericSubprogram (context, (declaration, specification))
+  | _ -> failwith "Not a generic subprogram"
+
+let mk_compilation_unit_body body : compilation_unit = Unit_Body body
+
+let mk_compilation_unit_declaration declaration : compilation_unit =
+  Unit_Declaration declaration

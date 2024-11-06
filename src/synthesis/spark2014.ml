@@ -206,7 +206,7 @@ let synth_spark2014 compute helper =
       (fun exp lst ->
         let x, y = compute exp helper in
         ((x, y), string_of_int (List.length lst)) :: lst )
-      expressions []
+      (List.rev expressions) []
   in
   let pair_to_string ((x, y), z) = "((" ^ x ^ "," ^ y ^ "), " ^ z ^ ")" in
   let id =
@@ -227,30 +227,27 @@ let synth_spark2014 compute helper =
         | _ -> failwith "prop_lst!" )
       (get_proposition_rev_hashtbl helper)
       []
+    |> Ada_pp.mk_list_append "Other"
     |> Ada_pp.mk_type_declaration "P"
   in
   let monitor_name = insert_string name "compute" '#' in
-  let code1 =
-    List.fold_right
-      (fun ((function_call, body), n) str ->
-        str
-        ^ ( [ n |> int_of_string
-              |> List.nth (List.rev expressions)
-              |> string_of_rmtld_fm |> Ada_pp.mk_comment
-            ; Ada_pp.mk_package_specification
-                (monitor_name ^ "_" ^ n)
-                [ convert_proposition_to_enumeration_type
-                ; Ada_pp.Unsafe_inline body (* unsafe *)
-                ; Ada_pp.mk_comment function_call ]
-              |> Ada_pp.mk_generic_package
-                   [ Ada_pp.mk_formal_package_declaration "X_rmtld3" "Rmtld3"
-                       "(<>)" ] ]
-          |> Ada_pp.pp_basic_declarations ) )
-      cpp_monitor_lst ""
-  in
-  (Ada_pp.Unsafe_inline "with Rmtld3;\n" |> Ada_pp.pp_basic_declaration)
-  ^ code1
-  |> save (monitor_name ^ ".ads") ;
+  (* construct all rtm_compute units *)
+  List.iter
+    (fun ((function_call, body), n) ->
+      Ada_pp.mk_package_specification
+        (monitor_name ^ "_" ^ n)
+        [ convert_proposition_to_enumeration_type
+        ; UnsafeDeclaration body (* unsafe *)
+        ; Ada_pp.mk_comment function_call ]
+      |> Ada_pp.mk_generic_package
+           [Ada_pp.mk_formal_package_declaration "X_rmtld3" "Rmtld3" "(<>)"]
+      |> Ada_pp.mk_compilation_unit_declaration_generic_package
+           [ Ada_pp.With "Rmtld3"
+           ; n |> int_of_string |> List.nth expressions |> string_of_rmtld_fm
+             |> Ada_pp.mk_context_comment ]
+      |> Ada_pp.mk_compilation_unit_declaration |> Ada_pp.pp_compilation_unit
+      |> save (monitor_name ^ "_" ^ n ^ ".ads") )
+    cpp_monitor_lst ;
   (* generate test package *)
   if is_setting "environment" helper then (
     let json =
@@ -262,29 +259,35 @@ let synth_spark2014 compute helper =
       else failwith "No 'trc' available!"
     in
     Ada_pp.mk_subprogram_specification "Test"
-      [Ada_pp.mk_parameter "buf" (Unsafe "access Nat_Buffer.Buffer_Type")]
+      [Ada_pp.mk_parameter "buf" (UnsafeType "access Nat_Buffer.Buffer_Type")]
       None
     |> Ada_pp.mk_generic_subprogram
          [ Ada_pp.mk_formal_package_declaration "Nat_Buffer" "Buffer" "(<>)"
          ; Ada_pp.mk_use_declaration "Nat_Buffer" ]
     |> Ada_pp.mk_list
+    |> Ada_pp.mk_list_append convert_proposition_to_enumeration_type
     |> Ada_pp.mk_package_specification "Unit"
-    |> Ada_pp.mk_package_declaration |> Ada_pp.mk_list
-    |> Ada_pp.mk_list_append (Ada_pp.Unsafe_inline "with Buffer;")
-    |> Ada_pp.pp_basic_declarations |> save "unit.ads" ;
+    |> Ada_pp.mk_package_declaration
+    |> Ada_pp.mk_compilation_unit_declaration_package [With "Buffer"]
+    |> Ada_pp.mk_compilation_unit_declaration |> Ada_pp.pp_compilation_unit
+    |> save "unit.ads" ;
     let rec convert_lst_to_reader lst =
       match lst with
       | [] -> []
       | (p, t) :: tl ->
           Ada_pp.mk_if
-            (Ada_pp.Equal
+            (Equal
                ( Ada_pp.mk_function_call "Nat_Buffer.Push"
-                   [ Ada_pp.mk_expression_parameter (Ada_pp.Name "buf.all")
+                   [ Ada_pp.mk_expression_parameter (Name "buf.all")
                    ; Ada_pp.mk_expression_parameter
                        (Ada_pp.mk_function_call "Nat_Buffer.E.Create"
                           [ Ada_pp.mk_expression_parameter ~selector:"Data"
-                              (Ada_pp.mk_int
-                                 (find_proposition_hashtbl p helper) )
+                              (Ada_pp.mk_enumeration_item
+                                 ( "P'Pos ( "
+                                 ^ ( if exists_proposition_hashtbl p helper
+                                     then "P_" ^ p
+                                     else "Other" )
+                                 ^ " )" ) )
                           ; Ada_pp.mk_expression_parameter ~selector:"Time"
                               (Ada_pp.mk_float t) ] ) ]
                , Ada_pp.mk_name "Nat_Buffer.OK" ) )
@@ -294,9 +297,12 @@ let synth_spark2014 compute helper =
     in
     convert_lst_to_reader trc
     |> Ada_pp.mk_subprogram "Test"
-         [Ada_pp.mk_parameter "buf" (Unsafe "access Nat_Buffer.Buffer_Type")]
+         [ Ada_pp.mk_parameter "buf"
+             (UnsafeType "access Nat_Buffer.Buffer_Type") ]
          None []
     |> Ada_pp.mk_package_body "Unit"
-    |> Ada_pp.mk_compilation_unit_package_body [Ada_pp.With "Ada.Text_Io"] |> Ada_pp.pp_compilation_unit |> save "unit.adb" )
+    |> Ada_pp.mk_compilation_unit_package_body [With "Ada.Text_Io"]
+    |> Ada_pp.mk_compilation_unit_body |> Ada_pp.pp_compilation_unit
+    |> save "unit.adb" )
 
 (* monitor dependent functions ends here *)

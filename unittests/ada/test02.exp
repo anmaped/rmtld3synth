@@ -3,7 +3,7 @@ with Rmtld3;
 generic
    with package X_rmtld3 is new Rmtld3 (<>);
 package rtm_compute_ef50_0 is
-type P is (P_b, P_a);
+type P is (Other, P_b, P_a);
 function Prop_469227 is new X_rmtld3.Prop (Proposition => P'Pos (P_a));
 function Prop_118337 is new X_rmtld3.Prop (Proposition => P'Pos (P_b));
 function Or3_33127 is new X_rmtld3.Or3 (fm1 => Prop_469227, fm2 => Prop_118337);

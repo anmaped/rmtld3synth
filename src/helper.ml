@@ -136,10 +136,15 @@ let get_proposition_hashtbl helper = get_setting_hash "prop_map" helper
 let get_proposition_rev_hashtbl helper =
   get_setting_hash "prop_map_reverse" helper
 
+let exists_proposition_hashtbl s helper =
+  match Hashtbl.find_opt (get_proposition_hashtbl helper) (S s) with
+  | Some (N _) -> true
+  | _ -> false
+
 let find_proposition_hashtbl s helper =
-  match Hashtbl.find (get_proposition_hashtbl helper) (S s) with
-  | N v -> v
-  | _ -> failwith "find_proposition_hashtbl: values mismatch!"
+  match Hashtbl.find_opt (get_proposition_hashtbl helper) (S s) with
+  | Some (N v) -> Some v
+  | _ -> None
 
 let find_proposition_rev_hashtbl v helper =
   try
