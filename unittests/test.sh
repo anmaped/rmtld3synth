@@ -87,7 +87,7 @@ dsl_expressions_length=${#dsl_expressions[@]}
 
 declare -a arrayrmtld=(
   "p"
-  "p \lor \not p"
+  "p \lor \neg p"
   "p \until_{<5} q"
   "p \until_{=5} q"
   "(\always_{<5} p) \land (\eventually_{=5} q)"

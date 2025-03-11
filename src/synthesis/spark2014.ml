@@ -290,9 +290,9 @@ let synth_spark2014 compute helper =
                                  ^ " )" ) )
                           ; Ada_pp.mk_expression_parameter ~selector:"Time"
                               (Ada_pp.mk_float t) ] ) ]
-               , Ada_pp.mk_name "Nat_Buffer.OK" ) )
-            [Ada_pp.mk_print "Ok!"]
-            [Ada_pp.mk_print "NOT Ok!"]
+               , Ada_pp.mk_name "Nat_Buffer.No_Error" ) )
+            [Ada_pp.mk_print "No Error!"]
+            [Ada_pp.mk_print "Error!"]
           :: convert_lst_to_reader tl
     in
     convert_lst_to_reader trc
@@ -301,7 +301,7 @@ let synth_spark2014 compute helper =
              (UnsafeType "access Nat_Buffer.Buffer_Type") ]
          None []
     |> Ada_pp.mk_package_body "Unit"
-    |> Ada_pp.mk_compilation_unit_package_body [With "Ada.Text_Io"]
+    |> Ada_pp.mk_compilation_unit_package_body [With "Ada.Text_IO"]
     |> Ada_pp.mk_compilation_unit_body |> Ada_pp.pp_compilation_unit
     |> save "unit.adb" )
 
