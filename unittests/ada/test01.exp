@@ -2,8 +2,8 @@ with Rmtld3;
 -- a
 generic
    with package X_rmtld3 is new Rmtld3 (<>);
-package rtm_compute_7854_0 is
+package rtm_compute_7464_0 is
 type P is (Other, P_a);
-function Prop_118337 is new X_rmtld3.Prop (Proposition => P'Pos (P_a));
--- Prop_118337
-end rtm_compute_7854_0;
+function Prop_3 is new X_rmtld3.Prop (Proposition => P'Pos (P_a));
+-- Prop_3
+end rtm_compute_7464_0;

@@ -3,8 +3,6 @@ open Sexplib.Conv
 open Rmtld3
 include Js.Helper_
 
-let _ = Random.self_init
-
 (* global_int settings *)
 type global_int = string * int [@@deriving sexp]
 
@@ -186,19 +184,19 @@ let get_proposition_counter helper = _get_counter "fm_num_prop" helper
 let get_until_counter helper =
   let x = _get_counter "fm_num_until" helper in
   (* avoid same template id *)
-  let y = Random.int 1000000 in
+  let y = _get_counter "unique_id_counter" helper in
   pair (x, y)
 
 let get_duration_counter helper =
   let x = _get_counter "fm_num_duration" helper in
   (* avoid same template id *)
-  let y = Random.int 1000000 in
+  let y = _get_counter "unique_id_counter" helper in
   pair (x, y)
 
 let get_unique_id helper =
   let x = _get_counter "fm_num_unique_id" helper in
   (* avoid same template id *)
-  let y = Random.int 1000 in
+  let y = _get_counter "unique_id_counter" helper in
   pair (x, y)
 
 let get_inc_counter_test_cases = _get_counter "unittests_num_test_cases"

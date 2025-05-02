@@ -2,13 +2,13 @@ with Rmtld3;
 -- ((~(a) or b) or true)
 generic
    with package X_rmtld3 is new Rmtld3 (<>);
-package rtm_compute_1d96_0 is
+package rtm_compute_0790_0 is
 type P is (Other, P_b, P_a);
-function Prop_469227 is new X_rmtld3.Prop (Proposition => P'Pos (P_a));
-function Not3_33127 is new X_rmtld3.Not3 (fm => Prop_469227);
-function Prop_118337 is new X_rmtld3.Prop (Proposition => P'Pos (P_b));
-function Or3_410885 is new X_rmtld3.Or3 (fm1 => Not3_33127, fm2 => Prop_118337);
+function Prop_8 is new X_rmtld3.Prop (Proposition => P'Pos (P_a));
+function Not3_15 is new X_rmtld3.Not3 (fm => Prop_8);
+function Prop_3 is new X_rmtld3.Prop (Proposition => P'Pos (P_b));
+function Or3_24 is new X_rmtld3.Or3 (fm1 => Not3_15, fm2 => Prop_3);
 
-function Or3_192726 is new X_rmtld3.Or3 (fm1 => Or3_410885, fm2 => X_rmtld3.mk_true);
--- Or3_192726
-end rtm_compute_1d96_0;
+function Or3_35 is new X_rmtld3.Or3 (fm1 => Or3_24, fm2 => X_rmtld3.mk_true);
+-- Or3_35
+end rtm_compute_0790_0;
