@@ -41,8 +41,8 @@ jobs:
           mkdir -p files #
           curl -O https://raw.githubusercontent.com/fdopen/opam-repository-mingw/refs/heads/opam2/packages/z3/z3.4.11.2/files/z3-z3-4.11.2.patch #
           mv z3-z3-4.11.2.patch files/ #
-          rm ../../../../*.cache #
-          cd ../../../../ #
+          cd ../../../ #
+          rm ../*.cache #
           opam admin update-extrafiles #
         shell: bash
 
