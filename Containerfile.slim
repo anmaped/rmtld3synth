@@ -18,7 +18,7 @@ RUN sed -i "s~api/ml/libz3ml~api/ml/libz3ml-static~g" z3/build/Makefile
 RUN sed -i "s~api/ml/dllz3ml.so~api/ml/dllz3ml-static.so~g" z3/build/Makefile
 RUN ls -l z3/build && sudo cp z3/build/libz3-static.a /usr/lib/libz3-static.a
 
-RUN cd z3/build && eval $(opam env) && sudo make install
+RUN cd z3/build && eval $(opam env) && sudo -E make install
 
 RUN sed -i "s/-cclib -lstdc++/:standard -cclib -static -cclib -no-pie/g" rmtld3synth/src/dune
 RUN cd rmtld3synth && eval $(opam env) && ./configure --prefix=/usr && opam exec -- make all
