@@ -1,5 +1,21 @@
+-- This file was automatically generated from rmtld3synth tool.
+-- Settings:
+--   rtm_buffer_size -> 100
+--   input_exp -> (1. < ( ( 10. + 10.) * 1.))
+--   rtm_monitor_name_prefix -> 'rtm_#_%'
+--   rtm_monitor_time_unit -> 's'
+--   rtm_period -> 200000
+--   prop_map_reverse -> 
+--   rtm_min_inter_arrival_time -> 1
+--   init -> true
+--   unique_id_counter -> 7
+--   fm_num_unique_id -> 7
+--   rtm_max_period -> 2000000
+--   input_exp_dsl -> '1 < 10 + 10 * 1'
+--   prop_map -> 
+-- Expression:
+--   (1. < ( ( 10. + 10.) * 1.))
 with Rmtld3;
--- (1. < ( ( 10. + 10.) * 1.))
 generic
    with package X_rmtld3 is new Rmtld3 (<>);
 package rtm_compute_cee6_0 is

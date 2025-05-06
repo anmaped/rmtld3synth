@@ -242,9 +242,19 @@ let synth_spark2014 compute helper =
       |> Ada_pp.mk_generic_package
            [Ada_pp.mk_formal_package_declaration "X_rmtld3" "Rmtld3" "(<>)"]
       |> Ada_pp.mk_compilation_unit_declaration_generic_package
-           [ Ada_pp.With "Rmtld3"
-           ; n |> int_of_string |> List.nth expressions |> string_of_rmtld_fm
-             |> Ada_pp.mk_context_comment ]
+           [ "This file was automatically generated from rmtld3synth tool.\n\
+              -- Settings:\n"
+             ^ String.concat "\n"
+                 (List.map
+                    (fun x -> if x = "" then "" else "--   " ^ x)
+                    (String.split_on_char '\n'
+                       (get_string_of_settings
+                          ~exclude:["version"; "gen_tests"] helper ) ) )
+             ^ "-- Expression:\n--   "
+             ^ ( n |> int_of_string |> List.nth expressions
+               |> string_of_rmtld_fm )
+             |> Ada_pp.mk_context_comment
+           ; Ada_pp.With "Rmtld3" ]
       |> Ada_pp.mk_compilation_unit_declaration |> Ada_pp.pp_compilation_unit
       |> save (monitor_name ^ "_" ^ n ^ ".ads") )
     cpp_monitor_lst ;

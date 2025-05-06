@@ -1,5 +1,22 @@
+-- This file was automatically generated from rmtld3synth tool.
+-- Settings:
+--   rtm_buffer_size -> 100
+--   input_exp -> (a or b)
+--   rtm_monitor_name_prefix -> 'rtm_#_%'
+--   rtm_monitor_time_unit -> 's'
+--   fm_num_prop -> 2
+--   rtm_period -> 200000
+--   prop_map_reverse -> (2->a) (1->b) 
+--   rtm_min_inter_arrival_time -> 1
+--   init -> true
+--   unique_id_counter -> 3
+--   fm_num_unique_id -> 3
+--   rtm_max_period -> 2000000
+--   input_exp_dsl -> 'a or b'
+--   prop_map -> (b->1) (a->2) 
+-- Expression:
+--   (a or b)
 with Rmtld3;
--- (a or b)
 generic
    with package X_rmtld3 is new Rmtld3 (<>);
 package rtm_compute_1488_0 is
