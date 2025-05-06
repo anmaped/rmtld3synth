@@ -1,13 +1,14 @@
-name: GitHub Pages
+name: Web Build
 
 on:
-  push:
-    branches:
-      - master
+  - push
+  - pull_request
+
+permissions: read-all
 
 jobs:
   set_gh_pages:
-    name: Build and Set gh-pages
+    name: Build web
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -31,10 +32,3 @@ jobs:
           cp _build/default/src/rmtld3synth.js /workspace/source/public &&
           cp doc/page/*.* /workspace/source/public &&
           ls /workspace/source/public -l'
-
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/master'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
