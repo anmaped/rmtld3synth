@@ -124,9 +124,9 @@ let print_settings tbl =
       print_endline "" )
     tbl
 
-let get_string_of_settings tbl =
+let get_string_of_settings ?(exclude=[]) tbl =
   Hashtbl.fold
-    (fun a b lst -> lst ^ a ^ " -> " ^ get_string_of_setting b ^ "\n")
+    (fun a b lst -> if List.exists (fun x -> a = x) exclude then lst else lst ^ a ^ " -> " ^ get_string_of_setting b ^ "\n")
     tbl ""
 
 let get_proposition_hashtbl helper = get_setting_hash "prop_map" helper

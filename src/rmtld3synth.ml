@@ -287,24 +287,6 @@ let synth_sat_problem formula =
           print_endline
             (Sexp.to_string (sexp_of_trace_untimed scheduler_trace)) ;
         () ) ) ) ;
-  if
-    is_setting "out_file" helper
-    && Filename.check_suffix (get_setting_string "out_file" helper) ".smt2"
-  then (
-    let out_file = get_setting_string "out_file" helper in
-    let stream = open_out out_file in
-    Printf.fprintf stream "%s\n" smtlib2_str ;
-    close_out stream ;
-    verb (fun _ -> print_endline ("SMTLIBv2 file " ^ out_file ^ " saved.")) )
-  else if
-    (* it does print nothing if z3 solver is enabled *)
-    not (isZ3SolverEnabled ())
-  then (
-    verb (fun _ ->
-        print_endline "Synthesis for SMTLIBv2 \n" ;
-        print_endline
-          "--------------------------------------------------------------------------------\n" ) ;
-    print_endline smtlib2_str )
 
 open Version
 open Helper
