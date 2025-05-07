@@ -29,6 +29,10 @@ jobs:
           eval $(opam env) && \
           ./configure --js_of_ocaml --without-z3-solver && make js && \
           mkdir -p /workspace/source/public && \
-          cp _build/default/src/rmtld3synth.js /workspace/source/public &&
-          cp doc/page/*.* /workspace/source/public &&
-          ls /workspace/source/public -l'
+          cp _build/default/src/rmtld3synth.js /workspace/source/public
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-artifact-${{ github.sha }}
+          path: _build/default/src/rmtld3synth.js
