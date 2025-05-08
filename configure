@@ -39,6 +39,14 @@ for arg in "$@"; do
     esac
 done
 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Mac OSX sed
+    SED="sed -i ''"
+else
+    # GNU sed
+    SED="sed -i''"
+fi
+
 # checks if z3 solver is available
 chmod 755 scripts/check_z3.sh
 . scripts/check_z3.sh
@@ -64,14 +72,14 @@ if $js_of_ocaml; then
     if [ ! -f "src/js/dune.bak" ]; then
         cp src/js/dune src/js/dune.bak
     fi
-    sed -i 's/%LIBRARIES%/js_of_ocaml/' src/js/dune
-    sed -i 's/%PPX%/js_of_ocaml-ppx/' src/js/dune
+    eval $SED 's/%LIBRARIES%/js_of_ocaml/' src/js/dune
+    eval $SED 's/%PPX%/js_of_ocaml-ppx/' src/js/dune
 else
     if [ ! -f "src/js/dune.bak" ]; then
         cp src/js/dune src/js/dune.bak
     fi
-    sed -i 's/%LIBRARIES%//' src/js/dune
-    sed -i 's/%PPX%//' src/js/dune
+    eval $SED 's/%LIBRARIES%//' src/js/dune
+    eval $SED 's/%PPX%//' src/js/dune
 fi
 
 if [ -n "$Z3_VERSION" ] && [ "x$z3_solver" == "xtrue" ]; then
@@ -86,7 +94,7 @@ if [ -n "$Z3_VERSION" ] && [ "x$z3_solver" == "xtrue" ]; then
     fi
     
     cp src/interface/dune src/interface/dune.bak
-    sed -i 's/%LIBRARIES%/z3/' src/interface/dune
+    eval $SED 's/%LIBRARIES%/z3/' src/interface/dune
 
 else
     echo -e "\nzsolver: 
@@ -95,7 +103,7 @@ else
     if [ ! -f "src/interface/dune.bak" ]; then
         cp src/interface/dune src/interface/dune.bak
     fi
-    sed -i 's/%LIBRARIES%//' src/interface/dune
+    eval $SED 's/%LIBRARIES%//' src/interface/dune
 fi
 
 echo 'configuration complete, type make to build.'
