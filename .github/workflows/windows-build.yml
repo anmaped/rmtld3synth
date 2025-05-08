@@ -51,3 +51,12 @@ jobs:
 
       - name: Build rmtld3synth
         run: opam install . --with-test
+
+      - name: 'Tar files'
+        run: tar -cvf files.tar ./
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-artifact-${{ github.sha }}
+          path: ./files.tar

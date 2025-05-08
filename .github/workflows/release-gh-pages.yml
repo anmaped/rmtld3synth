@@ -7,7 +7,7 @@ on:
 
 jobs:
   set_gh_pages:
-    name: Build and Set gh-pages
+    name: Release gh-pages
     runs-on: ubuntu-latest
     permissions:
       contents: write
