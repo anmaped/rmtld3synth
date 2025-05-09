@@ -18,9 +18,24 @@ jobs:
         with:
           submodules: true
 
+      - name: Install and Authenticate GitHub CLI
+        run: |
+          sudo apt install gh -y
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Get latest web-build run ID
+        id: get_run_id
+        run: |
+          RUN_ID=$(gh run list --workflow=web-build.yml --limit=1 --json databaseId -q '.[0].databaseId')
+          echo "Latest run ID: $RUN_ID"
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV  # Save to environment variable
+
       - uses: actions/download-artifact@v4
         with:
           name: web-build-artifact-${{ github.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.RUN_ID }}
 
       - shell: bash
         run: |
