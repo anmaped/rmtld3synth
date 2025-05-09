@@ -27,7 +27,7 @@ The stable version is available for testing in the browser [Try it](https://anma
 
 ## Get started with Tarball binaries
 
-The latest release version is [0.4](../../releases).
+The latest release version is [0.6](../../releases).
 
 ## Get started with docker :whale:
 

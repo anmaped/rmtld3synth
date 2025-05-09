@@ -3,6 +3,8 @@ on:
     # Sequence of patterns matched against refs/tags
     tags:
     - 'v*' # Push events to matching v*, i.e. v0.6
+    branches:
+    - master
 
 name: Upload Release Asset
 
@@ -25,10 +27,25 @@ jobs:
           draft: true
           prerelease: false
 
+      - name: Install and Authenticate GitHub CLI
+        run: |
+          sudo apt install gh -y
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Get latest web-build run ID
+        id: get_run_id
+        run: |
+          RUN_ID=$(gh run list --workflow=web-build.yml --limit=1 --json databaseId -q '.[0].databaseId')
+          echo "Latest run ID: $RUN_ID"
+          echo "RUN_ID_WEB=$RUN_ID" >> $GITHUB_ENV  # Save to environment variable
+
       - uses: actions/download-artifact@v4
         with:
           name: web-build-artifact-${{ github.sha }}
-      
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.RUN_ID_WEB }}
+
       - name: run anmaped/rmtld3synth image
         run: |
           docker run --rm \
@@ -39,9 +56,19 @@ jobs:
           xz /usr/bin/rmtld3synth && \
           cp /usr/bin/rmtld3synth.xz /workspace/source'
 
+      - name: Get latest windows-build run ID
+        id: get_run_id
+        run: |
+          RUN_ID=$(gh run list --workflow=web-build.yml --limit=1 --json databaseId -q '.[0].databaseId')
+          echo "Latest run ID: $RUN_ID"
+          echo "RUN_ID_WINDOWS=$RUN_ID" >> $GITHUB_ENV  # Save to environment variable
+
       - uses: actions/download-artifact@v4
         with:
           name: windows-build-artifact-${{ github.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.RUN_ID_WINDOWS }}
 
       - shell: bash
         run: |
@@ -54,9 +81,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rmtld3synth.js
-          asset_name: rmtld3synth-${{ github.ref }}.js
-          asset_content_type: text/javascript
+          asset_path: ./web-build-artifact-${{ github.sha }}.zip
+          asset_name: rmtld3synth-${{ github.ref }}-web.zip
+          asset_content_type: application/zip
 
       - name: Upload Release Asset linux-build-artifact-${{ github.sha }}
         id: upload-release-asset 
@@ -66,5 +93,16 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rmtld3synth.xz
-          asset_name: rmtld3synth-${{ github.ref }}-linux-static.xz
+          asset_name: rmtld3synth-${{ github.ref }}-linux.xz
           asset_content_type: application/xz
+
+      - name: Upload Release Asset windows-build-artifact-${{ github.sha }}
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./windows-build-artifact-${{ github.sha }}.zip
+          asset_name: rmtld3synth-${{ github.ref }}-windows.zip
+          asset_content_type: application/zip
