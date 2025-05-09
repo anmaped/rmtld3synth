@@ -1,149 +1,138 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta http-equiv="Content-Type" content="text/xhtml+xml; charset=UTF-8" />
-<title>rmtld3synth web demonstrator</title>
+    <meta http-equiv="Content-Type" content="text/xhtml+xml; charset=UTF-8" />
+    <title>rmtld3synth web demonstrator</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.spa.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.common.css" />
+    <link rel="dx-theme" data-theme="generic.light" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.light.css" />
+    <script src="https://cdn3.devexpress.com/jslib/17.1.8/js/dx.all.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+
+    <style type="text/css" media="screen">
+        .ace_editor,
+        .toolbar {
+            border: 1px solid lightgray;
+            margin: 0px;
+            width: 98%;
+        }
+
+        .ace_editor {
+            height: 100%;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.js" type="text/javascript"
+        charset="utf-8"></script>
+
+    <script type="text/javascript">
+
+        var worker;
+        function go() {
+            lst_files = [];
+            id = 0;
+            sessions = [];
+            document.getElementById('tab-bar').innerHTML = "";
+
+            var argv = encodeURIComponent("rmtld3synth --out-src \".\" " + inputEditor.getValue().replaceAll("'", "\""));
+            if (worker) {
+                worker.terminate();
+            }
+            worker = new Worker("bindings.js?argv=" + argv);
+
+            code.setValue("", 1);
+
+            worker.onmessage = function (m) {
+                if (typeof m.data == 'string') {
+                    if (m.data != "\0\n") {
+                        csEditor.setValue(csEditor.getValue() + m.data, 1);
 
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.spa.css" />
-<link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.common.css" />
-<link rel="dx-theme" data-theme="generic.light" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.light.css" />
-<script src="https://cdn3.devexpress.com/jslib/17.1.8/js/dx.all.js"></script>
-<link rel="stylesheet" type ="text/css" href ="styles.css" />
+                        const filteredLines = m.data
+                            .split('\n')
+                            .filter(line => line.startsWith('./'));
+                        if (filteredLines.length != 0) {
+                            lst_files.push(filteredLines);
+                            console.log(filteredLines);
+                        }
 
-<script type="text/javascript">
-<!--
-var worker;
-function go () {
-  var output=document.getElementById ("output");
-  var argv = encodeURIComponent(document.getElementById ("input").value);
-  if (worker) {
-    worker.terminate();
-  }
-  worker = new Worker ("rmtld3synth.js?argv="+argv);
-  document.getElementById ("output").value="";
-  worker.onmessage = function (m) {
-    if (typeof m.data == 'string') {
-    if (m.data == "\0\n") {
-        output.scrollTop = output.scrollHeight
-    } else {
-        output.value+=m.data;
-    }
-    }
-  }
+                        for (let f of lst_files) {
+                            worker.postMessage("get:file:" + f);
+                        }
+                        lst_files = [];
 
-  worker.onerror = function (m) {
-    if (typeof m.message == 'string') {
-    if (m.message == "\0\n") {
-        output.scrollTop = output.scrollHeight
-    } else {
-        output.value+=m.message;
-    }
-    }
-  }
-}
+                    }
+                }
 
-$(function(){
-    var dxMenu = $("#menu").dxMenu({
-        dataSource: menuData,
-        hideSubmenuOnMouseLeave: false,
-        displayExpr: "name",
-        onItemClick: function (data) {
-            var item = data.itemData;
-            if(item.cmd) {
-              document.getElementById ("input").value= item.cmd;
-              textAreaAdjust(document.getElementById ("input"));
-              go()
+                if (typeof m.data == 'object') {
+                    console.log(m.data.content);
+                    console.log("tab" + id);
+                    sessions.push(ace.createEditSession("", "ace/mode/ocaml"));
+                    sessions[id].setValue(m.data.content, 1);
 
+                    document.getElementById('tab-bar').innerHTML += ("<div class=\"tab" + (id == 0 ? " active" : "") + "\" data-tab=\"tab" + id + "\" onclick=\"switchTab('" + id + "')\">" + m.data.name + "</div>");
+                    if (id == 0) { switchTab(0); }
+                    id = id + 1;
+
+                }
+            }
+
+            worker.onerror = function (m) {
+                if (typeof m.message == 'string') {
+                    console.log("error: " + m.message);
+                }
             }
         }
-    }).dxMenu("instance");
-    
-    var showSubmenuModes = [{
-        name: "onHover",
-        delay: { show: 0, hide: 500 }
-    }, {
-        name: "onClick",
-        delay: { show: 0, hide: 300 }
-    }];
-    
-    $("#show-submenu-mode").dxSelectBox({
-        items: showSubmenuModes,
-        value: showSubmenuModes[1],
-        displayExpr: "name",
-        onValueChanged: function(data) {
-            dxMenu.option("showFirstSubmenuMode", data.value);
-        }
-    });
-    
-    $("#orientation").dxSelectBox({
-        items: ["horizontal", "vertical"],
-        value: "horizontal",
-        onValueChanged: function(data) {
-            dxMenu.option("orientation", data.value);
-        }
-    });
-    
-    $("#submenu-direction").dxSelectBox({
-        items: ["auto", "rightOrBottom", "leftOrTop"],
-        value: "auto",
-        onValueChanged: function(data) {
-            dxMenu.option("submenuDirection", data.value);
-        }
-    });
-    
-    $("#mouse-leave").dxCheckBox({
-        value: false,
-        text: "Hide Submenu on Mouse Leave",
-        onValueChanged: function(data) {
-            dxMenu.option("hideSubmenuOnMouseLeave", data.value);
-        }
-    });
-});
 
-var menuData = [{
-    id: "1",
-    name: "Monitor Synthesis",
-    items: [{
-        id: "1_1",
-        name: "Ocaml",
-        items: [{
-            id: "1_1_1",
-            name: "Simple Monitor",
-            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4\" --verbose 2"
-        },
-        {
-            id: "1_1_2",
-            name: "Simple Duration Monitor",
-            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
-        },
-        {
-            id: "1_1_3",
-            name: "Bounded Invariant",
-            cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
-        }]
-    }, {
-        id: "1_2",
-        name: "Cpp11",
-        items: [{
-            id: "1_2_1",
-            name: "Simple Monitor",
-            cmd: "./rmtld3synth --synth-cpp11 --input-latexeq \"(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4\" --verbose 2"
-        }, {
-            id: "1_2_2",
-            name: "Simple Duration Monitor",
-            cmd: "./rmtld3synth --synth-cpp11 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
-        }]
-    },
-     {
-        id: "1_3",
-        name: "Autopilot Case Study",
-        items: [{
-            id: "1_3_1",
-            name: "Use Case 1",
-            cmd: './rmtld3synth --synth-cpp11 --input-sexp \"(Or \n\
+        function copyCommand(cmd) {
+            inputEditor.setValue(cmd);
+        }
+
+        var menuData = [{
+            id: "1",
+            name: "Monitor Synthesis",
+            items: [{
+                id: "1_1",
+                name: "Ocaml",
+                items: [{
+                    id: "1_1_1",
+                    name: "Simple Monitor",
+                    cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4\" --verbose 2"
+                },
+                {
+                    id: "1_1_2",
+                    name: "Simple Duration Monitor",
+                    cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
+                },
+                {
+                    id: "1_1_3",
+                    name: "Bounded Invariant",
+                    cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
+                }]
+            }, {
+                id: "1_2",
+                name: "Cpp11",
+                items: [{
+                    id: "1_2_1",
+                    name: "Simple Monitor",
+                    cmd: "./rmtld3synth --synth-cpp11 --input-latexeq \"(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4\" --verbose 2"
+                }, {
+                    id: "1_2_2",
+                    name: "Simple Duration Monitor",
+                    cmd: "./rmtld3synth --synth-cpp11 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
+                }]
+            },
+            {
+                id: "1_3",
+                name: "Autopilot Case Study",
+                items: [{
+                    id: "1_3_1",
+                    name: "Use Case 1",
+                    cmd: './rmtld3synth --synth-cpp11 --input-sexp \"(Or \n\
   (Not \n\
     (Or \n\
       (Not \n\
@@ -167,103 +156,508 @@ var menuData = [{
               (LessThan (Duration (Constant 1000000) (Prop B)) \n\
                 (Constant 5000000)))))))) \n\
   (Or (Prop A) (Not (Or (Prop NOSYMBOL) (Not (Prop NOSYMBOL))))))\" --verbose 2'
-        }/*, {
+                }/*, {
             id: "1_3_2",
             name: "Use Case 2",
             cmd: "./rmtld3synth "
         }*/]
-    }]
-}, {
-    id: "2",
-    name: "SMT Synthesis",
-    items: [{
-        id: "2_1",
-        name: "Empirical",
-        items: [{
-            id: "2_1_1",
-            name: "Simple Temporal",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
-        },
-        {
-            id: "2_1_2",
-            name: "Simple Temporal (recursively unrolled)",
-            cmd: "./rmtld3synth --synth-smtlibv2 --rec-unrolling 10 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
-        },
-        {
-            id: "2_1_3",
-            name: "Bounded Duration",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
-        },
-        {
-            id: "2_1_4",
-            name: "Bounded Invariant",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
-        },
-        {
-            id: "2_1_5",
-            name: "Simple Temporal with Bounded Duration",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2\" --verbose 2"
-        }]
-    }, {
-        id: "2_2",
-        name: "Scheduling",
-        items: [{
-            id: "2_2_1",
-            name: "Simple Single processor",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}\" --verbose 2"
-        },
-        {
-            id: "2_2_2",
-            name: "Advanced Single processor",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}\" --verbose 2"
-        }/*, {
+            }]
+        }, {
+            id: "2",
+            name: "SMT Synthesis",
+            items: [{
+                id: "2_1",
+                name: "Empirical",
+                items: [{
+                    id: "2_1_1",
+                    name: "Simple Temporal",
+                    cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
+                },
+                {
+                    id: "2_1_2",
+                    name: "Simple Temporal (recursively unrolled)",
+                    cmd: "./rmtld3synth --synth-smtlibv2 --rec-unrolling 10 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
+                },
+                {
+                    id: "2_1_3",
+                    name: "Bounded Duration",
+                    cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
+                },
+                {
+                    id: "2_1_4",
+                    name: "Bounded Invariant",
+                    cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
+                },
+                {
+                    id: "2_1_5",
+                    name: "Simple Temporal with Bounded Duration",
+                    cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2\" --verbose 2"
+                }]
+            }, {
+                id: "2_2",
+                name: "Scheduling",
+                items: [{
+                    id: "2_2_1",
+                    name: "Simple Single processor",
+                    cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}\" --verbose 2"
+                },
+                {
+                    id: "2_2_2",
+                    name: "Advanced Single processor",
+                    cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}\" --verbose 2"
+                }/*, {
             id: "2_2_3",
             name: "Simple multi-processor",
             cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1\" --verbose 2"
         }*/]
-    }]
-}];
+            }]
+        }];
 
-function textAreaAdjust(o) {
-  o.style.height = "1px";
-  o.style.height = (5+o.scrollHeight)+"px";
-}
+    </script>
 
-function clearfld (el) {
-  el.value = "";
-}
-//-->
-</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 </head>
 
-<body onload=go()  class="dx-viewport">
-<h1 style="margin-left: 5px">rmtld3synth web demonstrator</h1>
+<body class="d-flex flex-column full-height" onload=go()>
 
-<div class="dx-viewport demo-container">
-        <div class="form">
-            <div>
-                
-                <div id="menu"></div>
-                <div id="product-details" class="hidden">
-                    <img src="" />
-                    <div class="name"></div>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><img src="logo.png" alt="Logo" width="64" height="64">rmtld3synth</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="modal" data-bs-target="#aboutModal" href="#">About</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4 flex-grow-1 d-flex" style="height: calc(100vh - 150px);">
+        <div class="row flex-grow-1 w-100">
+
+            <div class="col">
+                <div class="row mb-3 h-100">
+                    <div class="col-4">
+                        <div class="accordion" id="menuAccordion">
+
+                            <!-- Monitor Synthesis -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading1">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapse1">
+                                        Monitor Synthesis
+                                    </button>
+                                </h2>
+                                <div id="collapse1" class="accordion-collapse collapse show"
+                                    data-bs-parent="#menuAccordion">
+                                    <div class="accordion-body">
+
+                                        <!-- Ocaml -->
+                                        <div class="accordion" id="ocamlAccordion">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading1_1">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#collapse1_1">
+                                                        Ocaml
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse1_1" class="accordion-collapse collapse"
+                                                    data-bs-parent="#ocamlAccordion">
+                                                    <div class="accordion-body">
+                                                        <button
+                                                            class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
+                                                            onclick="copyCommand(`--synth-ocaml --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
+                                                            Monitor</button>
+                                                        <button
+                                                            class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
+                                                            onclick="copyCommand(`--synth-ocaml --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
+                                                            Duration Monitor</button>
+                                                        <button class="btn btn-sm btn-outline-primary w-100 text-start"
+                                                            onclick="copyCommand(`--synth-ocaml --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
+                                                            Invariant</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Cpp11 -->
+                                        <div class="accordion mt-2" id="cppAccordion">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading1_2">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#collapse1_2">
+                                                        Cpp11
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse1_2" class="accordion-collapse collapse"
+                                                    data-bs-parent="#cppAccordion">
+                                                    <div class="accordion-body">
+                                                        <button
+                                                            class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
+                                                            onclick="copyCommand(`--synth-cpp11 --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
+                                                            Monitor</button>
+                                                        <button class="btn btn-sm btn-outline-primary w-100 text-start"
+                                                            onclick="copyCommand(`--synth-cpp11 --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
+                                                            Duration Monitor</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Autopilot Case Study -->
+                                        <div class="accordion mt-2" id="autopilotAccordion">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading1_3">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#collapse1_3">
+                                                        Autopilot Case Study
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse1_3" class="accordion-collapse collapse"
+                                                    data-bs-parent="#autopilotAccordion">
+                                                    <div class="accordion-body">
+                                                        <button class="btn btn-sm btn-outline-primary w-100 text-start"
+                                                            onclick="copyCommand(`--synth-cpp11 --input-sexp '(Or \n\
+    (Not \n\
+        (Or \n\
+        (Not \n\
+            (Not \n\
+            (Or (LessThan (Duration (Constant 1000000) (Prop N)) (Constant 0)) \n\
+                (LessThan (Constant 0) (Duration (Constant 1000000) (Prop N)))))) \n\
+        (Not \n\
+            (Not \n\
+            (Or \n\
+                (Not \n\
+                (Or \n\
+                    (LessThan (Constant 0) \n\
+                    (Duration (Constant 1000000) (Prop B))) \n\
+                    (Not \n\
+                    (Or \n\
+                        (LessThan (Constant 0) \n\
+                        (Duration (Constant 1000000) (Prop B))) \n\
+                        (LessThan (Constant 1000000) \n\
+                        (Duration (Constant 0) (Prop B))))))) \n\
+                (Not \n\
+                (LessThan (Duration (Constant 1000000) (Prop B)) \n\
+                    (Constant 5000000)))))))) \n\
+    (Or (Prop A) (Not (Or (Prop NOSYMBOL) (Not (Prop NOSYMBOL))))))' --verbose 2`)">Use
+                                                            Case 1</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SMT Synthesis -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading2">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapse2">
+                                        SMT-Lib Synthesis
+                                    </button>
+                                </h2>
+                                <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#menuAccordion">
+                                    <div class="accordion-body">
+
+                                        <!-- Empirical -->
+                                        <div class="accordion" id="empiricalAccordion">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading2_1">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#collapse2_1">
+                                                        Empirical
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse2_1" class="accordion-collapse collapse"
+                                                    data-bs-parent="#empiricalAccordion">
+                                                    <div class="accordion-body">
+                                                        <!-- Buttons for commands -->
+                                                        <button
+                                                            class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
+                                                            onclick="copyCommand(`--synth-smtlibv2 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
+                                                            Temporal</button>
+                                                        <button
+                                                            class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
+                                                            onclick="copyCommand(`--synth-smtlibv2 --rec-unrolling 10 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
+                                                            Temporal (recursively unrolled)</button>
+                                                        <button
+                                                            class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
+                                                            onclick="copyCommand(`--synth-smtlibv2 --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Bounded
+                                                            Duration</button>
+                                                        <button
+                                                            class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
+                                                            onclick="copyCommand(`--synth-smtlibv2 --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
+                                                            Invariant</button>
+                                                        <button class="btn btn-sm btn-outline-primary w-100 text-start"
+                                                            onclick="copyCommand(`--synth-smtlibv2 --input-latexeq '\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2' --verbose 2`)">Simple
+                                                            Temporal with Bounded Duration</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Scheduling -->
+                                        <div class="accordion mt-2" id="schedulingAccordion">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading2_2">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#collapse2_2">
+                                                        Scheduling
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse2_2" class="accordion-collapse collapse"
+                                                    data-bs-parent="#schedulingAccordion">
+                                                    <div class="accordion-body">
+                                                        <button
+                                                            class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
+                                                            onclick="copyCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}' --verbose 2`)">Simple
+                                                            Single processor</button>
+                                                        <button class="btn btn-sm btn-outline-primary w-100 text-start"
+                                                            onclick="copyCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}' --verbose 2`)">Advanced
+                                                            Single processor</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="row mb-3">
+
+                            <!-- Input Terminal -->
+                            <div class="accordion" id="inputcommand">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#inputcollapse">
+                                            Input
+                                        </button>
+                                    </h2>
+                                    <div id="inputcollapse" class="accordion-collapse collapse show"
+                                        data-bs-parent="#inputcommand">
+                                        <div class="accordion-body">
+
+                                            <div id="input-editor"></div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Log Console -->
+                            <div class="accordion" id="logconsole">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#logcollapse">
+                                            Log Console
+                                        </button>
+                                    </h2>
+                                    <div id="logcollapse" class="accordion-collapse collapse show"
+                                        data-bs-parent="#logconsole">
+                                        <div class="accordion-body">
+
+                                            <div id="cs-editor"></div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="accordion" id="codea">
+
+                    <!-- Code Generation -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#codecollapse">
+                                Code Generation
+                            </button>
+                        </h2>
+                        <div id="codecollapse" class="accordion-collapse collapse show" data-bs-parent="#codea">
+                            <div class="accordion-body">
+
+                                <div style="width:98%;" id="tab-bar">
+                                    <div class="tab active" data-tab="tab0" onclick="switchTab('0')">file1</div>
+                                </div>
+                                <div id="code"></div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
 
-<div style="width:100%;height:80%">
-<label for="explanationone">Type a command</label>
-<textarea id="input" rows="2" cols="60" onclick="textAreaAdjust(this)" onkeyup="textAreaAdjust(this);go()" onchange="textAreaAdjust(this);" style="width:98%">./rmtld3synth --synth-ocaml --input-latexeq "(a \rightarrow ((a \lor b) \until_{<10} c)) \land \int^{10} c < 4" --verbose 2</textarea>
-</br>
-<label for="explanationtwo">Please see the results</label>
-<textarea id="output" rows="0" cols="60" style="width:98%;height:80%" readonly onload=go()>
-Your browser does not seem to support Webworkers.
-Try Firefox, Chrome or IE10+. 
-</textarea>
-</div>
+        <!-- About Modal -->
+        <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
 
-</div>
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="aboutModalLabel"><img src="logo.png" alt="Logo" width="64"
+                                height="64">About rmtld3synth</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body">
+                        <p>This tool allows synthesis of runtime monitors using various backends such as OCaml, C++11,
+                            and
+                            SMT-Lib. You can select predefined synthesis options or customize your own.</p>
+                        <p>Developed using Bootstrap 5, Ace editor, and <strong>js_of_ocaml</strong>.</p>
+                        <p><small>© 2025 The rmtld3synth team</small></p>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modal -->
+        <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content text-center p-4">
+                    <div class="modal-header border-0">
+                        <h1 class="modal-title display-6 text-primary w-100" id="welcomeModalLabel">Welcome to
+                            rmtld3synth Web!</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="lead text-secondary">We are excited to have you here. Get started by exploring our new
+                            features!</p>
+                        <a href="#" class="btn btn-primary" data-bs-dismiss="modal">Get Started</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            window.addEventListener('DOMContentLoaded', () => {
+                const myModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+                myModal.show();
+            });
+        </script>
+
+        <script>
+            const inputEditor = ace.edit("input-editor");
+            inputEditor.setTheme("ace/theme/textmate");
+            inputEditor.session.setMode("ace/mode/text"); // plain text mode
+            inputEditor.setOptions({
+                maxLines: 10,
+                minLines: 4,
+                autoScrollEditorIntoView: true,
+                wrap: true,
+                showPrintMargin: false,
+                showGutter: false
+            });
+
+            inputEditor.setValue("--help");
+
+            // Trigger your 'go()' function on keyup (or debounce it for performance)
+            inputEditor.session.on('change', () => {
+                go();
+            });
+
+            // Optional: mimic textarea height resizing
+            inputEditor.on('input', () => {
+                const lines = inputEditor.session.getLength();
+                inputEditor.container.style.height = `${Math.max(60, lines * 20)}px`;
+                inputEditor.resize();
+            });
+
+            // Optional: get value like from a textarea
+            function getInputValue() {
+                return inputEditor.getValue();
+            }
+        </script>
+
+        <script>
+            var csEditor = ace.edit("cs-editor");
+            csEditor.session.setMode("ace/mode/ocaml");
+
+            csEditor.setOptions({
+                maxLines: Infinity,
+                autoScrollEditorIntoView: true,
+                wrap: true,
+                showPrintMargin: false,
+                showGutter: false,
+                readOnly: true
+            });
+
+        </script>
+
+        <script>
+            var code = ace.edit("code");
+
+            code.setOptions({
+                maxLines: Infinity,
+                autoScrollEditorIntoView: true,
+                wrap: true,
+                showPrintMargin: false
+            });
+
+            sessions = [
+                ace.createEditSession("// Code in Tab 1", "ace/mode/ocaml"),
+            ];
+
+            // Function to switch between tabs
+            function switchTab(tabName) {
+                console.log(tabName);
+                code.setSession(sessions[tabName]);
+                code.getSession().setUseWrapMode(true);
+
+                setActiveTab(tabName);
+            }
+
+            function setActiveTab(tabName) {
+                // Remove 'active' class from all tabs
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+
+                // Add 'active' class to the selected tab
+                const newActiveTab = document.querySelector(`.tab[data-tab="tab${tabName}"]`);
+                if (newActiveTab) {
+                    newActiveTab.classList.add('active');
+                }
+            }
+
+            // Initialize with tab1
+            switchTab('0');
+        </script>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 
