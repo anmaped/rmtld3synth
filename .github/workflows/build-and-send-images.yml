@@ -31,8 +31,12 @@ jobs:
           context: .
           file: ./Containerfile.slim
           push: true
-          tags: ${{ steps.meta.outputs.tags }}-slim
+          tags: |
+            ${{ steps.meta.outputs.tags }}-slim
+            anmaped/rmtld3synth:latest
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            RMTLD3SYNTH_VERSION=${{ github.ref_name }}
 
       - name: Build and push dev image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671

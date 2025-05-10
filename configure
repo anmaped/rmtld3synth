@@ -94,7 +94,7 @@ if [ -n "$Z3_VERSION" ] && [ "x$z3_solver" == "xtrue" ]; then
     fi
     
     cp src/interface/dune src/interface/dune.bak
-    eval $SED 's/%LIBRARIES%/z3/' src/interface/dune
+    eval $SED "s/%LIBRARIES%/$Z3_NAME/" src/interface/dune
 
 else
     echo -e "\nzsolver: 

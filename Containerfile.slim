@@ -1,5 +1,7 @@
 FROM docker.io/ocamlpro/ocaml:4.14.2 as base
 
+ARG RMTLD3SYNTH_VERSION="v0.5-x" # this will be replaced by the build environment
+
 RUN sudo apk add python3 build-base bash
 
 RUN opam switch create . ocaml-system --deps-only --locked
@@ -7,10 +9,10 @@ RUN opam switch create . ocaml-system --deps-only --locked
 RUN opam pin add dolmen https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
 RUN opam pin add dolmen-export https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
 
-RUN git clone --branch v0.5-x https://github.com/anmaped/rmtld3synth.git
+RUN git clone --branch ${RMTLD3SYNTH_VERSION} https://github.com/anmaped/rmtld3synth.git
 RUN git clone --branch z3-4.12.3 https://github.com/Z3Prover/z3.git
 
-RUN opam install zarith ppx_sexp_conv sexplib bigarray-compat ocamlfind
+RUN opam install zarith ppx_sexp_conv sexplib bigarray-compat ocamlfind ppx_yojson_conv
 RUN cd z3 && eval $(opam env) && python scripts/mk_make.py --ml --staticlib && cd build && make
 
 # fix

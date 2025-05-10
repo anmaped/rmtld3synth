@@ -20,6 +20,7 @@ jobs:
 
       - name: Set-up Python3
         run: |
+          opam var arch
           $env:Path = 'D:\cygwin\bin;' + $env:Path; setx /m PATH "$env:PATH"
           opam install conf-python-3
           opam exec -- python3 --version
@@ -43,14 +44,18 @@ jobs:
           mv z3-z3-4.11.2.patch files/ #
           cd ../../../ #
           rm ../*.cache #
-          opam admin update-extrafiles #
         shell: bash
 
-      - name: Set-up Z3
-        run: opam install z3=4.11.2
+      - name: Update opam packages
+        run: |
+          (& opam env) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
+          cd D:\.opam\repo\default
+          opam admin update-extrafiles
 
       - name: Build rmtld3synth
-        run: opam install . --with-test
+        run: |
+          (& opam env) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
+          opam install z3=4.11.2 rmtld3synth --with-test
 
       - name: upload artifact
         uses: actions/upload-artifact@v4

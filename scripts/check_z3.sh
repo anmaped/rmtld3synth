@@ -27,6 +27,6 @@ QUERYVERSION="$QUERY -format %v"
 # query which package name is installed (z3 or Z3) using `ocamlfind query`
 #Z3_VERSION=`z3 --version | sed -ne 's/Z3 [^0-9]*\(\([0-9]\.\)\{0,4\}[0-9][^.]\).*/\1/p'`;
 
-$QUERY z3 && { Z3_VERSION="$($QUERYVERSION z3)"; }
-$QUERY Z3 && ! $QUERY z3 && { echo "Replace z3 by Z3."; sed -i 's/z3/Z3/' src/interface/dune; Z3_VERSION="$($QUERYVERSION Z3)"; }
+$QUERY z3 && { Z3_NAME="z3"; Z3_VERSION="$($QUERYVERSION z3)"; }
+$QUERY Z3 && ! $QUERY z3 && { echo "Replace z3 by Z3."; Z3_NAME="Z3"; Z3_VERSION="$($QUERYVERSION Z3)"; }
 ! $QUERY Z3 && ! $QUERY z3 && { echo "No z3 package found. Just compile rmtld3synth without z3 solver support."; sed -i 's/z3//' src/interface/dune; Z3_VERSION=""; }

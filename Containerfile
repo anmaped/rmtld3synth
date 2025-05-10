@@ -1,6 +1,6 @@
 FROM debian:12
 
-ARG RMTLD3SYNTH_VERSION="v0.5-x"
+ARG RMTLD3SYNTH_VERSION="v0.5-x" # this will be replaced by the build environment
 
 RUN \
   apt update && apt install -y \
