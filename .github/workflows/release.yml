@@ -3,8 +3,6 @@ on:
     # Sequence of patterns matched against refs/tags
     tags:
     - 'v*' # Push events to matching v*, i.e. v0.6
-    branches:
-    - master
 
 name: Upload Release Asset
 
@@ -24,7 +22,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          draft: true
+          draft: false
           prerelease: false
 
       - name: Install and Authenticate GitHub CLI

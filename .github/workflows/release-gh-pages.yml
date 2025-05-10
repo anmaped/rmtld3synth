@@ -2,8 +2,9 @@ name: GitHub Pages
 
 on:
   push:
-    branches:
-      - master
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v0.6
 
 jobs:
   set_gh_pages:
