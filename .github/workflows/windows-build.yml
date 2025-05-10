@@ -57,10 +57,20 @@ jobs:
           (& opam env) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
           opam install z3=4.11.2 rmtld3synth --with-test
 
+      - name: Set-up rmtld3synth bundle
+        run: |
+          eval $(opam env) #
+          mkdir bundle #
+          cp ./_opam/bin/rmtld3synth.exe ./bundle #
+          cp ./_opam/bin/libz3.dll ./bundle #
+          cd ./bundle #
+          curl -O https://raw.githubusercontent.com/mpreisler/mingw-bundledlls/refs/heads/master/mingw-bundledlls #
+          MINGW_BUNDLEDLLS_SEARCH_PATH="/usr/x86_64-w64-mingw32/sys-root/mingw/bin/:./" ./mingw-bundledlls rmtld3synth.exe --copy #
+          rm mingw-bundledlls #
+        shell: bash
+
       - name: upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-build-artifact-${{ github.sha }}
-          path: |
-            ./_opam/bin/rmtld3synth.exe
-            ./_opam/bin/libz3.dll
+          path: ./bundle
