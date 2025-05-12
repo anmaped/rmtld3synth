@@ -47,7 +47,7 @@ jobs:
       - name: run anmaped/rmtld3synth image
         run: |
           docker run --rm \
-          --entrypoint /bin/bash \
+          --entrypoint /bin/sh \
           -v ${PWD}:/workspace/source:z  \
           docker.io/anmaped/rmtld3synth:v0.6-x-slim \
           -c 'apk add xz && \
