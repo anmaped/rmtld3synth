@@ -34,8 +34,7 @@ jobs:
           file: ./Containerfile.slim
           push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}-slim
-            anmaped/rmtld3synth:latest
+            anmaped/rmtld3synth:${{ github.ref_name }}-slim
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             RMTLD3SYNTH_VERSION=${{ github.ref_name }}
@@ -46,7 +45,8 @@ jobs:
           context: .
           file: ./Containerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             RMTLD3SYNTH_VERSION=${{ github.ref_name }}
