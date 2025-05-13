@@ -1,9 +1,11 @@
-name: Publish Docker image
+name: Build and upload container images
 
 on:
   push:
     branches:
       - v0.*
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v0.6
 
 jobs:
   push_to_registry:

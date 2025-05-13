@@ -1,8 +1,11 @@
 name: Web Build
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - v0.*
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v0.6
 
 permissions: read-all
 
@@ -24,7 +27,7 @@ jobs:
           docker run --rm \
           --entrypoint /bin/bash \
           -v ${PWD}:/workspace/source:z  \
-          docker.io/anmaped/rmtld3synth:v0.6-x \
+          docker.io/anmaped/rmtld3synth:${{ github.ref_name }} \
           -c 'cp -r /workspace/source /localsource && cd /localsource && \
           eval $(opam env) && \
           ./configure --js_of_ocaml --without-z3-solver && make js && \

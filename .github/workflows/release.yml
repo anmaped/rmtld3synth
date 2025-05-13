@@ -1,10 +1,10 @@
+name: Release
+
 on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
     - 'v*' # Push events to matching v*, i.e. v0.6
-
-name: Upload Release Asset
 
 jobs:
   build:
@@ -13,17 +13,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
 
       - name: Install and Authenticate GitHub CLI
         run: |
@@ -49,14 +38,14 @@ jobs:
           docker run --rm \
           --entrypoint /bin/sh \
           -v ${PWD}:/workspace/source:z  \
-          docker.io/anmaped/rmtld3synth:v0.6-x-slim \
+          docker.io/anmaped/rmtld3synth:${{ github.ref_name }}-slim \
           -c 'apk add xz && \
           xz /usr/bin/rmtld3synth && \
           cp /usr/bin/rmtld3synth.xz /workspace/source'
 
       - name: Get latest windows-build run ID
         run: |
-          RUN_ID=$(gh run list --workflow=web-build.yml --limit=1 --json databaseId -q '.[0].databaseId')
+          RUN_ID=$(gh run list --workflow=windows-build.yml --limit=1 --json databaseId -q '.[0].databaseId')
           echo "Latest run ID: $RUN_ID"
           echo "RUN_ID_WINDOWS=$RUN_ID" >> $GITHUB_ENV  # Save to environment variable
 
@@ -70,6 +59,17 @@ jobs:
       - shell: bash
         run: |
           ls
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
 
       - name: Upload Release Asset web-build-artifact-${{ github.sha }}
         uses: actions/upload-release-asset@v1
