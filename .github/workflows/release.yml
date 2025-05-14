@@ -32,6 +32,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ env.RUN_ID_WEB }}
+          path: ./web-build-artifact-${{ github.sha }}
 
       - name: run anmaped/rmtld3synth image
         run: |
@@ -55,9 +56,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ env.RUN_ID_WINDOWS }}
+          path: ./windows-build-artifact-${{ github.sha }}
 
       - shell: bash
         run: |
+          sudo apt install zip -y
+          zip -j -r ./windows-build-artifact-${{ github.sha }}.zip ./windows-build-artifact-${{ github.sha }}
+          zip -j -r ./web-build-artifact-${{ github.sha }}.zip ./web-build-artifact-${{ github.sha }}
           ls
 
       - name: Create Release
@@ -78,7 +83,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./web-build-artifact-${{ github.sha }}.zip
-          asset_name: rmtld3synth-${{ github.ref }}-web.zip
+          asset_name: rmtld3synth-${{ github.ref_name }}-web.zip
           asset_content_type: application/zip
 
       - name: Upload Release Asset linux-build-artifact-${{ github.sha }}
@@ -88,7 +93,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rmtld3synth.xz
-          asset_name: rmtld3synth-${{ github.ref }}-linux.xz
+          asset_name: rmtld3synth-${{ github.ref_name }}-linux.xz
           asset_content_type: application/xz
 
       - name: Upload Release Asset windows-build-artifact-${{ github.sha }}
@@ -98,5 +103,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./windows-build-artifact-${{ github.sha }}.zip
-          asset_name: rmtld3synth-${{ github.ref }}-windows.zip
+          asset_name: rmtld3synth-${{ github.ref_name }}-windows.zip
           asset_content_type: application/zip
