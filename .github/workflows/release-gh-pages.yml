@@ -40,10 +40,14 @@ jobs:
 
       - shell: bash
         run: |
-          ls
+          sudo apt install curl -y
+          ls -l
           mkdir -p ./public
           cp rmtld3synth.js ./public
           cp doc/page/*.* ./public
+          curl -L -o out.tgz https://github.com/wasm-fmt/clang-format/releases/download/v20.1.5/wasm-fmt-clang-format-20.1.5.tgz
+          tar -xzvf out.tgz
+          cp -r package ./public/
           ls ./public -l
 
       - name: Deploy

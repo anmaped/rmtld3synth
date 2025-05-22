@@ -26,6 +26,14 @@
         }
     </style>
 
+    <script type="module">
+        import init, { format } from "./package/clang-format.js";
+        window.clangformat = async (filename, code) => {
+            await init();
+            return format(code, filename, "Chromium").toString();
+        };
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.js" type="text/javascript"
         charset="utf-8"></script>
 
@@ -71,8 +79,29 @@
                 if (typeof m.data == 'object') {
                     console.log(m.data.content);
                     console.log("tab" + id);
-                    sessions.push(ace.createEditSession("", "ace/mode/ocaml"));
-                    sessions[id].setValue(m.data.content, 1);
+                    
+                    let mode = "ace/mode/text";
+                    if (m.data.name && m.data.name.endsWith(".c") || m.data.name.endsWith(".cpp") || m.data.name.endsWith(".h")) {
+                        mode = "ace/mode/c_cpp";
+                    }
+
+                    if (m.data.name && m.data.name.endsWith(".ml") || m.data.name.endsWith(".mli")) {
+                        mode = "ace/mode/ocaml";
+                    }
+                    
+                    sessions.push(ace.createEditSession("", mode));
+                    sessions[id].setMode(mode);
+
+                    if (m.data.name && m.data.name.endsWith(".c") || m.data.name.endsWith(".cpp") || m.data.name.endsWith(".h")) {
+
+                        const frozen_id = id;
+                        clangformat(m.data.name, m.data.content).then((formatted) => {
+                            sessions[frozen_id].setValue(formatted, 1);
+                        });
+
+                    } else {
+                        sessions[id].setValue(m.data.content, 1);
+                    }
 
                     document.getElementById('tab-bar').innerHTML += ("<div class=\"tab" + (id == 0 ? " active" : "") + "\" data-tab=\"tab" + id + "\" onclick=\"switchTab('" + id + "')\">" + m.data.name + "</div>");
                     if (id == 0) { switchTab(0); }
@@ -243,7 +272,7 @@
 
             <div class="col">
                 <div class="row mb-3 h-100">
-                    <div class="col-4">
+                    <div class="col-lg-5 col-xl-4">
                         <div class="accordion" id="menuAccordion">
 
                             <!-- Monitor Synthesis -->
