@@ -79,7 +79,7 @@
                 if (typeof m.data == 'object') {
                     console.log(m.data.content);
                     console.log("tab" + id);
-                    
+
                     let mode = "ace/mode/text";
                     if (m.data.name && m.data.name.endsWith(".c") || m.data.name.endsWith(".cpp") || m.data.name.endsWith(".h")) {
                         mode = "ace/mode/c_cpp";
@@ -88,7 +88,7 @@
                     if (m.data.name && m.data.name.endsWith(".ml") || m.data.name.endsWith(".mli")) {
                         mode = "ace/mode/ocaml";
                     }
-                    
+
                     sessions.push(ace.createEditSession("", mode));
                     sessions[id].setMode(mode);
 

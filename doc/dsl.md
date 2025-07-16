@@ -1,7 +1,7 @@
 
-# Domain Specification Language
+# Domain Specific Language
 
-The BNF representation of the domain specification language is provided below:
+The BNF representation of the domain specific language is provided below:
 
 ```ocaml
 <F> ::==                             (* Formulas *)

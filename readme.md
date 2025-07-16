@@ -40,24 +40,30 @@ docker pull anmaped/rmtld3synth:latest # this will download the pre-built image 
 docker run -it anmaped/rmtld3synth  # this will create and run the container
 ```
 
-Now you can use the rmtld3synth command line interface.
+The rmtld3synth tool can now be used from the command-line interface.
 
 ### Get started with rmtld3synth
 
-To initiate monitor generation, you can utilize the `rmtld3synth` tool via the command line interface (CLI). Next, let's introduce an example of how to achieve this generation by specifying a straightforward input formula and specific settings.
-
- To create a sample monitor, execute the following shell command (assuming the tool is in the current shell environment):
+To begin generating a monitor, use the `rmtld3synth` tool from the command line. Below is a simple example demonstrating how to do this with a basic input formula and specific configuration options.
+To generate a sample monitor, execute this command:
 
 ```shell
-rmtld3synth --synth-cpp11 --input-latexeq "a \until_{<10} b" --out-src out
+rmtld3synth --synth-cpp11 --input-latexeq "a until b within 10s" --out-src out
 ```
 
-The `--synth-cpp11` flag sets `rmtld3synth` to build a C++11 monitor using the formula `a \until_{<10} b` and save the output in the `out` directory.
+The `--synth-cpp11` flag configures `rmtld3synth` to generate a C++11 monitor using the formula `a until b within 10s`, with the output saved in the `out` directory. This produces a working monitor that can be compiled with GCC, LLVM, or other C/C++ compilers.
 
-At this point, you have a working monitor that can be provided to GCC, LLVM, or other C/C++ compiler. Both C++ and Ocaml synthesis flags are available, although SPARK support is planned for future versions.
+Alternatively, the `--synth-ocaml` flag generates the monitor in the OCaml language, or the `--synth-smtlibv2` flag can be used to check the satisfiability of the formula in SMT-LIBv2 format.
 
-For further insights on instrumenting the monitors, please refer to the illustrative examples in the [rtmlib2](https://github.com/anmaped/rtmlib/tree/master/examples) repository.
-Alternatively, you may explore the [Documentation](#documentation) section of rmtld3synth. This resource provides valuable insights into creating monitors for various targets such as bare metal or operating systems like NuttX and FreeRTOS.
+For more information on the specification language, see the [Domain Specific Language](doc/dsl) documentation.
+
+Additional guidance is available in the [Documentation](#documentation) section, which includes details on integrating monitors for targets such as bare-metal environments or real-time operating systems like NuttX, FreeRTOS, and RTEMS.
+
+Examples demonstrating how to instrument the generated monitors can be found in the [rtmlib2](https://github.com/anmaped/rtmlib/tree/master/examples) repository.
+`rtmlib2` is the instrumentation library used to facilitate the integration of monitors into target systems.
+
+
+
 
 
 ## Building from Git
@@ -66,11 +72,11 @@ Alternatively, you may explore the [Documentation](#documentation) section of rm
 ![macOS build](https://github.com/anmaped/rmtld3synth/actions/workflows/macos-build.yml/badge.svg)
 ![Windows build](https://github.com/anmaped/rmtld3synth/actions/workflows/windows-build.yml/badge.svg)
 
-### To compile rmtld3synth for Linux and macOS using Opam and Ocaml version >= 4.04.0
+### To compile rmtld3synth for Linux and macOS using Opam and OCaml version >= 4.04.0
 
-To build rmtld3synth for Linux and macOS using Opam and a minimum Ocaml version of 4.04.0, follow these steps:
+To build rmtld3synth for Linux and macOS using Opam and a minimum OCaml version of 4.04.0, follow these steps:
 
-1. Pin rmtld3synth as an `opam` package and set the Ocaml compiler to version `>= 4.04.0`. All necessary dependencies will be installed automatically.
+1. Pin rmtld3synth as an `opam` package and set the OCaml compiler to version `>= 4.04.0`. All necessary dependencies will be installed automatically.
 
 ```shell
 opam pin add rmtld3synth https://github.com/anmaped/rmtld3synth.git
@@ -98,7 +104,7 @@ Please ensure that you have at least Python version 2.7 and `g++-5` installed on
 
 ### To compile rmtld3synth for Windows using ocaml >= 4.04.0
 
-Get [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/) and switch the Ocaml compiler to version `>= 4.04.0``.
+Get [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/) and switch the OCaml compiler to version `>= 4.04.0``.
 
 ```shell
 opam switch 4.04.0+mingw64
@@ -131,7 +137,7 @@ The current version is [v2.1.0](https://github.com/anmaped/rtmlib/tags).
 
 ![build workflow](https://github.com/anmaped/rtmlib/actions/workflows/build-and-send-images.yml/badge.svg)
 
-The rtmlib2 is a support library for embedding runtime monitors written in CPP11.
+The rtmlib2 is a support library for embedding runtime monitors written in C++11.
 
 Note that we can skip this compilation step if we do not need to integrate the monitors into the target system, or if we just want to synthesize the RMTLD3 specifications into SMT-Libv2.
 
