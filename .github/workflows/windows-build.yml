@@ -55,7 +55,7 @@ jobs:
       - name: Build rmtld3synth
         run: |
           (& opam env) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
-          opam install z3=4.11.2 rmtld3synth --with-test
+          opam install z3=4.11.2 rmtld3synth --with-test -vv
 
       - name: Set-up rmtld3synth bundle
         run: |

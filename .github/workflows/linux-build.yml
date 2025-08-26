@@ -20,4 +20,4 @@ jobs:
         with:
           ocaml-compiler: 4
 
-      - run: opam install . --with-test
+      - run: opam install . --with-test -vv

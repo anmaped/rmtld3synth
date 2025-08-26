@@ -1,0 +1,15 @@
+[
+  "Always",
+  [
+    "Or",
+    [
+      "Overlap",
+      [ "Expand", [ "Proposition", "a" ], 1.0 ],
+      [ "Proposition", "b" ]
+    ],
+    [
+      "Eventually",
+      [ "SubSetEq", [ "Proposition", "a" ], [ "Proposition", "b" ] ]
+    ]
+  ]
+]

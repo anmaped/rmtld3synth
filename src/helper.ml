@@ -1,7 +1,7 @@
 open Sexplib
 open Sexplib.Conv
 open Rmtld3
-include Js.Helper_
+include Js.Helper
 
 (* global_int settings *)
 type global_int = string * int [@@deriving sexp]

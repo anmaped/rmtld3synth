@@ -1,0 +1,8 @@
+(library
+ (name js)
+ (public_name rmtld3synth.js)
+ (modules Helper)
+ (enabled_if
+  (or
+   (= %{profile} "release")
+   (= %{profile} "release_without_z3"))))

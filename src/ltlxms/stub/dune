@@ -1,0 +1,8 @@
+(library
+ (name ltlxms)
+ (enabled_if
+  (or
+   (= %{profile} "release-js")
+   (= %{profile} "release_without_z3")))
+ (modules ltlxms)
+ (public_name rmtld3synth.ltlxms))

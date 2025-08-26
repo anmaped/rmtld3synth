@@ -1,0 +1,6 @@
+flowchart LR
+    A["Read Expression"] --> B("Transform Expression using Z3")
+    C["Read Trace from JSON"] --> D("Structure Trace")
+    B --> E{"Evaluate Expression against Trace using Z3"}
+    D --> E
+    E --> F["Result of Evaluation"]

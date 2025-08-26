@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name:         "rmtld3synth"
-version:      "0.5-dev"
+version:      "0.6-dev"
 maintainer:   "André Pedro <apedro.1@gmail.com>"
 authors:      "André Pedro <apedro.1@gmail.com>"
 homepage:     "https://github.com/anmaped/rmtld3synth"
@@ -31,9 +31,12 @@ pin-depends: [
 
 build: [
   ["./configure" "--prefix=%{prefix}%"]
-  [make "setup"]
+  ["make" "setup"]
   ["dune" "subst"] {pinned}
   ["dune" "build" "-p" name "-j" jobs]
 ]
 
-run-test: [make "tests" "allchecks"]
+run-test: [
+  ["dune" "runtest" "-p" name "-j" jobs]
+  ["make" "tests" "allchecks"]
+]

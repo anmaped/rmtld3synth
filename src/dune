@@ -2,7 +2,7 @@
 (executable
   (name            rmtld3synth)
   (public_name     rmtld3synth)
-  (libraries       rmtld3synth.synthesis)
+  (libraries       rmtld3synth.synthesis rmtld3synth.ltlxms rmtld3synth.sequence)
   (modules         Rmtld3synth Version)
   (flags           (-cclib -lstdc++) )
   (modes           byte exe)

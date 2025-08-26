@@ -1,7 +1,12 @@
 (library
-  (name            js)
-  (public_name     rmtld3synth.js)
-  (libraries       sexplib ppx_sexp_conv %LIBRARIES%)
-  (modules         Helper_)
-  (preprocess      (pps ppx_sexp_conv %PPX%))
-)
+ (name js)
+ (public_name rmtld3synth.js)
+ (libraries sexplib ppx_sexp_conv js_of_ocaml)
+ (modules Helper)
+ (preprocess
+  (pps ppx_sexp_conv js_of_ocaml-ppx))
+ (enabled_if
+  (and
+   (<> %{profile} "release")
+   (<> %{profile} "release_without_z3")
+   (= %{profile} "release-js"))))

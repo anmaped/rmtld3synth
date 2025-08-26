@@ -1,0 +1,9 @@
+(library
+ (name ltlxms)
+ (public_name rmtld3synth.ltlxms)
+ (libraries z3 yojson sequence)
+ (preprocess
+  (pps ppx_yojson_conv))
+ (modules syntax encoding check)
+ (enabled_if
+  (= %{profile} "release")))

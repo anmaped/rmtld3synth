@@ -1,0 +1,3 @@
+(let ((a!1 (or (overlap (expand a 1.0) b)
+               (eventually (forall ((xs Real) (ys Real)) (=> a b))))))
+  (always a!1))

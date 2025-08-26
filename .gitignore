@@ -3,3 +3,4 @@ _*/
 *_.ml
 version.ml
 Makefile
+*.bak

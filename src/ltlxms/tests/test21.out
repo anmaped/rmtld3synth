@@ -1,0 +1,4 @@
+(let ((a!1 (and (forall ((xs Real) (ys Real)) (=> C1 (not C2)))
+                (forall ((xs Real) (ys Real)) (=> C2 (not C1))))))
+(let ((a!2 (and a!1 (next a!1) (next (next (overlap C1 C2))))))
+  (or (overlap C1 C2) (and a!1 (next (overlap C1 C2))) a!2)))

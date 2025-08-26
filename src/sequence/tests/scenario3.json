@@ -1,0 +1,19 @@
+{
+    "trace": [
+        {
+            "eventID": "1",
+            "timestamp": "10:00:00",
+            "elements": [
+                {
+                    "ID": 1,
+                    "type": "Car",
+                    "position": {"x": 0, "y": -7.25, "z": 0, "yaw": 45, "pitch": 0, "roll": 0},
+                    "region": {
+                        "type": "circle",
+                        "radius": 1.0
+                    }
+                }
+            ]
+        }
+    ]
+}

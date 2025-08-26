@@ -4,7 +4,7 @@
 set -e
 
 err_report() {
-  echo "Error on line $1"
+  echo "[test.sh] Error on line $1"
 }
 
 trap 'err_report $LINENO' ERR
@@ -163,7 +163,10 @@ declare -a arrayrmtld_sat_expected_result=(
 
   echo "Executing rmtld3synth-unittest..."
 
-  rmtld3synth-unittest
+  # copy binary from _build directory to test directory
+  cp "./../_build/default/unittests/rmtld3/unittest.exe" .
+
+  ./unittest.exe
 
   sleep 10
 

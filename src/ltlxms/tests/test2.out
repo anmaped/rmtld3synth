@@ -1,0 +1,1 @@
+(forall ((xs Real) (ys Real)) (=> p q))

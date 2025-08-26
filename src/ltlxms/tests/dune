@@ -1,0 +1,83 @@
+(test
+ (name test_print_ltlxms)
+ (libraries yojson ltlxms)
+ (modules test_print_ltlxms))
+
+(test
+ (name test_ltlxms)
+ (libraries z3 yojson ltlxms)
+ (modules test_ltlxms)
+ (deps
+  test1.json
+  test2.json
+  test3.json
+  test4.json
+  test5.json
+  test6.json
+  test7.json
+  test8.json
+  test9.json
+  test10.json
+  test11.json
+  test12.json
+  test13.json
+  test14.json
+  test15.json
+  test16.json
+  test17.json
+  test18.json
+  test19.json
+  test20.json
+  test21.json
+  test1.out
+  test2.out
+  test3.out
+  test4.out
+  test5.out
+  test6.out
+  test7.out
+  test8.out
+  test9.out
+  test10.out
+  test11.out
+  test12.out
+  test13.out
+  test14.out
+  test15.out
+  test16.out
+  test18.out
+  test19.out
+  test20.out
+  test21.out))
+
+(executable
+ (name test_with_trace)
+ (modules test_with_trace)
+ (libraries ltlxms sequence z3 yojson))
+
+(rule
+ (alias runtest)
+ (deps ../../sequence/tests/scenario5.json property1.json)
+ (action
+  (run
+   ./test_with_trace.exe
+   ../../sequence/tests/scenario5.json
+   property1.json)))
+
+(rule
+ (alias runtest)
+ (deps ../../sequence/tests/scenario6.json property2.json)
+ (action
+  (run
+   ./test_with_trace.exe
+   ../../sequence/tests/scenario6.json
+   property2.json)))
+
+(rule
+ (alias runtest)
+ (deps ../../sequence/tests/scenario6.json property3.json)
+ (action
+  (run
+   ./test_with_trace.exe
+   ../../sequence/tests/scenario6.json
+   property3.json)))

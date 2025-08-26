@@ -1,0 +1,2 @@
+(and (forall ((xs Real) (ys Real)) (=> a (not b)))
+     (forall ((xs Real) (ys Real)) (=> b (not a))))

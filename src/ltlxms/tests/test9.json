@@ -1,0 +1,6 @@
+[ "Next", 
+  [ "Overlap", 
+    [ "NextT", [ "Expand", [ "Proposition", "a" ], 1.0 ] ],
+    [ "NextT", [ "Proposition", "b" ] ]
+  ]
+]

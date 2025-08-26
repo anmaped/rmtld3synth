@@ -13,12 +13,11 @@ endif
 all: compile install
 
 compile: setup
-	dune build --profile release @install
+	dune build --verbose --profile release @install
 	dune build --profile release @test
 
 setup: version zsolver
 	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
-	echo "(* dummy js interface *)" >> src/js/helper_.ml
 
 version:
 	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > src/version.ml
@@ -41,6 +40,5 @@ uninstall:
 clean:
 	dune clean
 	rm -f *.byte *.native
-	rm -f src/interface/z3solver_.ml src/interface/mathkernel_call_.ml src/js/helper_.ml version.ml
+	rm -f src/interface/z3solver_.ml src/interface/mathkernel_call_.ml version.ml
 	cp src/interface/dune.bak src/interface/dune
-	cp src/js/dune.bak src/js/dune

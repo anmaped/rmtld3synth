@@ -1,0 +1,15 @@
+[
+  "Until",
+  [
+    "And",
+    [
+      "Disconnected", ["Proposition", "C1"], ["Proposition", "C3"]
+    ],
+    [
+      "Disconnected", ["Proposition", "C2"], ["Proposition", "C3"]
+    ]
+  ],
+  [
+    "Overlap", ["Proposition", "C1"], ["Proposition", "C2"]
+  ]
+]

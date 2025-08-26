@@ -8,7 +8,10 @@ open Interface
 open Interface.Rmdslparser
 open Dsl
 
+
 let helper = mk_helper
+
+let ltlxms_lang = ref ""
 
 let smtlibv2_lang = ref false
 
@@ -80,6 +83,11 @@ let set_out_dir v = set_setting "out_dir" (Txt v) helper
 let set_exp v =
   set_setting "input_exp_sexp" (Txt v) helper ;
   set_setting "input_exp" (Fm (formula_of_sexp (Sexp.of_string v))) helper
+
+let set_ltlxms v =
+  ltlxms_lang := v;
+  (* dummy formula to bypass the check and use ltlxms *)
+  set_setting "input_exp" (Fm (Prop "a")) helper
 
 let set_exp_dsl v =
   set_setting "input_exp_dsl" (Txt v) helper ;
@@ -344,9 +352,14 @@ let _ =
       , " Includes a given environment (e.g., --include 'filename.env')\n\n\
         \ Input:" )
     ; (* input expressions *)
+      (* --input-ltlxms*)
       ( "--input-sexp"
       , Arg.String set_exp
       , " Inputs sexp expression (RMTLD3 formula)" )
+    ;
+    ( "--input-ltlxms"
+      , Arg.String set_ltlxms 
+      , " Inputs ltlxms expression (Experimental)" )
     ; ( "--input-dsl"
       , Arg.String set_exp_dsl
       , " Inputs dsl expression (RMTLD3 formula)" )
@@ -459,6 +472,52 @@ let _ =
           1 fm_lst
       in
       () )
+  (* rmtld3synth --input-ltlxms <nome fich.json> --eval --include <nome fich trace> --solver-z3 *)
+  else if !ltlxms_lang <> "" then (
+    verb_m 1 (fun _ ->
+        print_endline "Synthesis for LTLXMS language" ;
+        print_endline
+          "--------------------------------------------------------------------------------\n" ) ;
+    let property_file = !ltlxms_lang in
+    let trace_file =
+      try get_setting_string "environment" helper
+      with _ -> ""
+    in
+    if property_file = "" || trace_file = "" then
+      Printf.eprintf "Error: Both --input-ltlxms <property.json> and --include <trace.json> must be provided.\n"
+    else (
+      (* Temp file if none exists *)
+      let trace_path =
+        if Sys.file_exists trace_file then trace_file
+        else (
+          let tmp = Filename.temp_file "trace" ".json" in
+          let oc = open_out tmp in
+          output_string oc trace_file;
+          close_out oc;
+          tmp
+        )
+      in
+      (* --- Parse trace and property files to check validity --- *)
+      (try
+        let trace_json = Yojson.Safe.from_file trace_path in
+        let _parsed_trace = Sequence.Snapshot.parse (Yojson.Safe.to_basic trace_json) in
+        let property_json = Yojson.Safe.from_file property_file in
+        let _ = Ltlxms.Syntax.formula_of_yojson property_json in
+        ()
+      with e ->
+        Printf.eprintf "Error parsing trace or property file: %s\n" (Printexc.to_string e);
+        exit 1
+      );
+    (*Call the trace check*)
+    try
+      Ltlxms.Check.run
+        ~trace_file:trace_path
+        ~property_file:property_file
+        ~debug:!verb_mode
+    with e ->
+      Printf.eprintf "Error running trace check: %s\n" (Printexc.to_string e)
+    )
+  )
   else if !ocaml_lang then (
     verb_m 1 (fun _ ->
         print_endline "Synthesis for Ocaml language" ;

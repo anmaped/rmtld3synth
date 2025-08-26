@@ -1,0 +1,2 @@
+(let ((a!1 (next (once (overlap (expand a 1.0) b)))))
+  (next a!1))

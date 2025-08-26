@@ -1,0 +1,71 @@
+{
+    "trace": [
+    {
+        "eventID" : "1",
+        "timestamp" : "10:00:00",
+        "elements" : [
+            {	"ID" : 1,
+                "type" : "Car",
+                "position" : {"x" :0,"y":  -7.25, "z": 0, "yaw": 0, "pitch": 0, "roll": 0},
+                "region": {"type": "circle", "radius": 0.66}
+            },
+            {	"ID" : 2,
+                "type" : "Car",
+                "position" : {"x" :2,"y":  -7.0, "z": 0, "yaw": 0, "pitch": 0, "roll": 0},
+                "region": {"type": "circle", "radius": 0.70}
+            }
+        ]
+    },
+    
+    {
+        "eventID" : "2",
+        "timestamp" : "10:00:15",
+        "elements" : [
+            {	"ID" : 1,
+                "type" : "Car",
+                "position" : {"x" : 0, "y":  -4.5, "z": 0, "yaw": 0, "pitch": 0, "roll": 0},
+                "region": {"type": "circle", "radius": 0.66}
+            },
+            {	"ID" : 2,
+                "type" : "Car",
+                "position" : {"x" :2.5,"y":  -4.25, "z": 0, "yaw": 0, "pitch": 0, "roll": 0},
+                "region": {"type": "circle", "radius": 0.70}
+            }
+        ]
+    },
+    
+    {
+        "eventID" : "3",
+        "timestamp" : "10:00:30",
+        "elements" : [
+            {	"ID" : 1,
+                "type" : "Car",
+                "position" : {"x" : 0, "y":  -2, "z": 0, "yaw": 0, "pitch": 0, "roll": 0},
+                "region": {"type": "circle", "radius": 0.66}
+            },
+            {	"ID" : 2,
+                "type" : "Car",
+                "position" : {"x" :3,"y":  -1.75, "z": 0, "yaw": 0, "pitch": 0, "roll": 0},
+                "region": {"type": "circle", "radius": 0.70}
+            }
+        ]
+    },
+    
+    {
+        "eventID" : "4",
+        "timestamp" : "10:00:45",
+        "elements" : [
+            {	"ID" : 1,
+                "type" : "Car",
+                "position" : {"x" : 0, "y" : 0, "z": 0, "yaw": 0, "pitch": 0, "roll": 0},
+                "region": {"type": "circle", "radius": 0.66}
+            },
+            {	"ID" : 2,
+                "type" : "Car",
+                "position" : {"x" :3.5,"y":  0.25, "z": 0, "yaw": 0, "pitch": 0, "roll": 0},
+                "region": {"type": "circle", "radius": 0.70}
+            }
+        ]
+    }
+    ]
+}

@@ -1,0 +1,15 @@
+(test
+ (name test_snapshot_sequence)
+ (libraries sequence yojson)
+ (modules test_snapshot_sequence)
+ (deps scenario1.json))
+
+(test
+ (name expressions_and_AABB)
+ (libraries sequence yojson z3)
+ (modules expressions_and_AABB))
+
+(test
+ (name expressions_and_OBB)
+ (libraries sequence yojson z3)
+ (modules expressions_and_OBB))
