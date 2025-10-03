@@ -2,7 +2,7 @@ FROM docker.io/ocamlpro/ocaml:4.14.2 as base
 
 ARG RMTLD3SYNTH_VERSION="v0.5-x" # this will be replaced by the build environment
 
-RUN sudo apk add python3 build-base bash
+RUN sudo apk add python3 build-base bash gmp-static
 
 RUN opam switch create . ocaml-system --deps-only --locked
 

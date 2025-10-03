@@ -100,7 +100,7 @@ Please ensure that you have at least Python version 2.7 and `g++-5` installed on
 
 ### To compile rmtld3synth for Windows
 
-See instructions [here](doc/compilation-guide-for-windows).
+See instructions [here](doc/compilation-guide-for-windows.md).
 
 ## Notes on rtmlib2
 

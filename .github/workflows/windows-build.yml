@@ -21,12 +21,12 @@ jobs:
       - name: Set-up Python3
         run: |
           opam var arch
-          $env:Path = 'D:\cygwin\bin;' + $env:Path; setx /m PATH "$env:PATH"
+          $env:Path = 'C:\cygwin\bin;' + $env:Path; setx /m PATH "$env:PATH"
           opam install conf-python-3
           opam exec -- python3 --version
-          cp D:\cygwin\bin\python3.9.exe D:\cygwin\bin\python3.exe
+          cp C:\cygwin\bin\python3.9.exe C:\cygwin\bin\python3.exe
           opam exec -- python3 --version
-          ls D:\cygwin ; ls D:\cygwin\bin ; $env:Path
+          ls C:\cygwin ; ls C:\cygwin\bin ; $env:Path
 
       - name: Set-up opam package z3
         run: |
