@@ -63,9 +63,6 @@ Examples demonstrating how to instrument the generated monitors can be found in 
 `rtmlib2` is the instrumentation library used to facilitate the integration of monitors into target systems.
 
 
-
-
-
 ## Building from Git
 
 ![Linux build](https://github.com/anmaped/rmtld3synth/actions/workflows/linux-build.yml/badge.svg)
@@ -101,35 +98,9 @@ sudo make install
 
 Please ensure that you have at least Python version 2.7 and `g++-5` installed on your system.
 
+### To compile rmtld3synth for Windows
 
-### To compile rmtld3synth for Windows using ocaml >= 4.04.0
-
-Get [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/) and switch the OCaml compiler to version `>= 4.04.0``.
-
-```shell
-opam switch 4.04.0+mingw64
-eval `opam config env`
-```
-
-In case you have not properly installed the flexdll, download the new flexdll [here](http://alain.frisch.fr/flexdll/flexdll-bin-0.35.zip), and decompress the archive in the current directory (PWD) with the folder name `flexdll-bin-0.35``.
-
-```shell
-export PATH=$(PWD)/flexdll-bin-0.35:$PATH
-```
-
-Then, you have to pin the rmtld3synth package as described on `compile rmtld3synth for Linux and OS X ` section to conclude the compilation.
-
-:grey_exclamation:HINTS!!
-
-To compile z3 using Cygwin you should use the mingw32 or mingw64 tools, otherwise, it will not work properly.
-If the correct version of GCC is not found when executing `mk_make.py`, modify the flags `CXX` and `AR` as needed. For instance:
-
-```shell
-CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar python scripts/mk_make.py --ml
-```
-
-Ensure also that libz3 is properly installed in the current environment.
-If the libz3 is not found then use the copy command to copy the `z3/build/libz3.dll.a` library to the `/lib` or `/home/current-user/.opam/compiler-version/lib` directory.
+See instructions [here](doc/compilation-guide-for-windows).
 
 ## Notes on rtmlib2
 
