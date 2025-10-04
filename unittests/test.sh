@@ -32,6 +32,8 @@ mkdir -p $TEST_DIR
 mkdir -p $TEST_DIR/cpp
 mkdir -p $TEST_DIR/sat
 
+ls -alR $SOURCE_PATH
+
 # set rmtld3synth path
 RMTLD3SYNTH=$(pwd)/../_build/default/src/rmtld3synth.exe
 RMTLD3SYNTH="$(realpath -e -- "$RMTLD3SYNTH")"
