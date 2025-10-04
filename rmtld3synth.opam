@@ -37,7 +37,7 @@ build: [
 ]
 
 install: [
-  ["dune" "install"]
+  ["dune" "install" "-p" name]
 ]
 
 run-test: [
