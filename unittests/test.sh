@@ -38,10 +38,10 @@ ls -alR $SOURCE_PATH
 RMTLD3SYNTH=$(pwd)/../_build/default/src/rmtld3synth.exe
 RMTLD3SYNTH="$(realpath -e -- "$RMTLD3SYNTH")"
 
-$RMTLD3SYNTH --version >/dev/null 2>&1 || {
-  echo -e "${RED}rmtld3synth not found or not working. Please build the project first.${NC}\n"
+if ! command -v $RMTLD3SYNTH ; then
+  echo -e "\033[31mrmtld3synth not found or not working. Please build the project first.\033[0m"
   exit 1
-}
+fi
 
 CMDGENOCAML="$RMTLD3SYNTH --synth-ocaml"
 CMDGENCPP="$RMTLD3SYNTH --synth-cpp11"
