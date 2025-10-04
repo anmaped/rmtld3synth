@@ -28,18 +28,19 @@ SCRIPT_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
 SOURCE_PATH="$(realpath -e -- "$SCRIPT_PATH/..")"
 TEST_DIR=_alltests
 
+# show all files inside SOURCE_PATH
+#ls -alR $SOURCE_PATH
+
 mkdir -p $TEST_DIR
 mkdir -p $TEST_DIR/cpp
 mkdir -p $TEST_DIR/sat
-
-ls -alR $SOURCE_PATH
 
 # set rmtld3synth path
 RMTLD3SYNTH=$(pwd)/../_build/default/src/rmtld3synth.exe
 RMTLD3SYNTH="$(realpath -e -- "$RMTLD3SYNTH")"
 
 if ! command -v $RMTLD3SYNTH ; then
-  echo -e "\033[31mrmtld3synth not found or not working. Please build the project first.\033[0m"
+  echo -e "${RED}rmtld3synth not found or not working. Please build the project first.${NC}\n"
   exit 1
 fi
 
@@ -185,7 +186,7 @@ declare -a arrayrmtld_sat_expected_result=(
 
   pushd $SOURCE_PATH/_build/default/unittests/rmtld3/_unittests_ml/tests
 
-  g++ -Wall -g -O0 -std=gnu++11 -I$SOURCE_PATH/rtmlib2/src -DRTMLIB_ENABLE_DEBUG_RMTLD3 --verbose tests.cpp -o tests -pthread -latomic
+  g++ -Wall -g -O0 -std=gnu++11 -I"$(path "$SOURCE_PATH/rtmlib2/src")" -DRTMLIB_ENABLE_DEBUG_RMTLD3 --verbose tests.cpp -o tests -pthread -latomic
 
   ./tests
 
