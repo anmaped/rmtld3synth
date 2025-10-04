@@ -458,20 +458,8 @@ let rmtld3_unit_test_generation cluster_name cpp11_compute helper =
   close_out oc
 
 let generate_auxiliar_files cluster_name helper =
-  (* makefile *)
-  let code1 =
-    (* -DRTMLIB_ENABLE_DEBUG_RMTLD3 -DRTMLIB_ENABLE_DEBUGV_RMTLD3 *)
-    "\n\
-     x86-test:\n\
-     \t g++ -Wall -g -O0 -std=gnu++11 -I../../../rtmlib2/src \
-     -DRTMLIB_ENABLE_DEBUG_RMTLD3 --verbose tests.cpp -o tests -pthread \
-     -latomic\n"
-  in
-  let oc = open_out (cluster_name ^ "/tests/Makefile") in
-  output_string oc code1 ;
-  close_out oc ;
   (* main file *)
-  let code2 =
+  let code =
     "#include <stdio.h>\n\
      #include <unistd.h>\n\
      #include <task_compat.h>\n\
@@ -489,7 +477,7 @@ let generate_auxiliar_files cluster_name helper =
     ^ "\treturn 0;\n}"
   in
   let oc = open_out (cluster_name ^ "/tests/tests.cpp") in
-  output_string oc (beautify_cpp_code code2) ;
+  output_string oc (beautify_cpp_code code) ;
   close_out oc
 
 let _ =

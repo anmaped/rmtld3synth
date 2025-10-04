@@ -24,16 +24,25 @@ WHITE='\033[1;37m'
 
 [ -f "$(ocamlfind query z3)/libz3.dylib" ] && export DYLD_LIBRARY_PATH=$(ocamlfind query z3)
 
+SCRIPT_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
+SOURCE_PATH="$(realpath -e -- "$SCRIPT_PATH/..")"
 TEST_DIR=_alltests
 
 mkdir -p $TEST_DIR
 mkdir -p $TEST_DIR/cpp
 mkdir -p $TEST_DIR/sat
 
-BINDIR=_build/install/default/bin
-export PATH=$PATH:$(pwd)/../_build/install/default/bin
-CMDGENOCAML="rmtld3synth --synth-ocaml"
-CMDGENCPP="rmtld3synth --synth-cpp11"
+# set rmtld3synth path
+RMTLD3SYNTH=$(pwd)/../_build/default/src/rmtld3synth.exe
+RMTLD3SYNTH="$(realpath -e -- "$RMTLD3SYNTH")"
+
+$RMTLD3SYNTH --version >/dev/null 2>&1 || {
+  echo -e "${RED}rmtld3synth not found or not working. Please build the project first.${NC}\n"
+  exit 1
+}
+
+CMDGENOCAML="$RMTLD3SYNTH --synth-ocaml"
+CMDGENCPP="$RMTLD3SYNTH --synth-cpp11"
 
 [ "$2" = "" ] || [ "$2" = "discrete" ] && {
   echo "UNROLLING_SETTINGS=\"--assume-unary-seq --rec-unrolling=auto\""
@@ -45,8 +54,8 @@ CMDGENCPP="rmtld3synth --synth-cpp11"
   UNROLLING_SETTINGS="--rec-unrolling=auto"
 }
 
-CMDSAT_DEBUG="rmtld3synth --synth-smtlibv2 $UNROLLING_SETTINGS"
-CMDSAT_NO_TRACE="rmtld3synth --synth-smtlibv2 --solver-z3 $UNROLLING_SETTINGS"
+CMDSAT_DEBUG="$RMTLD3SYNTH --synth-smtlibv2 $UNROLLING_SETTINGS"
+CMDSAT_NO_TRACE="$RMTLD3SYNTH --synth-smtlibv2 --solver-z3 $UNROLLING_SETTINGS"
 CMDSAT="$CMDSAT_NO_TRACE --get-trace"
 
 # dsl expressions
@@ -161,23 +170,30 @@ declare -a arrayrmtld_sat_expected_result=(
 
 [ "$1" = "quickcheck" ] || [ "$1" = "allchecks" ] && {
 
-  echo "Executing rmtld3synth-unittest..."
+  echo "Checking rmtld3synth-unittest..."
 
-  rmtld3synth-unittest
-
-  sleep 10
+  if [ ! -f "$SOURCE_PATH/_build/default/unittests/rmtld3/_unittests_ml/tests/tests.cpp" ]; then
+    echo -e "${RED}Please dune runtest -p rmtld3synth first.${NC}\n"
+    exit 1
+  else
+    echo "rmtld3synth-unittest found."
+  fi
 
   echo "Executing generated cpp test..."
 
-  make -C $TEST_DIR/../_unittests_ml/tests
+  pushd $SOURCE_PATH/_build/default/unittests/rmtld3/_unittests_ml/tests
 
-  ./$TEST_DIR/../_unittests_ml/tests/tests
+  g++ -Wall -g -O0 -std=gnu++11 -I$SOURCE_PATH/rtmlib2/src -DRTMLIB_ENABLE_DEBUG_RMTLD3 --verbose tests.cpp -o tests -pthread -latomic
+
+  ./tests
+
+  popd # back to unittests
 
   sleep 10
 
   echo "Executing rtmlib2 integration test..."
 
-  ./integration/run.sh
+  . ./integration/run.sh
 
   sleep 10
 
@@ -194,7 +210,7 @@ declare -a arrayrmtld_sat_expected_result=(
 
   for ((i = 1; i < ${dsl_expressions_length} + 1; i++)); do
     echo "expression: '${dsl_expressions[$i - 1]}'"
-    rmtld3synth --eval --include "$(path "$DIR_PATH/../examples/environment/env1.json")" --input-dsl "${dsl_expressions[$i - 1]}"
+    $RMTLD3SYNTH --eval --include "$(path "$DIR_PATH/../examples/environment/env1.json")" --input-dsl "${dsl_expressions[$i - 1]}"
   done
 
   sleep 10

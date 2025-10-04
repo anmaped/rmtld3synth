@@ -36,4 +36,15 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 
-run-test: [make "tests" "allchecks"]
+install: [
+  ["dune" "install"]
+]
+
+run-test: [
+  ["dune" "runtest" "-p" name "-j" jobs]
+  [make "tests" "allchecks"]
+]
+
+remove: [
+  ["dune" "uninstall" "-p" name]
+]

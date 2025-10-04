@@ -24,7 +24,7 @@ OUTPUT_DIR=$SCRIPT_PATH/../../_build_tests/_integration
 mkdir -p $OUTPUT_DIR
 OUTPUT_DIR="$(realpath -e -- "$OUTPUT_DIR")"
 
-rmtld3synth --synth-cpp11 --input-dsl "a" --out-src="$(path "$OUTPUT_DIR")"
+$RMTLD3SYNTH --synth-cpp11 --input-dsl "a" --out-src="$(path "$OUTPUT_DIR")"
 
 cp "$SCRIPT_PATH/sample_monitor.cpp" "$OUTPUT_DIR"
 cp "$SCRIPT_PATH/sample_instrumentation.cpp" "$OUTPUT_DIR"
