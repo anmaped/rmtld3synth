@@ -25,4 +25,4 @@ jobs:
           docker.io/anmaped/rmtld3synth:${{ github.ref_name }} \
           -c 'cp -r /workspace/source /localsource && cd /localsource && \
           eval $(opam env) && \
-          ./configure && make && dune runtest -p rmtld3synth && make tests allchecks'
+          ./configure && make && dune runtest -p rmtld3synth'

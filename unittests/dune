@@ -1,0 +1,16 @@
+(rule
+ (alias runtest)
+ (deps
+   test.sh
+   ./ml/run.sh
+   ./integration/run.sh
+   ./integration/sample_instrumentation.cpp
+   ./integration/sample_monitor.cpp
+   ../examples/environment/env1.json
+   gen_ocaml.sh
+   gen_cpp.sh)
+  (action
+  (progn
+    (run ./ml/unittest.exe)
+    (run bash test.sh allchecks)))
+)

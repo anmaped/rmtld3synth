@@ -1,5 +1,5 @@
 
-(test
+(executable
   (name            unittest)
   (libraries       rmtld3synth.synthesis)
   (modules         Unittest)

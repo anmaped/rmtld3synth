@@ -20,14 +20,9 @@ SCRIPT_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
 SCRIPT_PATH="$(realpath -e -- "$SCRIPT_PATH")"
 echo $SCRIPT_PATH
 
-OUTPUT_DIR=$SCRIPT_PATH/../_integration
+OUTPUT_DIR=$SCRIPT_PATH/../_ml/tests
 mkdir -p $OUTPUT_DIR
 OUTPUT_DIR="$(realpath -e -- "$OUTPUT_DIR")"
-
-rmtld3synth --synth-cpp11 --input-dsl "a" --out-src="$(path "$OUTPUT_DIR")"
-
-cp "$SCRIPT_PATH/sample_monitor.cpp" "$OUTPUT_DIR"
-cp "$SCRIPT_PATH/sample_instrumentation.cpp" "$OUTPUT_DIR"
 
 echo "Generating the Makefile..."
 
@@ -51,7 +46,7 @@ echo -e "
 $CHECK_GCC
 
 all:
-	$CXX_INC -Wall -Wextra -std=gnu++11 $DEBUG -I\"$SCRIPT_PATH/../../../../rtmlib2/src/\" \"sample_monitor.cpp\" \"sample_instrumentation.cpp\" -o test -latomic
+	$CXX_INC -Wall -Wextra -std=gnu++11 $DEBUG -I\"$SCRIPT_PATH/../../../../rtmlib2/src/\" \"tests.cpp\" -o tests -latomic
 
 clean:
 	rm test
