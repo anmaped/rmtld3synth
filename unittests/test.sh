@@ -40,6 +40,7 @@ echo "OPAM switch prefix: $OPAM_SWITCH_PREFIX"
 
 export PATH="$SOURCE_PATH/_build/install/default/bin:$PATH"
 
+# help fixing strange error on github actions windows runner
 if [[ $(uname -s) == CYGWIN* ]]; then
   cp "$SOURCE_PATH/_build/install/default/bin/rmtld3synth.exe" "/usr/bin"
 fi

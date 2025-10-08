@@ -47,14 +47,15 @@ jobs:
 
       - name: Update opam packages
         run: |
-          (& opam env --switch=4.14.2) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
+          (& opam env --switch=4.14.2 --set-switch) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
           cd C:\.opam\repo\default
           opam admin update-extrafiles
 
       - name: Build rmtld3synth
         run: |
-          (& opam env --switch=4.14.2) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
-          opam install z3=4.11.2
+          (& opam env --switch=4.14.2 --set-switch) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
+          opam install z3=4.11.2 --verbose
+          opam pin --no-action add rmtld3synth.dev .
           opam install rmtld3synth --with-test --verbose
 
       - name: Set-up rmtld3synth bundle
