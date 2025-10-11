@@ -61,9 +61,11 @@ jobs:
       - name: Set-up rmtld3synth bundle
         run: |
           eval $(opam env --switch=4.14.2 --set-switch) #
+          env #
+          ls -l #
           mkdir bundle #
-          cp ./_opam/bin/rmtld3synth.exe ./bundle #
-          cp ./_opam/bin/libz3.dll ./bundle #
+          cp "$OPAM_SWITCH_PREFIX/bin/rmtld3synth.exe" ./bundle #
+          cp "$OPAM_SWITCH_PREFIX/bin/libz3.dll" ./bundle #
           cd ./bundle #
           curl -O https://raw.githubusercontent.com/mpreisler/mingw-bundledlls/refs/heads/master/mingw-bundledlls #
           MINGW_BUNDLEDLLS_SEARCH_PATH="/usr/x86_64-w64-mingw32/sys-root/mingw/bin/:./" ./mingw-bundledlls rmtld3synth.exe --copy #

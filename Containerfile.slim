@@ -6,8 +6,9 @@ RUN sudo apk add python3 build-base bash gmp-static
 
 RUN opam switch create . ocaml-system --deps-only --locked
 
-RUN opam pin add dolmen https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
-RUN opam pin add dolmen-export https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b -y
+RUN opam pin add dolmen https://github.com/Gbury/dolmen.git#a0f1bc66e7256fff1068ac0df525a2d23c1f3ea7 -y
+RUN opam pin add dolmen_type https://github.com/Gbury/dolmen.git#a0f1bc66e7256fff1068ac0df525a2d23c1f3ea7 -y
+RUN opam pin add dolmen_loop https://github.com/Gbury/dolmen.git#a0f1bc66e7256fff1068ac0df525a2d23c1f3ea7 -y
 
 RUN git clone --branch ${RMTLD3SYNTH_VERSION} https://github.com/anmaped/rmtld3synth.git
 RUN git clone --branch z3-4.12.3 https://github.com/Z3Prover/z3.git
