@@ -17,16 +17,18 @@ depends: [
   "bigarray-compat" {build}
   "sexplib" {build}
   "ppx_sexp_conv" {build}
-  "dolmen" {build}
+  "dolmen_loop" {build}
   "yojson" {build}
   "ppx_yojson_conv" {build}
   "z3" {<="4.12.3"}
-  "dolmen-export" {build}
+#  "dolmen-export" {build}
 ]
 
 pin-depends: [
-  ["dolmen.dev" "git+https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b"]
-  ["dolmen-export.dev" "git+https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b"]
+  ["dolmen.dev" "git+https://github.com/Gbury/dolmen.git#a0f1bc66e7256fff1068ac0df525a2d23c1f3ea7"]
+  ["dolmen_type.dev" "git+https://github.com/Gbury/dolmen.git#a0f1bc66e7256fff1068ac0df525a2d23c1f3ea7"]
+  ["dolmen_loop.dev" "git+https://github.com/Gbury/dolmen.git#a0f1bc66e7256fff1068ac0df525a2d23c1f3ea7"]
+#  ["dolmen-export.dev" "git+https://github.com/Gbury/dolmen.git#e81b130ac0fdcd7e2b08603648c54c8ead8fbd7b"]
 ]
 
 build: [

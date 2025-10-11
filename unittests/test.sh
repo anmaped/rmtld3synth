@@ -242,6 +242,7 @@ declare -a arrayrmtld_sat_expected_result=(
       printf "$i: \"expected: $EXPECT_RES/result: $RES\" ${GREEN}Successful${NC}\n"
     else
       printf "$i: \"expected: $EXPECT_RES/result: $RES\" ${RED}Fail${NC}\n"
+      exit 1
     fi
   done
 }
