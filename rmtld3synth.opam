@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name:         "rmtld3synth"
-version:      "0.6-dev"
+version:      "0.7-dev"
 maintainer:   "André Pedro <apedro.1@gmail.com>"
 authors:      "André Pedro <apedro.1@gmail.com>"
 homepage:     "https://github.com/anmaped/rmtld3synth"

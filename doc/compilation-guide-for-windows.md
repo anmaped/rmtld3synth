@@ -11,6 +11,33 @@ This guide explains how to compile [`rmtld3synth`](https://github.com/aclysma/rm
 - OPAM (installed **inside Cygwin**)
 - OCaml 4.14.2
 
+#### Install opam using powershell
+```powershell
+Invoke-Expression "& { $(Invoke-RestMethod https://opam.ocaml.org/install.ps1) }"
+```
+
+It will be installed in `AppData\Local\Programs\opam\bin`.
+
+#### Initialize opam and update env variables
+```powershell
+opam init --comp 4.14.2 --disable-sandboxing
+(& opam env --switch=4.14.2) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
+```
+
+In normal operation, opam only alters files within `AppData\Local\opam`.
+
+If you prefer, you can configure opam to install under `C:\cygwin`:
+```
+opam init --auto-setup --bare --cygwin-local-install --cygwin-location=C:\cygwin --enable-shell-hook
+```
+
+If appropriate, add `--comp 4.14.2 --disable-sandboxing` options to specify the compiler version and disable sandboxing. When running inside a container, it is recommended to disable sandboxing (avoid bwrap).
+
+#### Pin the current development version (`v0.7-x` as of this writing) using opam
+
+```powershell
+opam pin add rmtld3synth "https://github.com/anmaped/rmtld3synth.git#v0.7-x" --no-action
+```
 
 ### Basic Installation (Without Z3)
 
@@ -18,9 +45,9 @@ If you **do not need Z3 support**, installing `rmtld3synth` is simple:
 
 ```sh
 opam install rmtld3synth
-````
+```
 
-This installs the base package without the Z3 backend.
+This installs the base package without the Z3 backend. Go to step [check installation](#check-installation).
 
 ### Advanced Installation (With Z3 Support)
 
@@ -30,65 +57,74 @@ To build `rmtld3synth` with Z3 support, you’ll need to manually add a compatib
 
 ##### 1. Navigate to your local OPAM repository:
 
-```sh
-cd ~/.opam/repo/default/packages/z3
+```powershell
+cd $env:LOCALAPPDATA
+cd opam\repo\default\packages\z3
 ```
 
 > Replace the path if your OPAM repo is located elsewhere.
 
 ##### 2. Create a directory for Z3 version 4.11.2:
 
-```sh
+```powershell
+rm -r z3.4.11.2
 mkdir -p z3.4.11.2
 cd z3.4.11.2
 ```
 
 ##### 3. Download the OPAM file for Z3:
 
-```sh
-curl -O https://raw.githubusercontent.com/fdopen/opam-repository-mingw/refs/heads/opam2/packages/z3/z3.4.11.2/opam
+```powershell
+Invoke-WebRequest https://raw.githubusercontent.com/fdopen/opam-repository-mingw/refs/heads/opam2/packages/z3/z3.4.11.2/opam -OutFile opam
 ```
 
 ##### 4. Fix the compiler configuration for Z3 build:
 
-```sh
-CC=$(ocamlc -config | awk -F '[\t\r ]+' '/^bytecomp_c_compiler/ {print $2}')
-sed -i "s~AR=~CC=$CC AR=~g" opam
+```powershell
+# sed within powershell by importing them from an existing git installation
+Set-Alias -Name sed -Value C:\"Program Files"\Git\usr\bin\sed.exe
+Set-Alias -Name awk -Value C:\"Program Files"\Git\usr\bin\awk.exe
+
+sed -i "s~AR=~CC=$(ocamlc -config | awk -F '[\t\r ]+' '/^bytecomp_c_compiler/ {print $2}') AR=~g" opam
+
+sed -i "s~python3 scripts/~python3.9 scripts/~g" opam
 ```
 
 ##### 5. Download the Z3 patch file:
 
-```sh
+```powershell
 mkdir -p files
-curl -O https://raw.githubusercontent.com/fdopen/opam-repository-mingw/refs/heads/opam2/packages/z3/z3.4.11.2/files/z3-z3-4.11.2.patch
+
+Invoke-WebRequest https://raw.githubusercontent.com/fdopen/opam-repository-mingw/refs/heads/opam2/packages/z3/z3.4.11.2/files/z3-z3-4.11.2.patch -OutFile z3-z3-4.11.2.patch
+
 mv z3-z3-4.11.2.patch files/
 ```
 
 ##### 6. Clean and refresh the OPAM repository:
 
-```sh
-cd ~/.opam/repo/default
-rm ../*.cache 2>/dev/null
+```powershell
+cd ../../../
+rm ../*.cache
 opam admin update-extrafiles
 ```
 
 ##### 7. Install Z3 and `rmtld3synth`:
 
-```sh
+```powershell
 opam install z3=4.11.2 rmtld3synth
 ```
 
----
+### Check installation
 
 `rmtld3synth` should now be compiled and available in your current shell. You can confirm the installation by running:
 
-```sh
+```powershell
 rmtld3synth --help
 ```
 
 
 
-## To compile rmtld3synth for Windows using ocaml >= 4.04.0 (outdated)
+## To compile rmtld3synth for Windows using ocaml >= 4.04.0 (deprecated)
 
 Get [Andreas Hauptmann's installer](https://fdopen.github.io/opam-repository-mingw/installation/) and switch the OCaml compiler to version `>= 4.04.0``.
 
