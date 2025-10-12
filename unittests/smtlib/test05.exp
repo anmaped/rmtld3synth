@@ -1,0 +1,291 @@
+(set-info :smt-lib-version 2.6)
+(set-logic AUFDTNIRA)
+(set-info :source |https://github.com/anmaped/rmtld3synth|)
+(set-info :license "https://creativecommons.org/licenses/by/4.0/")
+(set-option :produce-models true)
+(define-sort Proptype () Int)
+(define-sort Time () Int)
+(define-sort Index () Int)
+(declare-datatype Duration ((dnone) (dsome (dval Int))))
+(declare-datatype Pair (par (X Y) ((mk-pair (first X) (second Y)))))
+(define-sort Trace () (Array Index Proptype))
+(define-sort Trace_ () (Array Index Real))
+(declare-datatype Fourvalue ((FVTRUE) (FVFALSE) (FVUNKNOWN) (FVSYMBOL)))
+(declare-datatype Threevalue ((TVTRUE) (TVFALSE) (TVUNKNOWN)))
+(define-fun tvnot ((phi Threevalue)) Threevalue
+  (ite (= phi TVTRUE) TVFALSE (ite (= phi TVFALSE) TVTRUE TVUNKNOWN)))
+(define-fun tvor ((phi1 Threevalue) (phi2 Threevalue)) Threevalue
+  (ite (or (= phi1 TVTRUE) (= phi2 TVTRUE)) TVTRUE
+   (ite (and (= phi1 TVFALSE) (= phi2 TVFALSE)) TVFALSE TVUNKNOWN)))
+(define-fun tvlessthan ((eta1 Duration) (eta2 Duration)) Threevalue
+  (ite (or (= eta1 dnone) (= eta2 dnone)) TVUNKNOWN
+   (ite (< (dval eta1) (dval eta2)) TVTRUE TVFALSE)))
+(define-fun mapb4 ((phi Threevalue)) Fourvalue
+  (ite (= phi TVTRUE) FVTRUE (ite (= phi TVFALSE) FVFALSE FVUNKNOWN)))
+(define-fun mapb3 ((p (Pair Bool Fourvalue))) Threevalue
+  (ite (= (second p) FVTRUE) TVTRUE
+   (ite (= (second p) FVSYMBOL) (ite (first p) TVUNKNOWN TVFALSE)
+    (ite (= (second p) FVFALSE) TVFALSE TVUNKNOWN))))
+(define-fun evali ((b1 Threevalue) (b2 Threevalue)) Fourvalue
+  (ite (= b2 TVFALSE) (ite (= b1 TVTRUE) FVSYMBOL (mapb4 b1)) (mapb4 b2)))
+(declare-const trc Trace)
+(declare-const trc_time Trace_)
+(declare-const trc_size Time)
+(declare-fun mapt (Index) Real)
+(assert (forall ((i Index))
+         (ite (< 0 i) (= (mapt i) (+ (mapt (- i 1)) (select trc_time i)))
+          (= (mapt i) (select trc_time i)))))
+(define-fun ev_prop ((mk Trace) (mt Time) (p Proptype)) Threevalue
+  (ite (>= trc_size mt) (ite (= (select mk mt) p) TVTRUE TVFALSE) TVUNKNOWN))
+(declare-const v_dt!3 Duration)
+(declare-const v_dt!8 Duration)
+(declare-const v_gamma!10 Index)
+(assert (= v_gamma!10 5))
+(define-fun evalb!10 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL)
+   (evali (tvnot (tvor (ev_prop mk mt 3) (ev_prop mk mt 1)))
+    (ev_prop mk mt 2)) v))
+(declare-fun evalfold!10 (Time Time) Fourvalue)
+(assert (forall ((x Time) (i Time))
+         (ite (< i x)
+          (= (evalb!10 trc x i (evalfold!10 (- x 1) i)) (evalfold!10 x i))
+          (= (evalb!10 trc x i FVSYMBOL) (evalfold!10 x i)))))
+(define-fun evalc!10 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!10 mtb) trc_size) (evalfold!10 (- mt 1) mtb)))
+(define-fun until_less_op!10 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!10 mt mtb)))
+(declare-const v_gamma!18 Index)
+(assert (= v_gamma!18 1))
+(define-fun evalb!18 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL) (evali TVTRUE (tvnot TVTRUE)) v))
+(declare-fun evalfold!18 (Time Time) Fourvalue)
+(assert (forall ((x Time) (i Time))
+         (ite (< i x)
+          (= (evalb!18 trc x i (evalfold!18 (- x 1) i)) (evalfold!18 x i))
+          (= (evalb!18 trc x i FVSYMBOL) (evalfold!18 x i)))))
+(define-fun evalc!18 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!18 mtb) trc_size) (evalfold!18 (- mt 1) mtb)))
+(define-fun until_less_op!18 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!18 mt mtb)))
+(declare-const v_gamma!28 Index)
+(assert (= v_gamma!28 1))
+(define-fun evalb!28 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL) (evali TVTRUE (until_less_op!10 (+ mt v_gamma!10) mt))
+   v))
+(define-fun evalc!28 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!28 mtb) trc_size) (evalb!28 trc mt mtb FVSYMBOL)))
+(define-fun eventually_op!28 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!28 mt mtb)))
+(declare-const v_gamma!40 Index)
+(assert (= v_gamma!40 5))
+(define-fun evalb!40 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL)
+   (evali (tvor (ev_prop mk mt 1) (tvor (tvnot TVTRUE) (ev_prop mk mt 2)))
+    (tvnot
+     (tvor (tvnot (ev_prop mk mt 3))
+      (tvnot
+       (tvnot
+        (tvor (tvnot (tvnot (until_less_op!18 (+ mt v_gamma!18) mt)))
+         (tvnot (eventually_op!28 (+ mt v_gamma!28) mt)))))))) v))
+(declare-fun evalfold!40 (Time Time) Fourvalue)
+(assert (forall ((x Time) (i Time))
+         (ite (< i x)
+          (= (evalb!40 trc x i (evalfold!40 (- x 1) i)) (evalfold!40 x i))
+          (= (evalb!40 trc x i FVSYMBOL) (evalfold!40 x i)))))
+(define-fun evalc!40 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!40 mtb) trc_size) (evalfold!40 (- mt 1) mtb)))
+(define-fun until_less_op!40 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!40 mt mtb)))
+(declare-const v_gamma!54 Index)
+(assert (= v_gamma!54 1))
+(define-fun evalb!54 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL) (evali TVTRUE (tvnot TVTRUE)) v))
+(declare-fun evalfold!54 (Time Time) Fourvalue)
+(assert (forall ((x Time) (i Time))
+         (ite (< i x)
+          (= (evalb!54 trc x i (evalfold!54 (- x 1) i)) (evalfold!54 x i))
+          (= (evalb!54 trc x i FVSYMBOL) (evalfold!54 x i)))))
+(define-fun evalc!54 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!54 mtb) trc_size) (evalfold!54 (- mt 1) mtb)))
+(define-fun until_less_op!54 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!54 mt mtb)))
+(declare-const v_gamma!70 Index)
+(assert (= v_gamma!70 1))
+(define-fun evalb!70 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL) (evali TVTRUE (until_less_op!40 (+ mt v_gamma!40) mt))
+   v))
+(define-fun evalc!70 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!70 mtb) trc_size) (evalb!70 trc mt mtb FVSYMBOL)))
+(define-fun eventually_op!70 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!70 mt mtb)))
+(declare-const v_gamma!88 Index)
+(assert (= v_gamma!88 5))
+(define-fun evalb!88 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL) (evali TVTRUE (tvnot (tvnot (ev_prop mk mt 2)))) v))
+(declare-fun evalfold!88 (Time Time) Fourvalue)
+(assert (forall ((x Time) (i Time))
+         (ite (< i x)
+          (= (evalb!88 trc x i (evalfold!88 (- x 1) i)) (evalfold!88 x i))
+          (= (evalb!88 trc x i FVSYMBOL) (evalfold!88 x i)))))
+(define-fun evalc!88 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!88 mtb) trc_size) (evalfold!88 (- mt 1) mtb)))
+(define-fun until_less_op!88 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!88 mt mtb)))
+(declare-const v_gamma!108 Index)
+(assert (= v_gamma!108 5))
+(define-fun evalb!108 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL) (evali TVTRUE (ev_prop mk mt 2)) v))
+(define-fun evalc!108 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!108 mtb) trc_size) (evalb!108 trc mt mtb FVSYMBOL)))
+(define-fun eventually_op!108 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!108 mt mtb)))
+(declare-const v_gamma!130 Index)
+(assert (= v_gamma!130 1))
+(define-fun evalb!130 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL) (evali TVTRUE (tvnot TVTRUE)) v))
+(declare-fun evalfold!130 (Time Time) Fourvalue)
+(assert (forall ((x Time) (i Time))
+         (ite (< i x)
+          (= (evalb!130 trc x i (evalfold!130 (- x 1) i)) (evalfold!130 x i))
+          (= (evalb!130 trc x i FVSYMBOL) (evalfold!130 x i)))))
+(define-fun evalc!130 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!130 mtb) trc_size) (evalfold!130 (- mt 1) mtb)))
+(define-fun until_less_op!130 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!130 mt mtb)))
+(declare-const v_gamma!154 Index)
+(assert (= v_gamma!154 1))
+(define-fun evalb!154 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL)
+   (evali TVTRUE
+    (tvnot
+     (tvor (tvnot (tvnot (until_less_op!88 (+ mt v_gamma!88) mt)))
+      (tvnot (eventually_op!108 (+ mt v_gamma!108) mt))))) v))
+(define-fun evalc!154 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!154 mtb) trc_size) (evalb!154 trc mt mtb FVSYMBOL)))
+(define-fun eventually_op!154 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!154 mt mtb)))
+(declare-const v_gamma!180 Index)
+(assert (= v_gamma!180 10))
+(define-fun indicator!3 ((mk Trace) (mt Time)) Int
+  (ite (= (ev_prop mk mt 1) TVTRUE) 1 0))
+(declare-fun evaleta!3 (Time Time) Duration)
+(assert (forall ((x Time) (i Time))
+         (=> (>= x 0)
+          (ite (and (>= i 0) (< i x))
+           (= (+ (dval (evaleta!3 (- x 1) i)) (indicator!3 trc x))
+            (dval (evaleta!3 x i)))
+           (= (dval (evaleta!3 x i)) (indicator!3 trc x))))))
+(define-fun duration_op!3 ((mt Time) (mtb Time)) Duration
+  (ite (and (>= trc_size mt) (< (dval (dsome 5)) (- (mapt mt) (mapt mtb))))
+   (evaleta!3 (- mt 1) mtb) dnone))
+(define-fun indicator!8 ((mk Trace) (mt Time)) Int
+  (ite (= (ev_prop mk mt 1) TVTRUE) 1 0))
+(declare-fun evaleta!8 (Time Time) Duration)
+(assert (forall ((x Time) (i Time))
+         (=> (>= x 0)
+          (ite (and (>= i 0) (< i x))
+           (= (+ (dval (evaleta!8 (- x 1) i)) (indicator!8 trc x))
+            (dval (evaleta!8 x i)))
+           (= (dval (evaleta!8 x i)) (indicator!8 trc x))))))
+(define-fun duration_op!8 ((mt Time) (mtb Time)) Duration
+  (ite (and (>= trc_size mt) (< (dval (dsome 5)) (- (mapt mt) (mapt mtb))))
+   (evaleta!8 (- mt 1) mtb) dnone))
+(define-fun evalb!180 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL)
+   (evali TVTRUE
+    (tvnot
+     (tvnot
+      (tvor
+       (tvnot
+        (tvnot
+         (tvor (tvnot TVTRUE)
+          (tvnot
+           (tvnot
+            (tvor (tvnot TVTRUE)
+             (tvnot
+              (tvor (tvnot (ev_prop mk mt 2))
+               (tvnot
+                (tvor
+                 (tvnot
+                  (tvnot
+                   (tvor
+                    (tvnot (tvnot (until_less_op!130 (+ mt v_gamma!130) mt)))
+                    (tvnot (eventually_op!154 (+ mt v_gamma!154) mt)))))
+                 (tvnot
+                  (tvnot
+                   (tvor
+                    (tvnot (tvnot (until_less_op!54 (+ mt v_gamma!54) mt)))
+                    (tvnot (eventually_op!70 (+ mt v_gamma!70) mt)))))))))))))))
+       (tvnot
+        (tvnot
+         (tvor (tvnot TVTRUE)
+          (tvnot
+           (tvor (tvnot (ev_prop mk mt 2))
+            (tvnot
+             (tvor
+              (tvlessthan (duration_op!8 (+ mt (dval v_dt!8)) mt) (dsome 2))
+              (tvlessthan (dsome 2) (duration_op!3 (+ mt (dval v_dt!3)) mt)))))))))))))
+   v))
+(declare-fun evalfold!180 (Time Time) Fourvalue)
+(assert (forall ((x Time) (i Time))
+         (ite (< i x)
+          (= (evalb!180 trc x i (evalfold!180 (- x 1) i)) (evalfold!180 x i))
+          (= (evalb!180 trc x i FVSYMBOL) (evalfold!180 x i)))))
+(define-fun evalc!180 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!180 mtb) trc_size) (evalfold!180 (- mt 1) mtb)))
+(define-fun until_less_op!180 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!180 mt mtb)))
+(declare-const v_gamma!208 Index)
+(assert (= v_gamma!208 1))
+(define-fun evalb!208 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL) (evali TVTRUE (tvnot TVTRUE)) v))
+(declare-fun evalfold!208 (Time Time) Fourvalue)
+(assert (forall ((x Time) (i Time))
+         (ite (< i x)
+          (= (evalb!208 trc x i (evalfold!208 (- x 1) i)) (evalfold!208 x i))
+          (= (evalb!208 trc x i FVSYMBOL) (evalfold!208 x i)))))
+(define-fun evalc!208 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!208 mtb) trc_size) (evalfold!208 (- mt 1) mtb)))
+(define-fun until_less_op!208 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!208 mt mtb)))
+(declare-const v_gamma!238 Index)
+(assert (= v_gamma!238 1))
+(define-fun evalb!238 ((mk Trace) (mt Time) (mtb Time)
+  (v Fourvalue)) Fourvalue
+  (ite (= v FVSYMBOL)
+   (evali TVTRUE (tvnot (tvor (tvnot TVTRUE) (tvnot (ev_prop mk mt 2))))) v))
+(define-fun evalc!238 ((mt Time) (mtb Time)) (Pair Bool Fourvalue)
+  (mk-pair (>= (+ v_gamma!238 mtb) trc_size) (evalb!238 trc mt mtb FVSYMBOL)))
+(define-fun eventually_op!238 ((mt Time) (mtb Time)) Threevalue
+  (mapb3 (evalc!238 mt mtb)))
+(define-fun allcheck ((mk Trace) (mt Time)) Bool
+  (=
+   (tvnot
+    (tvor
+     (tvnot
+      (tvnot
+       (tvor (tvnot (tvnot (until_less_op!208 (+ mt v_gamma!208) mt)))
+        (tvnot (eventually_op!238 (+ mt v_gamma!238) mt)))))
+     (tvnot
+      (tvnot
+       (tvor (tvnot (ev_prop mk mt 4))
+        (tvnot (tvnot (until_less_op!180 (+ mt v_gamma!180) mt))))))))
+   TVTRUE))
+(assert (forall ((t Time)) (< 0 (select trc_time t))))
+(assert (allcheck trc 0))
+(check-sat)
+(get-model)
+(get-info :all-statistics)
+

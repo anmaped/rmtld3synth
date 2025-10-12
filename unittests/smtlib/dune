@@ -1,0 +1,65 @@
+(rule
+  (with-outputs-to test01.out
+  (with-accepted-exit-codes 0
+    (run bash -c "%{exe:../../src/rmtld3synth.exe} --synth-smtlibv2 --input-dsl \"$(cat %{dep:test01.in})\" ")
+)))
+
+(rule
+  (alias runtest)
+  (action (diff test01.exp test01.out))
+)
+
+(rule
+  (with-outputs-to test02.out
+  (with-accepted-exit-codes 0
+    (run bash -c "%{exe:../../src/rmtld3synth.exe} --synth-smtlibv2 --input-dsl \"$(cat %{dep:test02.in})\" 2>/dev/null")
+)))
+
+(rule
+  (alias runtest)
+  (action (diff test02.exp test02.out))
+)
+
+(rule
+  (with-outputs-to test03.out
+  (with-accepted-exit-codes 0
+    (run bash -c "%{exe:../../src/rmtld3synth.exe} --synth-smtlibv2 --input-dsl \"$(cat %{dep:test03.in})\" 2>/dev/null")
+)))
+
+(rule
+  (alias runtest)
+  (action (diff test03.exp test03.out))
+)
+
+(rule
+  (with-outputs-to test04.out
+  (with-accepted-exit-codes 0
+    (run bash -c "%{exe:../../src/rmtld3synth.exe} --synth-smtlibv2 --input-dsl \"$(cat %{dep:test04.in})\" 2>/dev/null")
+)))
+
+(rule
+  (alias runtest)
+  (action (diff test04.exp test04.out))
+)
+
+(rule
+  (with-outputs-to test05.out
+  (with-accepted-exit-codes 0
+    (run bash -c "%{exe:../../src/rmtld3synth.exe} --synth-smtlibv2 --input-rmdsl \"$(cat %{dep:test05.in})\" 2>/dev/null")
+)))
+
+(rule
+  (alias runtest)
+  (action (diff test05.exp test05.out))
+)
+
+(rule
+  (with-outputs-to test06.out
+  (with-accepted-exit-codes 0
+    (run bash -c "%{exe:../../src/rmtld3synth.exe} --synth-smtlibv2 --input-rmdsl \"$(cat %{dep:test06.in})\" 2>/dev/null")
+)))
+
+(rule
+  (alias runtest)
+  (action (diff test06.exp test06.out))
+)

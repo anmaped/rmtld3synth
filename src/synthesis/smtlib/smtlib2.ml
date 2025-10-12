@@ -590,11 +590,11 @@ let synth_fm_uless gamma sf1 sf2 helper =
                [ f_minus (f_const_term "mt") (Term.int "1")
                ; f_const_term "mtb" ] ] )
     in
+    add_l comp1_append ;
+    add_l comp2_append ;
     evalb id ;
     evalfold id ;
     evalc id ;
-    add_l comp1_append ;
-    add_l comp2_append ;
     (* (define-fun until_less_op" ^ id ^ " ((mt Time) (mtb Time) ) Threevalue
        (mapb3 (evalc" ^ id ^ " mt mtb )) ) *)
     define_fun lst
