@@ -108,11 +108,20 @@ let synth_ocaml compute helper =
       '%'
   in
   let monitor_name = insert_string name "compute" '#' in
+  (* function to add three spaces to each line *)
+  let add_spaces str =
+    String.concat "\n" (List.map (fun line -> "   " ^ line) (String.split_on_char '\n' str))
+  in
   let code1 =
     "(* This file was automatically generated from rmtld3synth tool version\n"
     ^ get_setting_string "version" helper
-    ^ ". *)\n\n\
-       open List\n\
+    ^ ".\n *)\n\n(* Settings:\n"
+    ^ add_spaces ( get_json_string_of_settings helper 
+    ^ "\n\nFormula(s):\n"
+    ^ List.fold_right
+        (fun exp b -> b ^ "- " ^ string_of_rmtld_fm exp ^ "\n")
+         expressions "")
+    ^ "\n *) \n\
        open Rmtld3_eval\n\n\
        module type Trace = sig val trc : trace end\n\n"
     ^ List.fold_right
@@ -126,6 +135,7 @@ let synth_ocaml compute helper =
             \  let mon = " ^ function_call ^ " env lg_env t\nend\n\n" ^ str
           )
         cpp_monitor_lst ""
+    ^ "(* End of generated file *)"
   in
   try
     let out_dir = get_setting_string "out_dir" helper in

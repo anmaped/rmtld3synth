@@ -102,6 +102,21 @@ let print_setting a =
              a ^ "(" ^ m x ^ "->" ^ m y ^ ") " )
            ht "" )
 
+let get_json_string_of_setting a =
+  match a with
+  | Num v -> string_of_int v
+  | Txt s -> "\"" ^ s ^ "\""
+  | Fm f -> "\"" ^ string_of_rmtld_fm f ^ "\""
+  | Sel b -> string_of_bool b
+  | Hash ht ->
+      "\""
+      ^ Hashtbl.fold
+          (fun x y a ->
+            let m v = match v with S a -> a | N v -> string_of_int v in
+            a ^ "(" ^ m x ^ "->" ^ m y ^ ") " )
+          ht ""
+      ^ "\""
+
 let get_string_of_setting a =
   match a with
   | Num v -> string_of_int v
@@ -124,11 +139,43 @@ let print_settings tbl =
       print_endline "" )
     tbl
 
-let get_string_of_settings ?(exclude=[]) tbl =
+let get_string_of_settings ?(exclude = []) tbl =
   Hashtbl.fold
-    (fun a b lst -> if List.exists (fun x -> a = x) exclude then lst else lst ^ a ^ " -> " ^ get_string_of_setting b ^ "\n")
+    (fun a b lst ->
+      if List.exists (fun x -> a = x) exclude then lst
+      else lst ^ a ^ " -> " ^ get_string_of_setting b ^ "\n" )
     tbl ""
 
+(* JSON representation of settings *)
+(* need to remove stray quotes and group duplicated keys from json output *)
+let get_json_string_of_settings ?(exclude = []) tbl =
+  let items =
+    Hashtbl.fold
+      (fun a b lst ->
+        if List.exists (fun x -> a = x) exclude then lst
+        else
+          match List.assoc_opt a lst with
+          | Some values ->
+              (a, get_json_string_of_setting b :: values)
+              :: List.remove_assoc a lst
+          | None -> (a, [get_json_string_of_setting b]) :: lst )
+      tbl []
+  in
+  let json_items =
+    List.fold_right
+      (fun (a, b) lst ->
+        let item =
+          Printf.sprintf "\"%s\": %s" a
+            ( if List.length b > 1 then
+                Printf.sprintf "[ %s ]" (String.concat ", " b)
+              else Printf.sprintf "%s" (List.hd b) )
+        in
+        item :: lst )
+      items []
+  in
+  "{\n  " ^ String.concat ",\n  " json_items ^ "\n}"
+
+(* proposition two-way mapping helpers *)
 let get_proposition_hashtbl helper = get_setting_hash "prop_map" helper
 
 let get_proposition_rev_hashtbl helper =
@@ -268,9 +315,20 @@ let settings sexpression =
   , list_monitor_settings )
 
 let apply_settings s helper =
+  let isbool str =
+    match String.lowercase_ascii str with
+    | "true" | "false" -> true
+    | _ -> false
+  in
+  let tobool str =
+    match String.lowercase_ascii str with
+    | "true" -> true
+    | "false" -> false
+    | _ -> false
+  in
   let s_num, s_str, _ = settings (settings_from_string s) in
   List.iter (fun (a, b) -> set_setting a (Num b) helper) s_num ;
-  List.iter (fun (a, b) -> set_setting a (Txt b) helper) s_str
+  List.iter (fun (a, b) -> if isbool b then set_setting a (Sel (tobool b)) helper else set_setting a (Txt b) helper) s_str
 
 (* END helper for settings *)
 

@@ -48,7 +48,7 @@ To begin generating a monitor, use the `rmtld3synth` tool from the command line.
 To generate a sample monitor, execute this command:
 
 ```shell
-rmtld3synth --synth-cpp11 --input-latexeq "a until b within 10s" --out-src out
+rmtld3synth --synth-cpp11 --input-dsl "a until b within 10s" --out-src out
 ```
 
 The `--synth-cpp11` flag configures `rmtld3synth` to generate a C++11 monitor using the formula `a until b within 10s`, with the output saved in the `out` directory. This produces a working monitor that can be compiled with GCC, LLVM, or other C/C++ compilers.
