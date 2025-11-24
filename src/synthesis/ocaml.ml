@@ -62,14 +62,13 @@ let synth_fm_uless gamma sf1 sf2 helper =
 
 let synth_fm_ueq gamma sf1 sf2 helper =
   has_fm_ueq := true ;
-  ( "(eval_ueq " ^ string_of_float gamma ^ " " ^ fst sf1 ^ " " ^ fst sf2
-    ^ ")"
+  ( "(eval_ueq " ^ string_of_float gamma ^ " " ^ fst sf1 ^ " " ^ fst sf2 ^ ")"
   , snd sf1 ^ snd sf2 )
 
 let synth_fm_ulesseq gamma sf1 sf2 helper =
   has_fm_ulesseq := true ;
-  ( "(eval_ulesseq " ^ string_of_float gamma ^ " " ^ fst sf1 ^ " "
-    ^ fst sf2 ^ ")"
+  ( "(eval_ulesseq " ^ string_of_float gamma ^ " " ^ fst sf1 ^ " " ^ fst sf2
+    ^ ")"
   , snd sf1 ^ snd sf2 )
 
 let synth_fm_sless gamma (sf1, a) (sf2, b) helper =
@@ -89,7 +88,7 @@ let synth_ocaml compute helper =
       print_plaintext_formula exp ;
       print_endline "" )
     expressions ;
-  let cpp_monitor_lst =
+  let monitor_lst =
     List.fold_right
       (fun exp lst ->
         let mon_call, mon_body = compute exp helper in
@@ -102,7 +101,7 @@ let synth_ocaml compute helper =
       (get_setting_string "rtm_monitor_name_prefix" helper)
       (String.sub
          ( Digest.string
-             (String.concat "" (List.map pair_to_string cpp_monitor_lst))
+             (String.concat "" (List.map pair_to_string monitor_lst))
          |> Digest.to_hex )
          0 4 )
       '%'
@@ -110,18 +109,21 @@ let synth_ocaml compute helper =
   let monitor_name = insert_string name "compute" '#' in
   (* function to add three spaces to each line *)
   let add_spaces str =
-    String.concat "\n" (List.map (fun line -> "   " ^ line) (String.split_on_char '\n' str))
+    String.concat "\n"
+      (List.map (fun line -> "   " ^ line) (String.split_on_char '\n' str))
   in
   let code1 =
     "(* This file was automatically generated from rmtld3synth tool version\n"
     ^ get_setting_string "version" helper
     ^ ".\n *)\n\n(* Settings:\n"
-    ^ add_spaces ( get_json_string_of_settings helper 
-    ^ "\n\nFormula(s):\n"
-    ^ List.fold_right
-        (fun exp b -> b ^ "- " ^ string_of_rmtld_fm exp ^ "\n")
-         expressions "")
-    ^ "\n *) \n\
+    ^ add_spaces
+        ( get_json_string_of_settings helper
+        ^ "\n\nFormula(s):\n"
+        ^ List.fold_right
+            (fun exp b -> b ^ "- " ^ string_of_rmtld_fm exp ^ "\n")
+            expressions "" )
+    ^ "\n\
+      \ *) \n\
        open Rmtld3_eval\n\n\
        module type Trace = sig val trc : trace end\n\n"
     ^ List.fold_right
@@ -134,8 +136,21 @@ let synth_ocaml compute helper =
             \  let t = 0.\n\
             \  let mon = " ^ function_call ^ " env lg_env t\nend\n\n" ^ str
           )
-        cpp_monitor_lst ""
-    ^ "(* End of generated file *)"
+        monitor_lst ""
+    ^ "\n\
+       type monitor_factory = (module Trace) -> Rmtld3_eval.three_valued\n\n\
+       let registry : (string * string * monitor_factory) list =\n\
+      \  [\n"
+    ^ List.fold_right2
+        (fun ((_, _), n) exp acc ->
+          "    ( \""
+          ^ String.capitalize_ascii monitor_name
+          ^ "_" ^ n ^ "\"\n    , \"" ^ string_of_rmtld_fm exp
+          ^ "\"\n    , fun (module T) ->\n        let module M = "
+          ^ String.capitalize_ascii monitor_name
+          ^ "_" ^ n ^ " (T) in\n        M.mon );\n" ^ acc )
+        monitor_lst expressions ""
+    ^ "  ]\n" ^ "(* End of generated file *)"
   in
   try
     let out_dir = get_setting_string "out_dir" helper in
