@@ -56,7 +56,7 @@ if [ -n "$Z3_VERSION" ] && [ "x$z3_solver" == "xtrue" ]; then
     echo "Z3 Version Found: $Z3_VERSION"
 
     if $(vercmp "$Z3_VERSION" "4.7.1" "<="); then
-        echo "Z3 Version is not compatible > 4.7.1 required"
+        echo "Z3 Version is not compatible. Version > 4.7.1 required."
         exit 1
     fi
  

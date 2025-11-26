@@ -146,7 +146,7 @@ open Synthesis.Smtlib2
 open Synthesis.Cpp11
 open Synthesis.Ocaml
 open Synthesis.Spark2014
-open Interface.Z3solver_
+open Interface.Z3solver
 
 let set_recursive_unrolling arg =
   (* check scope: auto or [0-9]+ *)

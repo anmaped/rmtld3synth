@@ -32,7 +32,7 @@ jobs:
           eval $(opam env) && \
           ./configure --js_of_ocaml --without-z3-solver && make js && \
           mkdir -p /workspace/source/public && \
-          cp _build/default/src/rmtld3synth.js /workspace/source/public'
+          cp _build/default/src/rmtld3synth.bc.js /workspace/source/public/rmtld3synth.js'
 
       - name: upload artifact
         uses: actions/upload-artifact@v4

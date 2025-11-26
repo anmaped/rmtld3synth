@@ -16,16 +16,18 @@ compile: setup
 	dune build --profile release @install
 
 setup: version
-	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
+	echo "Running setup..."
 
 version:
 	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > src/version.ml
 
 js: version
-	cp src/interface/mathkernel_call_dummy.ml src/interface/mathkernel_call_.ml
 	opam install js_of_ocaml js_of_ocaml-ppx zarith_stubs_js -y
-	dune build --profile js src/rmtld3synth.bc
-	js_of_ocaml --disable genprim --debug-info +base/runtime.js +zarith_stubs_js/runtime.js +zarith_stubs_js/biginteger.js _build/default/src/rmtld3synth.bc
+	dune build --profile js src/rmtld3synth.bc.js
+
+wasm: version
+	opam install wasm_of_ocaml-compiler js_of_ocaml js_of_ocaml-ppx js_of_ocaml-lwt zarith_stubs_js -y
+	dune build --profile js src/rmtld3synth.bc.wasm.js
 
 tests:
 	mkdir -p _build_tests && cp -R unittests/* _build_tests && cd _build_tests && bash -e test.sh $(TESTS_ARGS)

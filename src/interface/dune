@@ -3,13 +3,17 @@
   (name            interface)
   (public_name     rmtld3synth.interface)
   (libraries       rmtld3synth.helper rmtld3synth.rmtld3.extension rmtld3synth.interface.tex sexplib ppx_sexp_conv str
-    (select z3solver_.ml from
-      ( z3 -> z3solver_.newapi.ml)
-      ( Z3 -> z3solver_.newapi.ml)
-      ( -> z3solver_.dummy.ml)
+    (select z3solver.ml from
+      ( z3 !rmtld3synth.js -> z3solver.newapi.ml)
+      ( Z3 !rmtld3synth.js -> z3solver.newapi.ml)
+      ( -> z3solver.dummy.ml)
+    )
+    (select mathkernel_call.ml from
+      ( rmtld3synth.js -> mathkernel_call.dummy.ml)
+      ( -> mathkernel_call.unix.ml)
     )
   )
-  (modules         Rmdslparser Mathkernel Mathkernel_call_ Z3solver_ )
+  (modules         Rmdslparser Mathkernel Mathkernel_call Z3solver )
   (preprocess      (pps ppx_sexp_conv))
   (c_library_flags -lstdc++)
 )
