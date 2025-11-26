@@ -55,7 +55,7 @@ The `--synth-cpp11` flag configures `rmtld3synth` to generate a C++11 monitor us
 
 Alternatively, the `--synth-ocaml` flag generates the monitor in the OCaml language, or the `--synth-smtlibv2` flag can be used to check the satisfiability of the formula in SMT-LIBv2 format.
 
-For more information on the specification language, see the [Domain Specific Language](doc/dsl) documentation.
+For more information on the specification language, see the [Domain Specific Language](doc/dsl.md) documentation.
 
 Additional guidance is available in the [Documentation](#documentation) section, which includes details on integrating monitors for targets such as bare-metal environments or real-time operating systems like NuttX, FreeRTOS, and RTEMS.
 

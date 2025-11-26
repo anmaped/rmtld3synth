@@ -27,7 +27,12 @@
 (library
   (name            helper)
   (public_name     rmtld3synth.helper)
-  (libraries       rmtld3synth.rmtld3 rmtld3synth.js sexplib ppx_sexp_conv)
-  (modules         Helper)
+  (libraries       rmtld3synth.rmtld3
+    (select helper_.ml from
+      ( rmtld3synth.js -> helper_.js.ml)
+      ( -> helper_.nojs.ml)
+    )
+    sexplib ppx_sexp_conv)
+  (modules         Helper Helper_)
   (preprocess      (pps ppx_sexp_conv))
 )

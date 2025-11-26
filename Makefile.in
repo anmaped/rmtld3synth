@@ -17,7 +17,6 @@ compile: setup
 
 setup: version zsolver
 	cp src/interface/mathkernel_call.ml src/interface/mathkernel_call_.ml
-	echo "(* dummy js interface *)" >> src/js/helper_.ml
 
 version:
 	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > src/version.ml
@@ -42,4 +41,3 @@ clean:
 	rm -f *.byte *.native
 	rm -f src/interface/z3solver_.ml src/interface/mathkernel_call_.ml src/js/helper_.ml version.ml
 	cp src/interface/dune.bak src/interface/dune
-	cp src/js/dune.bak src/js/dune

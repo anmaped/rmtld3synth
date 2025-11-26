@@ -63,23 +63,10 @@ if $js_of_ocaml; then
     echo -e "js: version
 \tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml
 \tcp src/interface/mathkernel_call_dummy.ml src/interface/mathkernel_call_.ml
-\tcp src/js/helper.ml src/js/helper_.ml
 \topam install js_of_ocaml js_of_ocaml-ppx zarith_stubs_js -y
-\tdune build --profile release src/rmtld3synth.bc
+\tdune build --profile js src/rmtld3synth.bc
 \tjs_of_ocaml --disable genprim --debug-info +base/runtime.js +zarith_stubs_js/runtime.js +zarith_stubs_js/biginteger.js _build/default/src/rmtld3synth.bc
 " >>Makefile
-
-    if [ ! -f "src/js/dune.bak" ]; then
-        cp src/js/dune src/js/dune.bak
-    fi
-    eval $SED \"s/%LIBRARIES%/js_of_ocaml zarith_stubs_js/\" src/js/dune
-    eval $SED 's/%PPX%/js_of_ocaml-ppx/' src/js/dune
-else
-    if [ ! -f "src/js/dune.bak" ]; then
-        cp src/js/dune src/js/dune.bak
-    fi
-    eval $SED 's/%LIBRARIES%//' src/js/dune
-    eval $SED 's/%PPX%//' src/js/dune
 fi
 
 if [ -n "$Z3_VERSION" ] && [ "x$z3_solver" == "xtrue" ]; then
