@@ -2,7 +2,6 @@
 
 prefix=/usr/local
 debugsym=true
-js_of_ocaml=false
 z3_solver=true
 
 for arg in "$@"; do
@@ -18,10 +17,6 @@ for arg in "$@"; do
         debugsym=false
         ;;
 
-    --js_of_ocaml)
-        js_of_ocaml=true
-        ;;
-
     --without-z3-solver)
         z3_solver=false
         ;;
@@ -30,7 +25,6 @@ for arg in "$@"; do
         echo 'usage: ./configure [options]'
         echo 'options:'
         echo '  --prefix=<path>: installation prefix'
-        echo '  --js_of_ocaml: Enables js_of_ocaml'
         echo '  --enable-debug: include debug symbols'
         echo '  --disable-debug: do not include debug symbols'
         echo 'all invalid options are silently ignored'
@@ -58,39 +52,16 @@ if $debugsym; then
 fi
 cat Makefile.in >>Makefile
 
-if $js_of_ocaml; then
-    # js_of_ocaml parameters: --disable genprim --debug-info
-    echo -e "js: version
-\tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml
-\tcp src/interface/mathkernel_call_dummy.ml src/interface/mathkernel_call_.ml
-\topam install js_of_ocaml js_of_ocaml-ppx zarith_stubs_js -y
-\tdune build --profile js src/rmtld3synth.bc
-\tjs_of_ocaml --disable genprim --debug-info +base/runtime.js +zarith_stubs_js/runtime.js +zarith_stubs_js/biginteger.js _build/default/src/rmtld3synth.bc
-" >>Makefile
-fi
-
 if [ -n "$Z3_VERSION" ] && [ "x$z3_solver" == "xtrue" ]; then
     echo "Z3 Version Found: $Z3_VERSION"
 
     if $(vercmp "$Z3_VERSION" "4.7.1" "<="); then
-        echo -e "\nzsolver: 
-\tcp src/interface/z3solver.ml src/interface/z3solver_.ml" >>Makefile
-    else
-        echo -e "\nzsolver: 
-\tcp src/interface/z3solver_newAPI.ml src/interface/z3solver_.ml" >>Makefile
+        echo "Z3 Version is not compatible > 4.7.1 required"
+        exit 1
     fi
-    
-    cp src/interface/dune src/interface/dune.bak
-    eval $SED "s/%LIBRARIES%/$Z3_NAME/" src/interface/dune
-
+ 
 else
-    echo -e "\nzsolver: 
-\tcp src/interface/z3solver_dummy.ml src/interface/z3solver_.ml" >>Makefile
-
-    if [ ! -f "src/interface/dune.bak" ]; then
-        cp src/interface/dune src/interface/dune.bak
-    fi
-    eval $SED 's/%LIBRARIES%//' src/interface/dune
+    echo "Z3 Version Not Found. Z3 Solver Interface will be disabled."
 fi
 
 echo 'configuration complete, type make to build.'
