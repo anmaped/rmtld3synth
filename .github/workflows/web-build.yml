@@ -30,9 +30,13 @@ jobs:
           docker.io/anmaped/rmtld3synth:${{ github.ref_name }} \
           -c 'cp -r /workspace/source /localsource && cd /localsource && \
           eval $(opam env) && \
-          ./configure --js_of_ocaml --without-z3-solver && make js && \
+          ./configure && make js && make wasm && \
           mkdir -p /workspace/source/public && \
-          cp _build/default/src/rmtld3synth.bc.js /workspace/source/public/rmtld3synth.js'
+          cp _build/default/src/rmtld3synth.bc.js /workspace/source/public/rmtld3synth.js && \
+          cp _build/default/src/rmtld3synth.bc.wasm.js /workspace/source/public/rmtld3synth.wasm.js && \
+          sed -i "s/rmtld3synth.bc.wasm.assets/rmtld3synth.wasm.assets/g" /workspace/source/public/rmtld3synth.wasm.js && \
+          mkdir -p /workspace/source/public/rmtld3synth.wasm.assets && \
+          cp -r _build/default/src/rmtld3synth.bc.wasm.assets/. /workspace/source/public/rmtld3synth.wasm.assets'
 
       - name: upload artifact
         uses: actions/upload-artifact@v4
