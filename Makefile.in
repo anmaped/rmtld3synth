@@ -26,8 +26,7 @@ js: version
 	dune build --profile js src/rmtld3synth.bc.js
 
 wasm: version
-	apt-get install cmake ninja-build -y
-	opam install wasm_of_ocaml-compiler js_of_ocaml js_of_ocaml-ppx js_of_ocaml-lwt zarith_stubs_js -y
+	opam install wasm_of_ocaml-compiler js_of_ocaml js_of_ocaml-ppx js_of_ocaml-lwt zarith_stubs_js -y --confirm-level unsafe-yes
 	dune build --profile js src/rmtld3synth.bc.wasm.js
 
 tests:
