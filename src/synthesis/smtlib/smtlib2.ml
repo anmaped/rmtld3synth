@@ -25,17 +25,17 @@ let recursive_unrolling_depth = ref 0
 
 let assume_unary_sequence = ref false
 
-type solvers = Z3 | CVC4 | UNKNOWN
+let isZ3SolverEnabled helper =
+   if is_setting "solver" helper then (
+     let s = get_setting_string "solver" helper in
+     s = "z3"
+   ) else false
 
-let solver = ref UNKNOWN
-
-let isZ3SolverEnabled () = !solver = Z3
-
-let isCvc4SolverEnabled () = !solver = CVC4
-
-let enable_recursive_unrolling () = recursive_unrolling := true
-
-let set_solver (slv : solvers) = solver := slv
+let isCvc4SolverEnabled helper =
+   if is_setting "solver" helper then (
+     let s = get_setting_string "solver" helper in
+     s = "cvc4"
+   ) else false
 
 let free_variables_set = ref SS.empty
 
@@ -722,7 +722,7 @@ let synth_fm_sless gamma (sf1, a) (sf2, b) helper =
 let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
   failwith ("S[=" ^ string_of_float gamma ^ "] Not Implemented!")
 
-let synth_smtlib_header () =
+let synth_smtlib_header helper =
   let common_header () = set_info lst ":smt-lib-version" (Term.real "2.6") in
   let common_header_cvc4 () =
     if !recursive_unrolling then set_logic lst "QF_AUFDTNIRA"
@@ -747,7 +747,7 @@ let synth_smtlib_header () =
   in
   common_header () ;
   common_header_cvc4 () ;
-  if isZ3SolverEnabled () then common_header_z3 () ;
+  if isZ3SolverEnabled helper then common_header_z3 () ;
   ()
 
 let synth_smtlib_common_types () =
@@ -1038,7 +1038,12 @@ let synth_smtlib_common_prop () =
   ()
 
 let synth_smtlib synth_fun formula helper =
-  synth_smtlib_header () ;
+  recursive_unrolling := get_setting_bool "rec_unrolling" helper ;
+  if !recursive_unrolling then
+    recursive_unrolling_depth := get_setting_int "rec_unrolling_depth" helper ;
+  assume_unary_sequence := get_setting_bool "assume_unary_sequence" helper ;
+
+  synth_smtlib_header helper ;
   synth_smtlib_common_types () ;
   synth_smtlib_common_macros () ;
   synth_smtlib_common_evali () ;
@@ -1058,9 +1063,9 @@ let synth_smtlib synth_fun formula helper =
     (f_const_sort "Bool")
     (* body *)
     (f_equal tm (f_const_term "TVTRUE")) ;
-  (* if isZ3SolverEnabled () then (assert (forall ((t Time)) (>= (select trc
+  (* if isZ3SolverEnabled helper then (assert (forall ((t Time)) (>= (select trc
      t) 0) )) *)
-  if isZ3SolverEnabled () then
+  if isZ3SolverEnabled helper then
     assert_ lst
       (Term.forall
          [Term.colon (f_const_term "t") (f_const_sort "Time")]
@@ -1080,11 +1085,11 @@ let synth_smtlib synth_fun formula helper =
     (Statement.assert_
        (Term.apply (f_const_term "allcheck")
           [f_const_term "trc"; Term.int "0"] ) ) ;
-  if not (isZ3SolverEnabled ()) then (
+  if not (isZ3SolverEnabled helper) then (
     check_sat lst ;
     get_model lst ;
     get_info lst ":all-statistics" ) ;
-  (* if isZ3SolverEnabled () then "(check-sat-using (then qe smt))" ; this
+  (* if isZ3SolverEnabled helper then "(check-sat-using (then qe smt))" ; this
      entry is available only in Z3 *)
   (* 
    * initialize dolmen to pretty print smtlib
@@ -1152,7 +1157,7 @@ let synth_smtlib synth_fun formula helper =
           close_out stream ;
           verb (fun _ ->
               print_endline ("SMTLIBv2 file " ^ out_file ^ " saved.") ) ) ;
-      if isZ3SolverEnabled () then output_str else ""
+      if isZ3SolverEnabled helper then output_str else ""
     with Not_found ->
-      if not (isZ3SolverEnabled ()) then print_endline output_str ;
+      if not (isZ3SolverEnabled helper) then print_endline output_str ;
       output_str )

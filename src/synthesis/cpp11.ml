@@ -46,6 +46,32 @@ let gen_adjust_base t helper =
     ^ "; return _v; \n}\n"
   else ""
 
+(** Updates the event queue size based on the input formula and settings.
+  
+  Computes the required buffer size by taking the maximum of:
+  - The configured rtm_buffer_size setting
+  - The calculated size based on formula time bounds divided by minimum inter-arrival time
+  
+  This ensures the event queue can accommodate all events within the formula's
+  time window, assuming events arrive at the specified minimum rate.
+*)
+let update_event_queue_size formula helper =                                   
+  (* monitor synthesis setting *)
+  let event_queue_size =
+    max
+      (get_setting_int "rtm_buffer_size" helper)
+      (* compute the buffer size based on the inter-arrival time equal to one time unit *)
+      ( List.fold_left
+          (fun v formula ->
+            let value = int_of_float (calculate_t_upper_bound formula) in
+            if value > v then value else v )
+          0
+          (get_all_setting_formula "input_exp" helper)
+      / get_setting_int "rtm_min_inter_arrival_time" helper )
+  in
+  verb (fun _ ->
+      Printf.printf "Buffer is defined as length %d\n" event_queue_size )
+
 (*
  * Compute terms
  *)
@@ -294,6 +320,11 @@ let synth_cpp11 compute helper =
   if expressions = [] then (
     print_endline "no formula is available." ;
     exit 1 ) ;
+  (* Calculate and set the maximum event queue size required for each expression
+     based on formula bounds and minimum inter-arrival time *)
+  List.iter
+    (fun exp -> update_event_queue_size exp helper)
+    expressions ;
   print_endline "\x1b[33mExpression(s) selected to encode:\x1b[0m" ;
   List.iter
     (fun exp ->

@@ -3,250 +3,30 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/xhtml+xml; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+
     <title>rmtld3synth web demonstrator</title>
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.spa.css" />
-    <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.common.css" />
-    <link rel="dx-theme" data-theme="generic.light" href="https://cdn3.devexpress.com/jslib/17.1.8/css/dx.light.css" />
-    <script src="https://cdn3.devexpress.com/jslib/17.1.8/js/dx.all.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css" />
-
-    <style type="text/css" media="screen">
-        .ace_editor,
-        .toolbar {
-            border: 1px solid lightgray;
-            margin: 0px;
-            width: 98%;
-        }
-
-        .ace_editor {
-            height: 100%;
-        }
-    </style>
-
-    <script type="module">
-        import init, { format } from "./package/clang-format.js";
-        window.clangformat = async (filename, code) => {
-            await init();
-            return format(code, filename, "Chromium").toString();
-        };
-    </script>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.js" type="text/javascript"
         charset="utf-8"></script>
+    <script src="js/worker.js" type="text/javascript" defer></script>
+    <script src="js/editor.js" type="text/javascript" defer></script>
 
-    <script type="text/javascript">
+    <!-- Clang-format WASM bindings -->
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-untar@2.0.0/build/dist/untar.js"></script>
+    <script src="js/clang-format-bindings.js"></script>
 
-        var worker;
-        function go() {
-            lst_files = [];
-            id = 0;
-            sessions = [];
-            document.getElementById('tab-bar').innerHTML = "";
-
-            var argv = encodeURIComponent("rmtld3synth --out-src \".\" " + inputEditor.getValue().replaceAll("'", "\""));
-            if (worker) {
-                worker.terminate();
-            }
-            worker = new Worker("bindings.js?argv=" + argv);
-
-            code.setValue("", 1);
-
-            worker.onmessage = function (m) {
-                if (typeof m.data == 'string') {
-                    if (m.data != "\0\n") {
-                        csEditor.setValue(csEditor.getValue() + m.data, 1);
-
-
-                        const filteredLines = m.data
-                            .split('\n')
-                            .filter(line => line.startsWith('./'));
-                        if (filteredLines.length != 0) {
-                            lst_files.push(filteredLines);
-                            console.log(filteredLines);
-                        }
-
-                        for (let f of lst_files) {
-                            worker.postMessage("get:file:" + f);
-                        }
-                        lst_files = [];
-
-                    }
-                }
-
-                if (typeof m.data == 'object') {
-                    console.log(m.data.content);
-                    console.log("tab" + id);
-
-                    let mode = "ace/mode/text";
-                    if (m.data.name && m.data.name.endsWith(".c") || m.data.name.endsWith(".cpp") || m.data.name.endsWith(".h")) {
-                        mode = "ace/mode/c_cpp";
-                    }
-
-                    if (m.data.name && m.data.name.endsWith(".ml") || m.data.name.endsWith(".mli")) {
-                        mode = "ace/mode/ocaml";
-                    }
-
-                    sessions.push(ace.createEditSession("", mode));
-                    sessions[id].setMode(mode);
-
-                    if (m.data.name && m.data.name.endsWith(".c") || m.data.name.endsWith(".cpp") || m.data.name.endsWith(".h")) {
-
-                        const frozen_id = id;
-                        clangformat(m.data.name, m.data.content).then((formatted) => {
-                            sessions[frozen_id].setValue(formatted, 1);
-                        });
-
-                    } else {
-                        sessions[id].setValue(m.data.content, 1);
-                    }
-
-                    document.getElementById('tab-bar').innerHTML += ("<div class=\"tab" + (id == 0 ? " active" : "") + "\" data-tab=\"tab" + id + "\" onclick=\"switchTab('" + id + "')\">" + m.data.name + "</div>");
-                    if (id == 0) { switchTab(0); }
-                    id = id + 1;
-
-                }
-            }
-
-            worker.onerror = function (m) {
-                if (typeof m.message == 'string') {
-                    console.log("error: " + m.message);
-                }
-            }
-        }
-
-        function copyCommand(cmd) {
-            inputEditor.setValue(cmd);
-        }
-
-        var menuData = [{
-            id: "1",
-            name: "Monitor Synthesis",
-            items: [{
-                id: "1_1",
-                name: "Ocaml",
-                items: [{
-                    id: "1_1_1",
-                    name: "Simple Monitor",
-                    cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4\" --verbose 2"
-                },
-                {
-                    id: "1_1_2",
-                    name: "Simple Duration Monitor",
-                    cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
-                },
-                {
-                    id: "1_1_3",
-                    name: "Bounded Invariant",
-                    cmd: "./rmtld3synth --synth-ocaml --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
-                }]
-            }, {
-                id: "1_2",
-                name: "Cpp11",
-                items: [{
-                    id: "1_2_1",
-                    name: "Simple Monitor",
-                    cmd: "./rmtld3synth --synth-cpp11 --input-latexeq \"(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4\" --verbose 2"
-                }, {
-                    id: "1_2_2",
-                    name: "Simple Duration Monitor",
-                    cmd: "./rmtld3synth --synth-cpp11 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
-                }]
-            },
-            {
-                id: "1_3",
-                name: "Autopilot Case Study",
-                items: [{
-                    id: "1_3_1",
-                    name: "Use Case 1",
-                    cmd: './rmtld3synth --synth-cpp11 --input-sexp \"(Or \n\
-  (Not \n\
-    (Or \n\
-      (Not \n\
-        (Not \n\
-          (Or (LessThan (Duration (Constant 1000000) (Prop N)) (Constant 0)) \n\
-            (LessThan (Constant 0) (Duration (Constant 1000000) (Prop N)))))) \n\
-      (Not \n\
-        (Not \n\
-          (Or \n\
-            (Not \n\
-              (Or \n\
-                (LessThan (Constant 0) \n\
-                  (Duration (Constant 1000000) (Prop B))) \n\
-                (Not \n\
-                  (Or \n\
-                    (LessThan (Constant 0) \n\
-                      (Duration (Constant 1000000) (Prop B))) \n\
-                    (LessThan (Constant 1000000) \n\
-                      (Duration (Constant 0) (Prop B))))))) \n\
-            (Not \n\
-              (LessThan (Duration (Constant 1000000) (Prop B)) \n\
-                (Constant 5000000)))))))) \n\
-  (Or (Prop A) (Not (Or (Prop NOSYMBOL) (Not (Prop NOSYMBOL))))))\" --verbose 2'
-                }/*, {
-            id: "1_3_2",
-            name: "Use Case 2",
-            cmd: "./rmtld3synth "
-        }*/]
-            }]
-        }, {
-            id: "2",
-            name: "SMT Synthesis",
-            items: [{
-                id: "2_1",
-                name: "Empirical",
-                items: [{
-                    id: "2_1_1",
-                    name: "Simple Temporal",
-                    cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
-                },
-                {
-                    id: "2_1_2",
-                    name: "Simple Temporal (recursively unrolled)",
-                    cmd: "./rmtld3synth --synth-smtlibv2 --rec-unrolling 10 --input-latexeq \" (a \\lor b) \\ \\until_{<10} \ c\" --verbose 2"
-                },
-                {
-                    id: "2_1_3",
-                    name: "Bounded Duration",
-                    cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\int^{9} c < 2\" --verbose 2"
-                },
-                {
-                    id: "2_1_4",
-                    name: "Bounded Invariant",
-                    cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b\" --verbose 2"
-                },
-                {
-                    id: "2_1_5",
-                    name: "Simple Temporal with Bounded Duration",
-                    cmd: "./rmtld3synth --synth-smtlibv2 --input-latexeq \"\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2\" --verbose 2"
-                }]
-            }, {
-                id: "2_2",
-                name: "Scheduling",
-                items: [{
-                    id: "2_2_1",
-                    name: "Simple Single processor",
-                    cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}\" --verbose 2"
-                },
-                {
-                    id: "2_2_2",
-                    name: "Advanced Single processor",
-                    cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}\" --verbose 2"
-                }/*, {
-            id: "2_2_3",
-            name: "Simple multi-processor",
-            cmd: "./rmtld3synth --synth-smtlibv2 --input-rmdsl \"\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1\" --verbose 2"
-        }*/]
-            }]
-        }];
-
+    <script>
+        const log = (...msg) => {
+            //document.getElementById("log").innerText += msg.join(" ") + "\n";
+            console.log(msg.join(" "));
+        };
+        loadClangFormatWasm();
     </script>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
 </head>
 
 <body class="d-flex flex-column full-height" onload=go()>
@@ -303,14 +83,14 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="copyCommand(`--synth-ocaml --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
+                                                            onclick="setCommand(`--synth-ocaml --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
                                                             Monitor</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="copyCommand(`--synth-ocaml --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setCommand(`--synth-ocaml --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
                                                             Duration Monitor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="copyCommand(`--synth-ocaml --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
+                                                            onclick="setCommand(`--synth-ocaml --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
                                                             Invariant</button>
                                                     </div>
                                                 </div>
@@ -331,10 +111,10 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="copyCommand(`--synth-cpp11 --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
+                                                            onclick="setCommand(`--synth-cpp11 --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
                                                             Monitor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="copyCommand(`--synth-cpp11 --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setCommand(`--synth-cpp11 --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
                                                             Duration Monitor</button>
                                                     </div>
                                                 </div>
@@ -354,7 +134,7 @@
                                                     data-bs-parent="#autopilotAccordion">
                                                     <div class="accordion-body">
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="copyCommand(`--synth-cpp11 --input-sexp '(Or \n\
+                                                            onclick="setCommand(`--synth-cpp11 --input-sexp '(Or \n\
     (Not \n\
         (Or \n\
         (Not \n\
@@ -414,22 +194,22 @@
                                                         <!-- Buttons for commands -->
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="copyCommand(`--synth-smtlibv2 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
+                                                            onclick="setCommand(`--synth-smtlibv2 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
                                                             Temporal</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="copyCommand(`--synth-smtlibv2 --rec-unrolling 10 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
+                                                            onclick="setCommand(`--synth-smtlibv2 --rec-unrolling 10 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
                                                             Temporal (recursively unrolled)</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="copyCommand(`--synth-smtlibv2 --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Bounded
+                                                            onclick="setCommand(`--synth-smtlibv2 --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Bounded
                                                             Duration</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="copyCommand(`--synth-smtlibv2 --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
+                                                            onclick="setCommand(`--synth-smtlibv2 --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
                                                             Invariant</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="copyCommand(`--synth-smtlibv2 --input-latexeq '\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setCommand(`--synth-smtlibv2 --input-latexeq '\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2' --verbose 2`)">Simple
                                                             Temporal with Bounded Duration</button>
                                                     </div>
                                                 </div>
@@ -450,11 +230,16 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="copyCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}' --verbose 2`)">Simple
+                                                            onclick="setCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}' --verbose 2`)">Simple
                                                             Single processor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="copyCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}' --verbose 2`)">Advanced
+                                                            onclick="setCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}' --verbose 2`)">Advanced
                                                             Single processor</button>
+                                                        <!--
+                                                            <button class="btn btn-sm btn-outline-primary w-100 text-start"
+                                                            onclick="setCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1' --verbose 2`)">Single
+                                                            Multi processor</button>
+                                                        -->
                                                     </div>
                                                 </div>
                                             </div>
@@ -599,96 +384,6 @@
                 myModal.show();
             });
         </script>
-
-        <script>
-            const inputEditor = ace.edit("input-editor");
-            inputEditor.setTheme("ace/theme/textmate");
-            inputEditor.session.setMode("ace/mode/text"); // plain text mode
-            inputEditor.setOptions({
-                maxLines: 10,
-                minLines: 4,
-                autoScrollEditorIntoView: true,
-                wrap: true,
-                showPrintMargin: false,
-                showGutter: false
-            });
-
-            inputEditor.setValue("--help");
-
-            // Trigger your 'go()' function on keyup (or debounce it for performance)
-            inputEditor.session.on('change', () => {
-                go();
-            });
-
-            // Optional: mimic textarea height resizing
-            inputEditor.on('input', () => {
-                const lines = inputEditor.session.getLength();
-                inputEditor.container.style.height = `${Math.max(60, lines * 20)}px`;
-                inputEditor.resize();
-            });
-
-            // Optional: get value like from a textarea
-            function getInputValue() {
-                return inputEditor.getValue();
-            }
-        </script>
-
-        <script>
-            var csEditor = ace.edit("cs-editor");
-            csEditor.session.setMode("ace/mode/ocaml");
-
-            csEditor.setOptions({
-                maxLines: Infinity,
-                autoScrollEditorIntoView: true,
-                wrap: true,
-                showPrintMargin: false,
-                showGutter: false,
-                readOnly: true
-            });
-
-        </script>
-
-        <script>
-            var code = ace.edit("code");
-
-            code.setOptions({
-                maxLines: Infinity,
-                autoScrollEditorIntoView: true,
-                wrap: true,
-                showPrintMargin: false
-            });
-
-            sessions = [
-                ace.createEditSession("// Code in Tab 1", "ace/mode/ocaml"),
-            ];
-
-            // Function to switch between tabs
-            function switchTab(tabName) {
-                console.log(tabName);
-                code.setSession(sessions[tabName]);
-                code.getSession().setUseWrapMode(true);
-
-                setActiveTab(tabName);
-            }
-
-            function setActiveTab(tabName) {
-                // Remove 'active' class from all tabs
-                document.querySelectorAll('.tab').forEach(tab => {
-                    tab.classList.remove('active');
-                });
-
-                // Add 'active' class to the selected tab
-                const newActiveTab = document.querySelector(`.tab[data-tab="tab${tabName}"]`);
-                if (newActiveTab) {
-                    newActiveTab.classList.add('active');
-                }
-            }
-
-            // Initialize with tab1
-            switchTab('0');
-        </script>
-
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 

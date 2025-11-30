@@ -330,79 +330,26 @@ let apply_settings s helper =
   List.iter (fun (a, b) -> set_setting a (Num b) helper) s_num ;
   List.iter (fun (a, b) -> if isbool b then set_setting a (Sel (tobool b)) helper else set_setting a (Txt b) helper) s_str
 
+
+(* load settings from a file and set them in the helper *)
+let load_settings_from_file filename helper =
+  try
+    let int_settings, str_settings, monitor_settings = 
+      settings (settings_from_file filename) in
+    (* load settings and formulas from the configuration file *)
+    List.iter (fun (name, value) -> set_setting name (Num value) helper) int_settings;
+    List.iter (fun (name, value) -> set_setting name (Txt value) helper) str_settings;
+    List.iter (fun (_, _, formula) -> set_setting "input_exp" (Fm formula) helper) monitor_settings
+  with _ -> failwith ("Failed to load settings from file: " ^ filename)
+
 (* END helper for settings *)
 
-(* compute the heap cost of a formula *)
-let rec calculate_heap_cost (formula : rmtld3_fm) =
-  match formula with
-  | True _ -> 1
-  | Prop _ -> 1
-  | Not sf -> 1 + calculate_heap_cost sf
-  | Or (sf1, sf2) ->
-      1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
-  | Until (_, sf1, sf2) ->
-      1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
-  | LessThan (tr1, tr2) ->
-      1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
-  | _ ->
-      raise
-        (Failure
-           ( "ERROR: Calculating bound for unsupported formula ("
-           ^ Sexp.to_string (sexp_of_fm formula)
-           ^ ")." ) )
-
-and calculate_heap_cost_term term =
-  match term with
-  | Constant _ -> 1
-  | Duration (_, phi) -> 1 + calculate_heap_cost phi
-  | FPlus (tr1, tr2) ->
-      1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
-  | FTimes (tr1, tr2) ->
-      1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
-  | _ ->
-      raise
-        (Failure
-           ( "ERROR: Calculating bound for unsupported term ("
-           ^ Sexp.to_string (sexp_of_tm term)
-           ^ ")." ) )
-
-let rec calculate_cycle_cost (formula : rmtld3_fm) l =
-  match formula with
-  | True _ -> 0
-  | Prop _ -> 0
-  | Not sf -> 0 + calculate_cycle_cost sf l
-  | Or (sf1, sf2) ->
-      0 + calculate_cycle_cost sf1 l + calculate_cycle_cost sf2 l
-  | Until (_, sf1, sf2) ->
-      let lend i = if List.length i > 0 then List.tl i else [] in
-      let x, _ =
-        List.fold_left
-          (fun (a, c) _ ->
-            ( a + calculate_cycle_cost sf1 c + calculate_cycle_cost sf2 c + 1
-            , lend c ) )
-          (0, l) l
-      in
-      x + 0
-  | LessThan (_, _) -> 0
-  | _ ->
-      raise
-        (Failure
-           ( "ERROR: Calculating bound for unsupported formula ("
-           ^ Sexp.to_string (sexp_of_fm formula)
-           ^ ")." ) )
-
-and calculate_cycle_cost_term term l =
-  match term with
-  | Constant _ -> 0
-  | Duration (_, phi) -> 0 + calculate_cycle_cost phi l
-  | FPlus (_, _) -> 0
-  | FTimes (_, _) -> 0
-  | _ ->
-      raise
-        (Failure
-           ( "ERROR: Calculating bound for unsupported term ("
-           ^ Sexp.to_string (sexp_of_tm term)
-           ^ ")." ) )
+(* create directory if it does not exist *)
+let create_dir dir_name =
+  if not (Sys.file_exists dir_name) then
+    Unix.mkdir dir_name 0o777
+  else if not (Sys.is_directory dir_name) then
+    failwith (Printf.sprintf "'%s' exists but is not a directory" dir_name)
 
 (* trace generation helpers *)
 

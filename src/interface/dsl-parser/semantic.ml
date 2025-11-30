@@ -82,7 +82,7 @@ let fail text buffer (checkpoint : _ I.checkpoint) =
   let message = E.expand (get text checkpoint) message in
   (* Show these three components. *)
   eprintf "%s%s%s%!" location indication message ;
-  exit 1
+  raise Exit
 
 (* [check filename text] runs the parser. *)
 

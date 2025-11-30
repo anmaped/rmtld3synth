@@ -2,7 +2,7 @@
   (name server)
   (public_name rmtld3synth-server)
   (modules Server)
-  (libraries
+  (libraries rmtld3synth.options rmtld3synth.synthesis
     (select server.ml from
       ( dream yojson lwt lwt.unix !rmtld3synth.js -> server.dream.ml)
       ( -> server.dummy.ml))

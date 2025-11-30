@@ -11,4 +11,4 @@ self.onmessage = function (e) {
   }
 };
 
-importScripts("rmtld3synth.js")
+importScripts("../bundles/rmtld3synth.js")

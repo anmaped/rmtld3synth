@@ -75,4 +75,5 @@ let parse s =
 (* função Main *)
 let () =
   let s = read_line () in
-  parse s
+  try parse s
+  with Exit -> exit 1

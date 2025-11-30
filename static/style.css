@@ -22,3 +22,14 @@
     color: #fff;
     font-weight: bold;
 }
+
+.ace_editor,
+.toolbar {
+    border: 1px solid lightgray;
+    margin: 0px;
+    width: 98%;
+}
+
+.ace_editor {
+    height: 100%;
+}

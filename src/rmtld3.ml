@@ -748,7 +748,83 @@ and calculate_t_upper_bound_term term =
       Stdlib.max
         (calculate_t_upper_bound_term tr1)
         (calculate_t_upper_bound_term tr2)
-  | _ -> raise (Failure "Attempt to acquire bound for unsupported terms.")
+  | _ -> raise (Failure ("Attempt to acquire bound for unsupported terms . " ^ Sexp.to_string (sexp_of_rmtld3_tm term)))
+
+(*
+ * compute the heap upper bound of a RMTLD3 term and formula (if exists)
+ *)
+let rec calculate_heap_cost (formula : rmtld3_fm) =
+  match formula with
+  | True _ -> 1
+  | Prop _ -> 1
+  | Not sf -> 1 + calculate_heap_cost sf
+  | Or (sf1, sf2) ->
+      1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
+  | Until (_, sf1, sf2) ->
+      1 + max (calculate_heap_cost sf1) (calculate_heap_cost sf2)
+  | LessThan (tr1, tr2) ->
+      1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
+  | _ ->
+      raise
+        (Failure
+           ( "ERROR: Calculating bound for unsupported formula ("
+           ^ Sexp.to_string (sexp_of_fm formula)
+           ^ ")." ) )
+
+and calculate_heap_cost_term term =
+  match term with
+  | Constant _ -> 1
+  | Duration (_, phi) -> 1 + calculate_heap_cost phi
+  | FPlus (tr1, tr2) ->
+      1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
+  | FTimes (tr1, tr2) ->
+      1 + max (calculate_heap_cost_term tr1) (calculate_heap_cost_term tr2)
+  | _ ->
+      raise
+        (Failure
+           ( "ERROR: Calculating bound for unsupported term ("
+           ^ Sexp.to_string (sexp_of_tm term)
+           ^ ")." ) )
+(*
+ * compute the cycle upper bound of a RMTLD3 term and formula (if exists)
+ *)
+let rec calculate_cycle_cost (formula : rmtld3_fm) l =
+  match formula with
+  | True _ -> 0
+  | Prop _ -> 0
+  | Not sf -> 0 + calculate_cycle_cost sf l
+  | Or (sf1, sf2) ->
+      0 + calculate_cycle_cost sf1 l + calculate_cycle_cost sf2 l
+  | Until (_, sf1, sf2) ->
+      let lend i = if List.length i > 0 then List.tl i else [] in
+      let x, _ =
+        List.fold_left
+          (fun (a, c) _ ->
+            ( a + calculate_cycle_cost sf1 c + calculate_cycle_cost sf2 c + 1
+            , lend c ) )
+          (0, l) l
+      in
+      x + 0
+  | LessThan (_, _) -> 0
+  | _ ->
+      raise
+        (Failure
+           ( "ERROR: Calculating bound for unsupported formula ("
+           ^ Sexp.to_string (sexp_of_fm formula)
+           ^ ")." ) )
+
+and calculate_cycle_cost_term term l =
+  match term with
+  | Constant _ -> 0
+  | Duration (_, phi) -> 0 + calculate_cycle_cost phi l
+  | FPlus (_, _) -> 0
+  | FTimes (_, _) -> 0
+  | _ ->
+      raise
+        (Failure
+           ( "ERROR: Calculating bound for unsupported term ("
+           ^ Sexp.to_string (sexp_of_tm term)
+           ^ ")." ) )
 
 (*
  * example function to generate results and gnuplot files to plot them
