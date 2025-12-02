@@ -43,11 +43,11 @@ jobs:
           sudo apt install curl -y
           ls -l
           mkdir -p ./public
-          cp rmtld3synth.js ./public
-          cp static/*.* ./public
-          curl -L -o out.tgz https://github.com/wasm-fmt/clang-format/releases/download/v20.1.5/wasm-fmt-clang-format-20.1.5.tgz
-          tar -xzvf out.tgz
-          cp -r package ./public/
+          mkdir -p ./public/bundles
+          cp rmtld3synth.js ./public/bundles
+          cp -r static/. ./public
+          curl -L -o wasm-fmt-clang-format-20.1.5.tgz https://github.com/wasm-fmt/clang-format/releases/download/v20.1.5/wasm-fmt-clang-format-20.1.5.tgz
+          cp wasm-fmt-clang-format-20.1.5.tgz ./public/bundles
           ls ./public -l
 
       - name: Deploy

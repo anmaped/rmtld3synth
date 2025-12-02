@@ -143,7 +143,7 @@ let _ =
         print_endline "Synthesis for Ocaml language" ;
         print_endline
           "--------------------------------------------------------------------------------\n" ) ;
-    synth_ocaml Conv_ocaml.synth Options.helper
+    synth_ocaml Format.std_formatter Conv_ocaml.synth Options.helper
     )
   else if !Options.cpp11_lang then (
     verb_m 1 (fun _ ->

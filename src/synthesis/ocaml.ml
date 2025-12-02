@@ -77,7 +77,8 @@ let synth_fm_sless gamma (sf1, a) (sf2, b) helper =
 let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
   failwith ("S[=" ^ string_of_float gamma ^ "] Not Implemented!")
 
-let synth_ocaml compute helper =
+let synth_ocaml fmt compute helper =
+  let print_endline x = Format.fprintf fmt "%s\n" x in
   (* out_file cluster_name monitor_period *)
   print_endline "Current Configuration:" ;
   print_settings helper ;

@@ -48,6 +48,7 @@
   (libraries       rmtld3synth.rmtld3
     (select helper_.ml from
       ( rmtld3synth.js -> helper_.js.ml)
+      ( unix !rmtld3synth.js -> helper_.nojs.ml)
       ( -> helper_.nojs.ml)
     )
     sexplib ppx_sexp_conv)

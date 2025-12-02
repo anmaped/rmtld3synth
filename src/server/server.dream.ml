@@ -1,4 +1,4 @@
-let run_cmd () =
+let run_cmd fmt () =
   let module Conv_ocaml = Synthesis.Standard.Translate (Synthesis.Ocaml) in
   Options.default_settings Options.helper ;
   Helper.set_setting "version" (Helper.Txt "") Options.helper ;
@@ -6,27 +6,7 @@ let run_cmd () =
   Options.set_exp_dsl "a" ;
   (* example formula *)
   if !Options.ocaml_lang then
-    Synthesis.Ocaml.synth_ocaml Conv_ocaml.synth Options.helper
-
-let intersect_start () =
-  let stdout_backup = Unix.dup Unix.stdout in
-  let read_fd, write_fd = Unix.pipe () in
-  Unix.dup2 write_fd Unix.stdout ;
-  (stdout_backup, read_fd, write_fd)
-
-let intersect_end (stdout_backup, read_fd, write_fd) =
-  Unix.close write_fd ;
-  Unix.dup2 stdout_backup Unix.stdout ;
-  Unix.close stdout_backup ;
-  let buffer = Buffer.create 1024 in
-  let temp = Bytes.create 1024 in
-  let rec read_all () =
-    let n = Unix.read read_fd temp 0 1024 in
-    if n > 0 then (
-      Buffer.add_subbytes buffer temp 0 n ;
-      read_all () )
-  in
-  read_all () ; Unix.close read_fd ; Buffer.contents buffer
+    Synthesis.Ocaml.synth_ocaml fmt Conv_ocaml.synth Options.helper
 
 let status () =
   [ Dream.get "/api/settings" (fun _request ->
@@ -162,15 +142,19 @@ let request_control () =
         let task =
           request_tracking
             (fun _req ->
-              (let st = intersect_start () in
-               try
-                 run_cmd () ;
-                 let result = intersect_end st in
+              (
+                let buf = Buffer.create 1024 in
+                let fmt = Format.formatter_of_buffer buf in
+              try
+                 run_cmd fmt () ;
+                 Format.pp_print_flush fmt ();
+                 let result = Buffer.contents buf in
                  (*Lwt_unix.sleep 60.0 >>= fun () ->*)
                  Hashtbl.replace completed_requests hash_id
                    ("completed", result, timestamp)
                with e ->
-                 let error_msg = intersect_end st in
+                 Format.pp_print_flush fmt ();
+                 let error_msg = Buffer.contents buf in
                  let backtrace = Printexc.get_backtrace () in
                  Dream.log "Error in request %s: %s\n%s" hash_id
                    (Printexc.to_string e) backtrace ;
