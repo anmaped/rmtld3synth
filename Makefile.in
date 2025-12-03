@@ -19,7 +19,7 @@ setup: version
 	echo "Running setup..."
 
 version:
-	echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > src/version.ml
+	#echo "let git = \"`git describe --tags` (`git rev-parse HEAD`)\n`uname -m -o` `date +\"%Y-%m-%d %H:%M\"`\"" > src/version.ml
 
 js: version
 	opam install js_of_ocaml js_of_ocaml-ppx zarith_stubs_js -y

@@ -55,3 +55,10 @@
   (modules         Helper Helper_)
   (preprocess      (pps ppx_sexp_conv))
 )
+
+(rule
+ (targets version.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run sh -c "echo \"let git = \\\"$(git describe --tags) ($(git rev-parse HEAD))\\n$(uname -m -o) $(date '+%Y-%m-%d %H:%M')\\\"\""))))
