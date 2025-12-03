@@ -1,12 +1,25 @@
-let run_cmd fmt () =
+let run_cmd fmt body =
   let module Conv_ocaml = Synthesis.Standard.Translate (Synthesis.Ocaml) in
   Options.default_settings Options.helper ;
-  Helper.set_setting "version" (Helper.Txt "") Options.helper ;
-  Options.set_ocaml_language () ;
-  Options.set_exp_dsl "a" ;
-  (* example formula *)
-  if !Options.ocaml_lang then
-    Synthesis.Ocaml.synth_ocaml fmt Conv_ocaml.synth Options.helper
+  (* validate json *)
+  Json_schema.validate_schema_string
+    ~schema:Json_schema.schema_json ~json:body
+  |> function
+  | Error msg ->
+      Format.fprintf fmt "Error: Input JSON does not conform to schema." ;
+      Dream.log "Schema validation failed for input: %s" body ;
+      failwith ("Schema validation failed: " ^ msg)
+  | Ok () ->
+      (* set options from json *)
+      let json = Yojson.Safe.from_string body in
+      Options.apply_options_from_assoc_list
+        (json |> Yojson.Safe.Util.to_assoc) ;
+      Dream.log "Settings after applying JSON options: %s"
+        (Helper.get_json_string_of_settings Options.helper) ;
+      Helper.set_setting "version" (Helper.Txt "") Options.helper ;
+      (* run synthesis based on options *)
+      if Options.ocaml_lang () then
+        Synthesis.Ocaml.synth_ocaml fmt Conv_ocaml.synth Options.helper
 
 let status () =
   [ Dream.get "/api/settings" (fun _request ->
@@ -142,18 +155,17 @@ let request_control () =
         let task =
           request_tracking
             (fun _req ->
-              (
-                let buf = Buffer.create 1024 in
-                let fmt = Format.formatter_of_buffer buf in
-              try
-                 run_cmd fmt () ;
-                 Format.pp_print_flush fmt ();
+              (let buf = Buffer.create 1024 in
+               let fmt = Format.formatter_of_buffer buf in
+               try
+                 run_cmd fmt body ;
+                 Format.pp_print_flush fmt () ;
                  let result = Buffer.contents buf in
                  (*Lwt_unix.sleep 60.0 >>= fun () ->*)
                  Hashtbl.replace completed_requests hash_id
                    ("completed", result, timestamp)
                with e ->
-                 Format.pp_print_flush fmt ();
+                 Format.pp_print_flush fmt () ;
                  let error_msg = Buffer.contents buf in
                  let backtrace = Printexc.get_backtrace () in
                  Dream.log "Error in request %s: %s\n%s" hash_id

@@ -78,16 +78,15 @@ let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
   failwith ("S[=" ^ string_of_float gamma ^ "] Not Implemented!")
 
 let synth_ocaml fmt compute helper =
-  let print_endline x = Format.fprintf fmt "%s\n" x in
+  let pp_endline = pp_endline fmt in
   (* out_file cluster_name monitor_period *)
-  print_endline "Current Configuration:" ;
-  print_settings helper ;
+  verbose pp_endline "Current Configuration:" ;
+  verbose (pp_settings fmt) helper ;
   let expressions = get_all_setting_formula "input_exp" helper in
-  print_endline "Expression(s) selected to encode:" ;
+  verbose pp_endline "Expression(s) selected to encode:" ;
   List.iter
     (fun exp ->
-      print_plaintext_formula exp ;
-      print_endline "" )
+      verbose pp_endline (string_of_rmtld_fm exp) )
     expressions ;
   let monitor_lst =
     List.fold_right
@@ -155,18 +154,18 @@ let synth_ocaml fmt compute helper =
   in
   try
     let out_dir = get_setting_string "out_dir" helper in
-    print_endline "Generated Output Files:" ;
+    verbose pp_endline "Generated Output Files:" ;
     let monitor_name =
       String.capitalize_ascii (insert_string name "compute" '#')
     in
     let stream = open_out (out_dir ^ "/" ^ monitor_name ^ ".ml") in
     Printf.fprintf stream "%s\n" code1 ;
     close_out stream ;
-    print_endline (out_dir ^ "/" ^ monitor_name ^ ".ml")
+    verbose pp_endline (out_dir ^ "/" ^ monitor_name ^ ".ml")
   with Not_found -> (
     try
       let out_file = get_setting_string "out_file" helper in
-      print_endline "Generated Output Files:" ;
+      verbose pp_endline "Generated Output Files:" ;
       let monitor_name =
         String.capitalize_ascii (insert_string name "compute" '#')
       in
@@ -177,9 +176,9 @@ let synth_ocaml fmt compute helper =
            |> String.capitalize_ascii )
            code1 ) ;
       close_out stream ;
-      print_endline out_file
+      verbose pp_endline out_file
     with Not_found -> (* print to console *)
-                      print_endline code1 )
+                      pp_endline code1 )
 
 let synth_ocaml_unittests () =
   (* debuging flag *)

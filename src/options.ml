@@ -14,7 +14,7 @@ let simplify_formula = ref false
 
 let cpp11_lang = ref false
 
-let ocaml_lang = ref false
+let ocaml_lang () = get_setting_bool "synth_ocaml" helper
 
 let spark2014_lang = ref false
 
@@ -53,7 +53,7 @@ let set_smt_formula f = smtlibv2_lang := true
 
 let set_simplify_formula f = simplify_formula := true
 
-let set_ocaml_language f = ocaml_lang := true
+let set_ocaml_language f = set_setting "synth_ocaml" (Sel true) helper
 
 let set_cpp_language f = cpp11_lang := true
 
@@ -159,6 +159,25 @@ let set_gen_tests v = set_setting "gen_tests" (Sel v) helper
 let set_version () = set_setting "version" (Sel true) helper
 
 (* ... other refs & setters ... *)
+
+let apply_options_from_assoc_list assoc_list =
+  List.iter
+    (fun (key, value) ->
+      match value with
+      | `String s -> 
+          if key = "input_exp_sexp" then
+            set_exp s
+          else if key = "input_exp_dsl" then
+            set_exp_dsl s
+          else if key = "input_exp_ltxeq" then
+            set_exp_ltxeq s
+          else if key = "input_exp_rmdsl" then
+            set_exp_rmdsl s
+          else failwith ("Unknown string option: " ^ key)
+      | `Int n -> set_setting key (Num n) helper
+      | `Bool b -> set_setting key (Sel b) helper
+      | _ -> () )
+    assoc_list
 
 let speclist =
   [ (* action flags *)

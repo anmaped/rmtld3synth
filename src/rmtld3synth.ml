@@ -138,12 +138,13 @@ let _ =
           1 fm_lst
       in
       () )
-  else if !Options.ocaml_lang then (
+  else if Options.ocaml_lang () then (
     verb_m 1 (fun _ ->
         print_endline "Synthesis for Ocaml language" ;
         print_endline
           "--------------------------------------------------------------------------------\n" ) ;
-    synth_ocaml Format.std_formatter Conv_ocaml.synth Options.helper
+    synth_ocaml Format.std_formatter Conv_ocaml.synth Options.helper ;
+    Format.print_flush ()
     )
   else if !Options.cpp11_lang then (
     verb_m 1 (fun _ ->

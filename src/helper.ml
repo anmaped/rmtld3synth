@@ -29,9 +29,11 @@ type helper = (string, settings) Hashtbl.t (* new settings structure *)
 
 let verb_mode = ref 0
 
-let verb f = if !verb_mode >= 2 then f () else ()
-
 let verb_m mode f = if !verb_mode >= mode then f () else ()
+
+let verb f = verb_m 2 f
+
+let verbose f = if !verb_mode >= 1 then f else ignore
 
 let mk_helper =
   let tbl = Hashtbl.create 50 in
@@ -88,14 +90,14 @@ let get_all_setting_formula name tbl : Rmtld3.fm list =
   in
   List.rev (_get_all_setting_formula (Hashtbl.find_all tbl name))
 
-let print_setting a =
+let pp_setting fmt a =
   match a with
-  | Num v -> print_string (string_of_int v)
-  | Txt s -> print_string ("'" ^ s ^ "'")
-  | Fm f -> print_string (string_of_rmtld_fm f)
-  | Sel b -> print_string (string_of_bool b)
+  | Num v -> Format.fprintf fmt "%d" v
+  | Txt s -> Format.fprintf fmt "'%s'" s
+  | Fm f -> Format.fprintf fmt "%s" (string_of_rmtld_fm f)
+  | Sel b -> Format.fprintf fmt "%b" b
   | Hash ht ->
-      print_string
+      Format.fprintf fmt "%s"
         (Hashtbl.fold
            (fun x y a ->
              let m v = match v with S a -> a | N v -> string_of_int v in
@@ -130,14 +132,18 @@ let get_string_of_setting a =
           a ^ "(" ^ m x ^ "->" ^ m y ^ ") " )
         ht ""
 
-let print_settings tbl =
+let pp_settings fmt tbl =
   Hashtbl.iter
     (fun a b ->
-      print_string a ;
-      print_string " -> " ;
-      print_setting b ;
-      print_endline "" )
+      Format.fprintf fmt "%s -> " a;
+      pp_setting fmt b;
+      Format.fprintf fmt "\n" )
     tbl
+
+let print_settings tbl =
+  pp_settings Format.std_formatter tbl
+
+let pp_endline fmt = Format.fprintf fmt "%s\n"
 
 let get_string_of_settings ?(exclude = []) tbl =
   Hashtbl.fold
