@@ -20,6 +20,7 @@ depends: [
   "dolmen_loop" {build}
   "yojson" {build}
   "ppx_yojson_conv" {build}
+  "ppx_blob" {build}
   "z3" {<="4.12.3"}
 ]
 
