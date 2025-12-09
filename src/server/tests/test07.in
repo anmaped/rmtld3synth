@@ -1,0 +1,5 @@
+{
+    "smtlibv2_language": true,
+    "input_latexeq": "(a \\lor b) \\ \\until_{<10}  c",
+    "verbose": 2
+}

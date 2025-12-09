@@ -1,10 +1,20 @@
 (executable
   (name server)
   (public_name rmtld3synth-server)
-  (modules Server Json_schema)
+  (modules Server Json_schema Version)
   (libraries rmtld3synth.options rmtld3synth.synthesis
     (select server.ml from
       ( dream yojson lwt lwt.unix jsonschema !rmtld3synth.js -> server.dream.ml)
       ( -> server.dummy.ml))
   )
+  (preprocess (pps ppx_blob))
+  (preprocessor_deps (file schema.json))
+  (enabled_if (<> %{profile} "js"))
 )
+
+(rule
+ (targets version.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run sh -c "echo \"let git = \\\"$(git describe --tags) ($(git rev-parse HEAD))\\n$(uname -m -o) $(date '+%Y-%m-%d %H:%M')\\\"\""))))

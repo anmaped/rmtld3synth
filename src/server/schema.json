@@ -1,0 +1,236 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "RMTLD Tool Configuration",
+  "type": "object",
+  "properties": {
+    "gen_rmtld_formula": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Language] Generate RMTLD formula"
+    },
+    "smtlibv2_language": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Language] Enable SMTLIB v2 output"
+    },
+    "ocaml_language": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Language] Enable OCaml output"
+    },
+    "cpp11_language": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Language] Enable C++11 output"
+    },
+    "spark2014_language": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Language] Enable SPARK 2014 output"
+    },
+    "simpl_cad": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Language] Enable Simpl CAD output"
+    },
+    "solver_z3": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Solvers] Use the Z3 solver"
+    },
+    "solver_cvc4": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Solvers] Use the CVC4 solver"
+    },
+    "solver_statistics": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Solvers] Enable solver statistics"
+    },
+    "rec_unrolling": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "none",
+            "auto"
+          ],
+          "default": "none"
+        },
+        {
+          "type": "integer",
+          "minimum": 0
+        }
+      ],
+      "description": "[group: Recursive Unrolling] Depth for recursive unrolling"
+    },
+    "assume_unary_seq": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Tracing] Assume unary sequence"
+    },
+    "get_trace": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Tracing] Generate execution trace"
+    },
+    "trace_style": {
+      "type": "string",
+      "description": "[group: Tracing] Trace output style"
+    },
+    "eval": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Tracing] Evaluate formula"
+    },
+    "include_env": {
+      "type": "string",
+      "description": "[group: Environment] Path to environment file"
+    },
+    "input_sexp": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "[group: Input] S-expression input"
+    },
+    "input_dsl": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "[group: Input] DSL input"
+    },
+    "input_latexeq": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "[group: Input] LaTeX equations input"
+    },
+    "input_rmdsl": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "[group: Input] RMD-SL input"
+    },
+    "config_file": {
+      "type": "string",
+      "description": "[group: Configuration] Path to config file"
+    },
+    "set_monitor_period": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "[group: Monitor Settings] Monitor period"
+    },
+    "set_buffer_size": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "[group: Monitor Settings] Buffer size"
+    },
+    "set_min_inter_time": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "[group: Monitor Settings] Minimum inter-event time"
+    },
+    "set_max_period": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "[group: Monitor Settings] Maximum period"
+    },
+    "set_event_type": {
+      "type": "string",
+      "description": "[group: Monitor Settings] Event type"
+    },
+    "set_event_subtype": {
+      "type": "string",
+      "description": "[group: Monitor Settings] Event subtype"
+    },
+    "set_monitor_name_prefix": {
+      "type": "string",
+      "description": "[group: Monitor Settings] Monitor name prefix"
+    },
+    "set_monitor_time_unit": {
+      "type": "string",
+      "description": "[group: Monitor Settings] Time unit"
+    },
+    "out_file": {
+      "type": "string",
+      "pattern": "^.+$",
+      "description": "[group: Output] Output file path"
+    },
+    "out_src": {
+      "type": "string",
+      "pattern": "^.+$",
+      "description": "[group: Output] Output source path"
+    },
+    "out_dir": {
+      "type": "string",
+      "pattern": "^.+/$",
+      "description": "[group: Output] Output directory (must end with /)"
+    },
+    "verbose": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "[group: Misc] Verbosity level"
+    },
+    "version": {
+      "type": "boolean",
+      "default": false,
+      "description": "[group: Input] Show version instead of running"
+    }
+  },
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "required": [
+        "smtlibv2_language"
+      ]
+    },
+    {
+      "required": [
+        "ocaml_language"
+      ]
+    },
+    {
+      "required": [
+        "cpp11_language"
+      ]
+    },
+    {
+      "required": [
+        "spark2014_language"
+      ]
+    }
+  ]
+}

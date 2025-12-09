@@ -55,12 +55,13 @@ let gen_adjust_base t helper =
   This ensures the event queue can accommodate all events within the formula's
   time window, assuming events arrive at the specified minimum rate.
 *)
-let update_event_queue_size formula helper =                                   
+let update_event_queue_size formula helper =
   (* monitor synthesis setting *)
   let event_queue_size =
     max
       (get_setting_int "rtm_buffer_size" helper)
-      (* compute the buffer size based on the inter-arrival time equal to one time unit *)
+      (* compute the buffer size based on the inter-arrival time equal to one
+         time unit *)
       ( List.fold_left
           (fun v formula ->
             let value = int_of_float (calculate_t_upper_bound formula) in
@@ -251,8 +252,8 @@ let rec synth_fm_sless gamma (sf1, a) (sf2, b) helper =
     && (sf1, a) = synth_fm_not (synth_fm_true helper) helper
   then (
     print_endline
-      "The unbounded previous 'prev[∞] ɸ' is converted to 'false \
-       since[<1.] ɸ' since cpp11 synthesis is enabled." ;
+      "The unbounded previous 'prev[∞] ɸ' is converted to 'false since[<1.] \
+       ɸ' since cpp11 synthesis is enabled." ;
     synth_fm_sless 1.
       (synth_fm_not (synth_fm_true helper) helper)
       (sf2, b) helper )
@@ -313,23 +314,21 @@ let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
       \  " )
 
 (* monitor dependent c++ functions begin here *)
-let synth_cpp11 compute helper =
-  print_endline "\x1b[33mCurrent Configuration:\x1b[0m" ;
-  print_settings helper ;
+let synth_cpp11 fmt compute helper =
+  let pp_endline = pp_endline fmt in
+  verbose pp_endline
+    "\x1b[33mConfiguration before C++ code generation:\x1b[0m" ;
+  verbose print_settings helper ;
   let expressions = get_all_setting_formula "input_exp" helper in
-  if expressions = [] then (
-    print_endline "no formula is available." ;
-    exit 1 ) ;
-  (* Calculate and set the maximum event queue size required for each expression
-     based on formula bounds and minimum inter-arrival time *)
-  List.iter
-    (fun exp -> update_event_queue_size exp helper)
-    expressions ;
-  print_endline "\x1b[33mExpression(s) selected to encode:\x1b[0m" ;
+  if expressions = [] then failwith "no formula is available." ;
+  (* Calculate and set the maximum event queue size required for each
+     expression based on formula bounds and minimum inter-arrival time *)
+  List.iter (fun exp -> update_event_queue_size exp helper) expressions ;
+  verbose pp_endline "\x1b[33mExpression(s) selected to encode:\x1b[0m" ;
   List.iter
     (fun exp ->
       print_plaintext_formula exp ;
-      print_endline "" )
+      pp_endline "" )
     expressions ;
   let cpp_monitor_lst =
     List.fold_right
@@ -594,34 +593,43 @@ let synth_cpp11 compute helper =
   in
   try
     let out_dir = get_setting_string "out_dir" helper in
-    print_endline "\x1b[32mGenerated Output Files:\x1b[0m" ;
+    pp_endline "\x1b[32mGenerated Output Files:\x1b[0m" ;
     let monitor_name =
       String.capitalize_ascii (insert_string name "compute" '#')
     in
-    let stream = open_out (out_dir ^ "/" ^ monitor_name ^ ".h") in
-    Printf.fprintf stream "%s\n" (beautify_cpp_code code1) ;
-    close_out stream ;
-    print_endline (out_dir ^ "/" ^ monitor_name ^ ".h") ;
+    save_file (out_dir ^ "/" ^ monitor_name ^ ".h") (beautify_cpp_code code1) ;
+    pp_endline (out_dir ^ "/" ^ monitor_name ^ ".h") ;
     let monitor_name =
       String.capitalize_ascii (insert_string name "monitor" '#')
     in
-    let stream = open_out (out_dir ^ "/" ^ monitor_name ^ ".h") in
-    Printf.fprintf stream "%s\n" (beautify_cpp_code code2) ;
-    close_out stream ;
-    print_endline
-      (out_dir ^ "/" ^ String.capitalize_ascii monitor_name ^ ".h") ;
+    save_file (out_dir ^ "/" ^ monitor_name ^ ".h") (beautify_cpp_code code2) ;
+    pp_endline (out_dir ^ "/" ^ String.capitalize_ascii monitor_name ^ ".h") ;
     let monitor_name =
       String.capitalize_ascii (insert_string name "instrument" '#')
     in
-    let stream = open_out (out_dir ^ "/" ^ monitor_name ^ ".h") in
-    Printf.fprintf stream "%s\n" (beautify_cpp_code code3) ;
-    close_out stream ;
-    print_endline (out_dir ^ "/" ^ monitor_name ^ ".h")
+    save_file (out_dir ^ "/" ^ monitor_name ^ ".h") (beautify_cpp_code code3) ;
+    pp_endline (out_dir ^ "/" ^ monitor_name ^ ".h")
   with Not_found ->
     (* print to console *)
-    print_endline "Generated Output Header Files:" ;
-    print_endline (beautify_cpp_code code1) ;
-    print_endline (beautify_cpp_code code2) ;
-    print_endline (beautify_cpp_code code3)
+    (*pp_endline "Generated Output Header Files:" ; pp_endline
+      (beautify_cpp_code code1) ; pp_endline (beautify_cpp_code code2) ;
+      pp_endline (beautify_cpp_code code3)*)
+
+    print_boundary_init pp_endline ;
+    (* start of multipart message *)
+    let monitor_name =
+      String.capitalize_ascii (insert_string name "compute" '#')
+    in
+    print_part pp_endline id (monitor_name ^ ".h") code1 ;
+    let monitor_name =
+      String.capitalize_ascii (insert_string name "monitor" '#')
+    in
+    print_part pp_endline id (monitor_name ^ ".h") code2 ;
+    let monitor_name =
+      String.capitalize_ascii (insert_string name "instrument" '#')
+    in
+    print_part pp_endline id (monitor_name ^ ".h") code3 ;
+    (* end of multipart message *)
+    print_boundary_end pp_endline id
 
 (* monitor dependent functions ends here *)

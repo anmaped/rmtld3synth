@@ -1,6 +1,5 @@
-(* Synthesis from RMTLD3 to Ocaml *)
+(* Synthesis from RMTLD3 to OCaml *)
 
-open List
 open Str
 open Rmtld3
 open Helper
@@ -80,13 +79,12 @@ let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
 let synth_ocaml fmt compute helper =
   let pp_endline = pp_endline fmt in
   (* out_file cluster_name monitor_period *)
-  verbose pp_endline "Current Configuration:" ;
+  verbose pp_endline "Configuration before OCaml code generation:" ;
   verbose (pp_settings fmt) helper ;
   let expressions = get_all_setting_formula "input_exp" helper in
   verbose pp_endline "Expression(s) selected to encode:" ;
   List.iter
-    (fun exp ->
-      verbose pp_endline (string_of_rmtld_fm exp) )
+    (fun exp -> verbose pp_endline (string_of_rmtld_fm exp))
     expressions ;
   let monitor_lst =
     List.fold_right
@@ -96,15 +94,16 @@ let synth_ocaml fmt compute helper =
       expressions []
   in
   let pair_to_string ((x, _), y) = "(" ^ x ^ ", " ^ y ^ ")" in
+  let id =
+    String.sub
+      ( Digest.string (String.concat "" (List.map pair_to_string monitor_lst))
+      |> Digest.to_hex )
+      0 4
+  in
   let name =
     insert_string
       (get_setting_string "rtm_monitor_name_prefix" helper)
-      (String.sub
-         ( Digest.string
-             (String.concat "" (List.map pair_to_string monitor_lst))
-         |> Digest.to_hex )
-         0 4 )
-      '%'
+      id '%'
   in
   let monitor_name = insert_string name "compute" '#' in
   (* function to add three spaces to each line *)
@@ -158,9 +157,7 @@ let synth_ocaml fmt compute helper =
     let monitor_name =
       String.capitalize_ascii (insert_string name "compute" '#')
     in
-    let stream = open_out (out_dir ^ "/" ^ monitor_name ^ ".ml") in
-    Printf.fprintf stream "%s\n" code1 ;
-    close_out stream ;
+    save_file (out_dir ^ "/" ^ monitor_name ^ ".ml") code1 ;
     verbose pp_endline (out_dir ^ "/" ^ monitor_name ^ ".ml")
   with Not_found -> (
     try
@@ -169,16 +166,17 @@ let synth_ocaml fmt compute helper =
       let monitor_name =
         String.capitalize_ascii (insert_string name "compute" '#')
       in
-      let stream = open_out out_file in
-      Printf.fprintf stream "%s\n"
+      save_file out_file
         (Str.global_replace (Str.regexp monitor_name)
            ( out_file |> Filename.basename |> Filename.remove_extension
            |> String.capitalize_ascii )
            code1 ) ;
-      close_out stream ;
       verbose pp_endline out_file
-    with Not_found -> (* print to console *)
-                      pp_endline code1 )
+    with Not_found ->
+      (* print to console *)
+      print_boundary_init pp_endline ;
+      print_part pp_endline id (monitor_name ^ ".ml") code1 ;
+      print_boundary_end pp_endline id )
 
 let synth_ocaml_unittests () =
   (* debuging flag *)
@@ -335,9 +333,9 @@ let synth_ocaml_unittests () =
     Printf.printf "count: %i\n" !count ;
     (* binomial(n+(m-1), (m-1)) * 2^n *)
     let g_val = [0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10] in
-    let g_val2 = map (fun a -> pow 2 a - 1) (tl g_val) in
+    let g_val2 = List.map (fun a -> pow 2 a - 1) (List.tl g_val) in
     let lst1 = [1; 2; 3; 4; 5; 6; 7; 8] in
-    iter
+    List.iter
       (fun a ->
         let fm = gen_u_formula_with_triangle_pattern true a 10. in
         print_endline
@@ -347,7 +345,7 @@ let synth_ocaml_unittests () =
           ^ string_of_int (snd (measure_formula fm)) )
         (* print_endline (Sexp.to_string_hum (sexp_of_rmtld3_fm fm)); *) )
       g_val ;
-    iter
+    List.iter
       (fun a ->
         let fm =
           gen_u_formula_with_maximum_prop_evaluation a 10. (List.length lst1)

@@ -1,0 +1,1 @@
+{"input_dsl":"--synth-ocaml --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2","ocaml_language":true}

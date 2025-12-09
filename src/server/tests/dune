@@ -1,0 +1,28 @@
+;; write tests for schema validation
+
+(test
+  (name schema_test)
+  (libraries alcotest yojson jsonschema)
+  (modules Schema_test)
+  (deps 
+    ../schema.json 
+    test01.in 
+    test02.in
+    test03.in
+    test04.in
+    test05.in
+    test06.in
+    test07.in
+    test08.in
+    test09.in
+    test10.fail.in
+    test11.fail.in
+    test12.in
+    test13.fail.in
+  )
+  (enabled_if 
+   (and (not %{lib-available:rmtld3synth.js})
+     %{lib-available:jsonschema} 
+     %{lib-available:alcotest} 
+     %{lib-available:yojson}))
+)

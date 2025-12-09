@@ -1,0 +1,4 @@
+{
+    "input_dsl": "a until b within 10s",
+    "ocaml_language": true
+}

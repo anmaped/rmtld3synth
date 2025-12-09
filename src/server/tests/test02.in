@@ -1,0 +1,4 @@
+{
+    "input_dsl": [ "a until b within 10s", "duration of a in [0,10] < 6", "a or b" ],
+    "ocaml_language": true
+}

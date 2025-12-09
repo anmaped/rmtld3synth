@@ -177,7 +177,7 @@ let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
   ("", "")
 
 (* monitor dependent spark2014 functions begin here *)
-let synth_spark2014 compute helper =
+let synth_spark2014 fmt compute helper =
   let save filename =
     if is_setting "out_dir" helper then ( fun a ->
       let stream =

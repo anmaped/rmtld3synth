@@ -1,0 +1,28 @@
+{
+    "cpp11_language": true,
+    "input_latexeq": "(Or 
+    (Not 
+        (Or 
+        (Not 
+            (Not 
+            (Or (LessThan (Duration (Constant 1000000) (Prop N)) (Constant 0)) 
+                (LessThan (Constant 0) (Duration (Constant 1000000) (Prop N)))))) 
+        (Not 
+            (Not 
+            (Or 
+                (Not 
+                (Or 
+                    (LessThan (Constant 0) 
+                    (Duration (Constant 1000000) (Prop B))) 
+                    (Not 
+                    (Or 
+                        (LessThan (Constant 0) 
+                        (Duration (Constant 1000000) (Prop B))) 
+                        (LessThan (Constant 1000000) 
+                        (Duration (Constant 0) (Prop B))))))) 
+                (Not 
+                (LessThan (Duration (Constant 1000000) (Prop B)) 
+                    (Constant 5000000)))))))) 
+    (Or (Prop A) (Not (Or (Prop NOSYMBOL) (Not (Prop NOSYMBOL))))))",
+    "verbose": 2
+}

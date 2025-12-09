@@ -483,7 +483,7 @@ let generate_auxiliar_files cluster_name helper =
 let _ =
   (* ask test parameters *)
   let cluster_name = "_ml" in
-  let helper = mk_helper in
+  let helper = mk_helper () in
   let default_settings =
     "(rtm_period 200000)\n\
      (rtm_buffer_size 100)\n\

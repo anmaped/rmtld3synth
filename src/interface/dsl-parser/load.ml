@@ -9,7 +9,7 @@ let parse_string s =
   | exception Lexer.Error msg ->
       (* A lexical error has occurred. *)
       eprintf "%s%!" msg;
-      exit 1
+      raise Exit
   | exception Parser.Error ->
       (* A syntax error has occurred. *)
       Semantic.check "input" s

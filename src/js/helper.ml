@@ -33,6 +33,12 @@ module Sys = struct
   let command x = 1
 end
 
+module Unix = struct
+  let mkdir _ _ = ()
+  let open_process_full _ _ = (Obj.magic (), Obj.magic (), Obj.magic ())
+  let close_process_full _ = 1
+end
+
 let output_buffer_ = Buffer.create 1000
 
 let flush x =

@@ -1,6 +1,6 @@
 
 var worker;
-function go() {
+function runWorker() {
     lst_files = [];
     id = 0;
     sessions = [];
@@ -17,27 +17,13 @@ function go() {
     worker.onmessage = function (m) {
         if (typeof m.data == 'string') {
             if (m.data != "\0\n") {
-                csEditor.setValue(csEditor.getValue() + m.data, 1);
-
-
-                const filteredLines = m.data
-                    .split('\n')
-                    .filter(line => line.startsWith('./'));
-                if (filteredLines.length != 0) {
-                    lst_files.push(filteredLines);
-                    console.log(filteredLines);
-                }
-
-                for (let f of lst_files) {
-                    worker.postMessage("get:file:" + f);
-                }
-                lst_files = [];
-
+                log(m.data);
             }
         }
 
         if (typeof m.data == 'object') {
-            console.log(m.data.content);
+            // m.data = {name: ..., content: ...}
+            console.log(m.data);
             console.log("tab" + id);
 
             let mode = "ace/mode/text";
@@ -77,6 +63,90 @@ function go() {
     }
 }
 
-function setCommand(cmd) {
-    inputEditor.setValue(cmd);
+
+function parseCommandLine(cmd) {
+  // 1. Tokenize respecting quotes, without unescaping
+  const tokens = [];
+  let current = "";
+  let quote = null;
+
+  for (let i = 0; i < cmd.length; i++) {
+    const ch = cmd[i];
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null;
+      } else {
+        current += ch; // keep characters literally
+      }
+    } else {
+      if (ch === "'" || ch === '"') {
+        quote = ch;
+      } else if (/\s/.test(ch)) {
+        if (current.length) {
+          tokens.push(current);
+          current = "";
+        }
+      } else {
+        current += ch;
+      }
+    }
+  }
+
+  if (current.length) tokens.push(current);
+
+  // 2. Convert tokens into JSON
+  const result = {};
+  let i = 0;
+
+  while (i < tokens.length) {
+    const t = tokens[i];
+
+    if (t.startsWith("--")) {
+      // Convert flag names: '-' → '_'
+      let key = t.slice(2).replace(/-/g, "_");
+
+      if (tokens[i + 1] && !tokens[i + 1].startsWith("--")) {
+        let val = tokens[++i];
+
+        // numeric conversion only for pure numbers
+        if (/^-?\d+(\.\d+)?$/.test(val)) {
+          val = Number(val);
+        }
+
+        // Handle duplicate flags → array
+        if (result[key] !== undefined) {
+          if (!Array.isArray(result[key])) {
+            result[key] = [result[key]];
+          }
+          result[key].push(val);
+        } else {
+          result[key] = val;
+        }
+
+      } else {
+        result[key] = true;
+      }
+    }
+
+    i++;
+  }
+
+  return result;
+}
+
+
+
+function setInput(cmd) {
+    try {
+        if (window.backendMode) {
+            inputEditor.setValue(JSON.stringify(parseCommandLine(cmd), null, 2));
+        } else {
+            inputEditor.setValue(cmd);
+        }
+        console.log("Set Input:", window.schema);
+    } catch (error) {
+        console.error('Error setting input:', error);
+    }
+
 }

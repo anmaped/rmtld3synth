@@ -1138,9 +1138,7 @@ let synth_smtlib synth_fun formula helper =
     let out_dir = get_setting_string "out_dir" helper in
     print_endline "Generated Output Files:" ;
     let name = String.capitalize_ascii ("encoding_" ^ hexid) in
-    let stream = open_out (out_dir ^ "/" ^ name ^ ".smt2") in
-    Printf.fprintf stream "%s\n" output_str ;
-    close_out stream ;
+    save_file (out_dir ^ "/" ^ name ^ ".smt2") output_str ;
     print_endline (out_dir ^ "/" ^ name ^ ".smt2") ;
     output_str
   with Not_found -> (
@@ -1152,9 +1150,7 @@ let synth_smtlib synth_fun formula helper =
         then failwith "Output file name must end with .smt2 suffix."
         else
           let out_file = get_setting_string "out_file" helper in
-          let stream = open_out out_file in
-          Printf.fprintf stream "%s\n" output_str ;
-          close_out stream ;
+          save_file out_file output_str ;
           verb (fun _ ->
               print_endline ("SMTLIBv2 file " ^ out_file ^ " saved.") ) ) ;
       if isZ3SolverEnabled helper then output_str else ""

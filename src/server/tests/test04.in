@@ -1,0 +1,5 @@
+{
+    "ocaml_language": true,
+    "input_latexeq": "\\int^{9} c < 2",
+    "verbose": 2
+}

@@ -1,0 +1,5 @@
+{
+    "cpp11_language": true,
+    "input_latexeq": "(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4",
+    "verbose": 2
+}

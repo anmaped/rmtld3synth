@@ -1,9 +1,12 @@
+(** Run generation command with JSON input.
+    Validates the input against the schema, applies options, and executes code generation. *)
 let run_cmd fmt body =
-  let module Conv_ocaml = Synthesis.Standard.Translate (Synthesis.Ocaml) in
-  Options.default_settings Options.helper ;
+  let job_helper = Helper.mk_helper () in
+  (* default settings job_helper *)
+  Options.default_settings job_helper ;
   (* validate json *)
-  Json_schema.validate_schema_string
-    ~schema:Json_schema.schema_json ~json:body
+  Json_schema.validate_schema_string ~schema:Json_schema.schema_json
+    ~json:body
   |> function
   | Error msg ->
       Format.fprintf fmt "Error: Input JSON does not conform to schema." ;
@@ -13,19 +16,50 @@ let run_cmd fmt body =
       (* set options from json *)
       let json = Yojson.Safe.from_string body in
       Options.apply_options_from_assoc_list
-        (json |> Yojson.Safe.Util.to_assoc) ;
+        (json |> Yojson.Safe.Util.to_assoc)
+        job_helper ;
       Dream.log "Settings after applying JSON options: %s"
-        (Helper.get_json_string_of_settings Options.helper) ;
-      Helper.set_setting "version" (Helper.Txt "") Options.helper ;
-      (* run synthesis based on options *)
-      if Options.ocaml_lang () then
-        Synthesis.Ocaml.synth_ocaml fmt Conv_ocaml.synth Options.helper
+        (Helper.get_json_string_of_settings job_helper) ;
+      (* Check if version flag is set to display version info, otherwise
+         proceed with generation *)
+      if Helper.get_setting_bool "version" job_helper then
+        Format.fprintf fmt "Version %s" Version.git
+      else (
+        (* Store version in settings for use during code generation *)
+        Helper.set_setting "version" (Helper.Txt Version.git) job_helper ;
+        (* run generation based on options *)
+        if Options.ocaml_lang job_helper then
+          let module Conv_ocaml =
+            Synthesis.Standard.Translate (Synthesis.Ocaml) in
+          Synthesis.Ocaml.synth_ocaml fmt Conv_ocaml.synth job_helper
+        else if Options.cpp11_lang job_helper then (
+          let module Conv_cpp11 =
+            Synthesis.Standard.Translate (Synthesis.Cpp11) in
+          Options.default_cpp11_settings job_helper ;
+          Synthesis.Cpp11.synth_cpp11 fmt Conv_cpp11.synth job_helper )
+        else if Options.spark2014_lang job_helper then
+          let module Conv_spark2014 =
+            Synthesis.Standard.Translate (Synthesis.Spark2014) in
+          Synthesis.Spark2014.synth_spark2014 fmt Conv_spark2014.synth
+            job_helper
+        else if Options.smtlibv2_lang job_helper then
+          Format.fprintf fmt "Error: Not implemented."
+        else
+          Format.fprintf fmt "Error: No valid generation language specified."
+        )
 
+(** API endpoint to retrieve JSON schema. *)
+let schema () =
+  [ Dream.get "/api/schema" (fun _request ->
+        Dream.json Json_schema.schema_json ) ]
+
+(** API endpoint to retrieve current settings as JSON. *)
 let status () =
   [ Dream.get "/api/settings" (fun _request ->
         let settings = Helper.get_json_string_of_settings Options.helper in
         Dream.json settings ) ]
 
+(** API endpoint to retrieve available command-line options and their descriptions. *)
 let options () =
   [ Dream.get "/api/options" (fun _request ->
         let options = Options.speclist in
@@ -39,30 +73,35 @@ let options () =
                 | first :: _ -> first
               in
               `Assoc
-                [ ("command", `String command_name)
+                [ ( "command"
+                  , `String
+                      (String.map
+                         (fun c -> if c = '-' then '_' else c)
+                         command_name ) )
                 ; ( "values"
                   , `String
                       ( match spec with
                       | Arg.Int _ -> "integer"
                       | Arg.String _ -> "string"
-                      | Arg.Unit _ -> "unit"
+                      | Arg.Unit _ -> "boolean"
                       | _ -> "other" ) )
-                ; ("description", `String description) ] )
+                ; ("description", `String (String.trim description)) ] )
             options
         in
         Dream.json (Yojson.Basic.to_string (`List options_json)) ) ]
 
 open Lwt.Infix
 
-let pending_requests =
-  Hashtbl.create 100 (* request_id -> (timestamp, target) *)
+(** Hash table storing currently pending requests: request_id -> (timestamp, target) *)
+let pending_requests = Hashtbl.create 100
 
-let completed_requests =
-  Hashtbl.create 100 (* hash_id -> (status, result, timestamp) *)
+(** Hash table storing completed requests: hash_id -> (status, result, timestamp) *)
+let completed_requests = Hashtbl.create 100
 
-let cancellable_requests = Hashtbl.create 100 (* hash_id -> Lwt.t *)
+(** Hash table storing cancellable request tasks: hash_id -> Lwt.t *)
+let cancellable_requests = Hashtbl.create 100
 
-(* Clean up completed requests older than one day *)
+(** Clean up completed requests older than one day. *)
 let cleanup_old_requests () =
   let now = Unix.gettimeofday () in
   let one_day = 86400.0 in
@@ -73,7 +112,7 @@ let cleanup_old_requests () =
       else Some (status, result, timestamp) )
     completed_requests
 
-(* Background cleanup task *)
+(** Background task that runs cleanup every hour. *)
 let rec cleanup_loop () =
   Lwt_unix.sleep 3600.0 (* Run every hour *)
   >>= fun () ->
@@ -84,6 +123,7 @@ let rec cleanup_loop () =
 
 let () = Lwt.async cleanup_loop
 
+(** Middleware to track request lifecycle: start, completion, and cleanup. *)
 let request_tracking handler request =
   let timestamp = Unix.gettimeofday () in
   let target = Dream.target request in
@@ -101,6 +141,14 @@ let request_tracking handler request =
         remaining ;
       Lwt.return_unit )
 
+(** Convert Unix time to ISO 8601 format string. *)
+let iso8601 t =
+  let open Unix in
+  let t = gmtime t in
+  Printf.sprintf "%04d-%02d-%02dT%02d:%02d:%02dZ" (t.tm_year + 1900)
+    (t.tm_mon + 1) t.tm_mday t.tm_hour t.tm_min t.tm_sec
+
+(** API endpoints for request control: submit, query, and cancel requests. *)
 let request_control () =
   [ Dream.get "/api/requests/active" (fun _request ->
         let active_count = Hashtbl.length pending_requests in
@@ -120,10 +168,14 @@ let request_control () =
   ; Dream.get "/api/request/:hash_id" (fun request ->
         let hash_id = Dream.param request "hash_id" in
         match Hashtbl.find_opt completed_requests hash_id with
-        | Some (status, result, _timestamp) ->
-            Dream.json
-              (Printf.sprintf {|{"status":"%s","result":"%s"}|} status
-                 (String.escaped result) )
+        | Some (status, result, timestamp) ->
+            let json =
+              `Assoc
+                [ ("status", `String status)
+                ; ("result", `String result)
+                ; ("timestamp", `String (iso8601 timestamp)) ]
+            in
+            Dream.json (Yojson.Safe.to_string json)
         | None ->
             Dream.json
               (Printf.sprintf {|{"status":"not_found","result":""}|}) )
@@ -182,6 +234,7 @@ let request_control () =
           (Printf.sprintf {|{"hash_id":"%s","status":"pending"}|} hash_id) )
   ]
 
+(** Main entry point: sets up routing and starts the Dream web server. *)
 let () =
   let app =
     Dream.router
@@ -201,7 +254,7 @@ let () =
                  Dream.from_filesystem "static/bundles"
                    (Dream.param request "file")
                    request ) ]
-         ; options () @ status () @ request_control () ] )
+         ; options () @ schema () @ request_control () ] )
     |> Dream.logger
   in
   Dream.run ~interface:"0.0.0.0" ~port:8001 app

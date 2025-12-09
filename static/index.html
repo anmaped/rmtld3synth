@@ -12,8 +12,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.js" type="text/javascript"
         charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ajv/8.17.1/ajv7.min.js"></script>
     <script src="js/worker.js" type="text/javascript" defer></script>
     <script src="js/editor.js" type="text/javascript" defer></script>
+    <script src="js/schema.js" type="text/javascript" defer></script>
+    <script src="js/console.js" type="text/javascript" defer></script>
 
     <!-- Clang-format WASM bindings -->
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
@@ -24,12 +27,16 @@
         const log = (...msg) => {
             //document.getElementById("log").innerText += msg.join(" ") + "\n";
             console.log(msg.join(" "));
+            //csEditor.setValue(csEditor.getValue() + msg.join(" ") + "\n", 1);
+            if (typeof terminalLog !== 'undefined' && terminalLog) {
+                terminalLog(msg.join(" "));
+            }
         };
         loadClangFormatWasm();
     </script>
 </head>
 
-<body class="d-flex flex-column full-height" onload=go()>
+<body class="d-flex flex-column full-height">
 
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
@@ -83,14 +90,14 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setCommand(`--synth-ocaml --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
+                                                            onclick="setInput(`--ocaml-language --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
                                                             Monitor</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setCommand(`--synth-ocaml --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setInput(`--ocaml-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
                                                             Duration Monitor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setCommand(`--synth-ocaml --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
+                                                            onclick="setInput(`--ocaml-language --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
                                                             Invariant</button>
                                                     </div>
                                                 </div>
@@ -111,10 +118,10 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setCommand(`--synth-cpp11 --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
+                                                            onclick="setInput(`--cpp11-language --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
                                                             Monitor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setCommand(`--synth-cpp11 --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setInput(`--cpp11-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
                                                             Duration Monitor</button>
                                                     </div>
                                                 </div>
@@ -134,7 +141,7 @@
                                                     data-bs-parent="#autopilotAccordion">
                                                     <div class="accordion-body">
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setCommand(`--synth-cpp11 --input-sexp '(Or \n\
+                                                            onclick="setInput(`--cpp11-language --input-sexp '(Or \n\
     (Not \n\
         (Or \n\
         (Not \n\
@@ -194,22 +201,22 @@
                                                         <!-- Buttons for commands -->
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setCommand(`--synth-smtlibv2 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
+                                                            onclick="setInput(`--smtlibv2-language --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
                                                             Temporal</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setCommand(`--synth-smtlibv2 --rec-unrolling 10 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
+                                                            onclick="setInput(`--smtlibv2-language --rec-unrolling 10 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
                                                             Temporal (recursively unrolled)</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setCommand(`--synth-smtlibv2 --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Bounded
+                                                            onclick="setInput(`--smtlibv2-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Bounded
                                                             Duration</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setCommand(`--synth-smtlibv2 --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
+                                                            onclick="setInput(`--smtlibv2-language --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
                                                             Invariant</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setCommand(`--synth-smtlibv2 --input-latexeq '\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setInput(`--smtlibv2-language --input-latexeq '\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2' --verbose 2`)">Simple
                                                             Temporal with Bounded Duration</button>
                                                     </div>
                                                 </div>
@@ -230,14 +237,14 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}' --verbose 2`)">Simple
+                                                            onclick="setInput(`--smtlibv2-language --input-rmdsl '\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}' --verbose 2`)">Simple
                                                             Single processor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}' --verbose 2`)">Advanced
+                                                            onclick="setInput(`--smtlibv2-language --input-rmdsl '\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}' --verbose 2`)">Advanced
                                                             Single processor</button>
                                                         <!--
                                                             <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setCommand(`--synth-smtlibv2 --input-rmdsl '\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1' --verbose 2`)">Single
+                                                            onclick="setInput(`--smtlibv2-language --input-rmdsl '\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1' --verbose 2`)">Single
                                                             Multi processor</button>
                                                         -->
                                                     </div>
@@ -276,32 +283,37 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <!-- Log Console -->
-                            <div class="accordion" id="logconsole">
+                        <div class="row mb-3 d-none" id="configuration">
+                            <!-- Configuration -->
+                            <div class="accordion" id="configuration">
                                 <div class="accordion-item">
                                     <h2 class="accordion-header">
                                         <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#logcollapse">
-                                            Log Console
+                                            data-bs-target="#configcollapse">
+                                            Configuration
                                         </button>
                                     </h2>
-                                    <div id="logcollapse" class="accordion-collapse collapse show"
-                                        data-bs-parent="#logconsole">
+                                    <div id="configcollapse" class="accordion-collapse collapse show"
+                                        data-bs-parent="#configuration">
                                         <div class="accordion-body">
 
-                                            <div id="cs-editor"></div>
+                                            <form id="dynamic-form" class="needs-validation" novalidate></form>
+                                            <button id="submit-btn" class="btn btn-primary mt-3">
+                                                <i class="bi bi-gear"></i> Generate JSON
+                                            </button>
 
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
 
             <div class="col">
+                <div class="row"></div>
                 <div class="accordion" id="codea">
 
                     <!-- Code Generation -->
@@ -316,7 +328,7 @@
                             <div class="accordion-body">
 
                                 <div style="width:98%;" id="tab-bar">
-                                    <div class="tab active" data-tab="tab0" onclick="switchTab('0')">file1</div>
+                                    <div class="tab active" data-tab="tab0" onclick="switchTab('0')">No file</div>
                                 </div>
                                 <div id="code"></div>
 
@@ -324,66 +336,178 @@
 
                         </div>
                     </div>
+                </div>
 
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="aboutModalLabel"><img src="logo.png" alt="Logo" width="64" height="64"
+                            style="border-radius: 8px;"> About rmtld3synth</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+                    <p>This tool allows synthesis of runtime monitors using various backends such as OCaml, C++11,
+                        and
+                        SMT-Lib. You can select predefined synthesis options or customize your own.</p>
+                    <p>Developed using Bootstrap 5, Ace editor, and <strong>js_of_ocaml</strong>.</p>
+                    <p><small>© 2025 The rmtld3synth team</small></p>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content text-center p-4">
+                <div class="modal-header border-0">
+                    <h1 class="modal-title display-6 text-primary w-100" id="welcomeModalLabel">Welcome to
+                        rmtld3synth Web!</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div id="entry-container" class="modal-body">
+                    <p id="entry-message" class="lead text-secondary">We are excited to have you here. Get started
+                        by exploring our new
+                        features!</p>
+                    <a href="#" class="btn btn-primary" data-bs-dismiss="modal">Get Started</a>
                 </div>
             </div>
         </div>
-
-        <!-- About Modal -->
-        <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-
-                    <!-- Modal Header -->
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="aboutModalLabel"><img src="logo.png" alt="Logo" width="64"
-                                height="64" style="border-radius: 8px;"> About rmtld3synth</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-
-                    <!-- Modal Body -->
-                    <div class="modal-body">
-                        <p>This tool allows synthesis of runtime monitors using various backends such as OCaml, C++11,
-                            and
-                            SMT-Lib. You can select predefined synthesis options or customize your own.</p>
-                        <p>Developed using Bootstrap 5, Ace editor, and <strong>js_of_ocaml</strong>.</p>
-                        <p><small>© 2025 The rmtld3synth team</small></p>
-                    </div>
-
-                    <!-- Modal Footer -->
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
+    </div>
 
 
-        <!-- Modal -->
-        <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content text-center p-4">
-                    <div class="modal-header border-0">
-                        <h1 class="modal-title display-6 text-primary w-100" id="welcomeModalLabel">Welcome to
-                            rmtld3synth Web!</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="lead text-secondary">We are excited to have you here. Get started by exploring our new
-                            features!</p>
-                        <a href="#" class="btn btn-primary" data-bs-dismiss="modal">Get Started</a>
+    <!-- Console Accordion -->
+    <div class="accordion fixed-bottom shadow-lg" id="logConsoleAccordion" style="z-index: 1030;">
+        <div class="accordion-item border-0 rounded-0">
+            <h2 class="accordion-header" id="headingLogConsole" style="cursor: ns-resize;">
+                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseLogConsole" aria-expanded="false" aria-controls="collapseLogConsole">
+                    <i class="bi bi-terminal me-2"></i> Console
+
+                    <!-- Line count badge -->
+                    <span class="badge bg-secondary ms-auto me-2" id="log-console-line-count">no line</span>
+
+                    <!-- Connection status badge -->
+                    <span id="log-connection-status" class="badge bg-danger me-2 ms-auto d-none">Disconnected</span>
+                </button>
+            </h2>
+            <div id="collapseLogConsole" class="accordion-collapse collapse" aria-labelledby="headingLogConsole"
+                data-bs-parent="#logConsoleAccordion">
+                <div class="accordion-body p-0 bg-dark">
+                    <div id="log-console" class="terminal-body p-3 font-monospace text-light"
+                        style="height: 200px; overflow-y: auto; background-color: #1e1e1e; font-size: 0.875rem; line-height: 1.5;">
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <script>
-            window.addEventListener('DOMContentLoaded', () => {
-                const myModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
-                myModal.show();
-            });
-        </script>
+
+    <script>
+        // Remove focus from modal buttons when closed
+        document.addEventListener('hide.bs.modal', function (event) {
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const myModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+            myModal.show();
+
+            const buttonsContainer = document.getElementById('entry-container');
+            const backendUrl = ""; // Your backend main URL
+            const backendHealthCheck = backendUrl + "/api/options"; // Lightweight endpoint to check availability
+
+            try {
+                const response = await fetch(backendHealthCheck, { method: 'GET' });
+                if (response.ok) {
+                    // Clean entry container
+                    buttonsContainer.innerHTML = '';
+
+                    // Add message text
+                    const messageText = document.createElement('p');
+                    messageText.className = 'lead text-secondary mb-4';
+                    messageText.textContent = 'Choose your preferred environment:';
+                    buttonsContainer.appendChild(messageText);
+
+                    // Button container
+                    const buttonGroup = document.createElement('div');
+                    buttonGroup.className = 'd-flex flex-column flex-sm-row justify-content-center gap-3 mb-3';
+
+                    // Browser-only button
+                    const browserButton = document.createElement('a');
+                    browserButton.href = '#';
+                    browserButton.className = 'btn btn-outline-primary btn-lg';
+                    browserButton.setAttribute('data-bs-dismiss', 'modal');
+                    browserButton.innerHTML = '<i class="bi bi-laptop"></i> Browser-Only Mode';
+                    browserButton.title = 'Runs entirely in your browser with WebAssembly';
+                    buttonGroup.appendChild(browserButton);
+
+                    // Backend button
+                    const backendButton = document.createElement('a');
+                    backendButton.href = '#';
+                    backendButton.className = 'btn btn-success btn-lg';
+                    backendButton.setAttribute('data-bs-dismiss', 'modal');
+                    backendButton.innerHTML = '<i class="bi bi-cloud"></i> Server-Backed Mode';
+                    backendButton.title = 'Enhanced performance with server-side processing';
+                    buttonGroup.appendChild(backendButton);
+
+                    buttonsContainer.appendChild(buttonGroup);
+
+                    // Add feature comparison
+                    const helpText = document.createElement('p');
+                    helpText.className = 'small text-muted mt-3 mb-0';
+                    helpText.innerHTML = '<strong>Browser-Only:</strong> Works offline, and runs locally via JavaScript or WebAssembly.<br><strong>Server-Backed:</strong> Supports constraint solving and simulations with server resources.';
+                    buttonsContainer.appendChild(helpText);
+
+                    // Set backend mode
+                    browserButton.onclick = () => { setBackendMode(false); getSchema(); };
+                    backendButton.onclick = () => { setBackendMode(true); getSchema(); setConnectionStatus(true); };
+                }
+            } catch (error) {
+                console.log('Backend not available, only showing browser option.', error);
+            }
+
+        });
+
+        // Set backend mode
+        function setBackendMode(enabled) {
+            if (window.backendMode !== undefined && window.backendMode === enabled) {
+                return; // No change
+            }
+
+            if (enabled) {
+                log("Change to server-Backed Mode.");
+                window.backendMode = true;
+            } else {
+                log("Browser-Only Mode enabled.");
+                window.backendMode = false;
+            }
+        }
+
+        // Default to browser-only mode
+        setBackendMode(false);
+    </script>
+
 
 </body>
 

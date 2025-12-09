@@ -1,0 +1,6 @@
+{
+    "smtlibv2_language": true,
+    "input_latexeq": "(a \\lor b) \\ \\until_{<10}  c",
+    "rec_unrolling": "auto",
+    "verbose": 2
+}

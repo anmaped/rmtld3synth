@@ -116,7 +116,7 @@ let _ =
     else fm
   in
   (* Selects synthesis for smtlibv2, ocaml, cpp or does simplification. *)
-  if !Options.smtlibv2_lang then
+  if Options.smtlibv2_lang Options.helper then
     if input_fm <> mfalse then synth_sat_problem (to_simplify input_fm)
     else (
       verb (fun _ -> print_endline "Rmdsl parsing enabled.") ;
@@ -138,7 +138,7 @@ let _ =
           1 fm_lst
       in
       () )
-  else if Options.ocaml_lang () then (
+  else if Options.ocaml_lang Options.helper then (
     verb_m 1 (fun _ ->
         print_endline "Synthesis for Ocaml language" ;
         print_endline
@@ -146,25 +146,22 @@ let _ =
     synth_ocaml Format.std_formatter Conv_ocaml.synth Options.helper ;
     Format.print_flush ()
     )
-  else if !Options.cpp11_lang then (
+  else if Options.cpp11_lang Options.helper then (
     verb_m 1 (fun _ ->
         print_endline "Synthesis for C++11 language" ;
         print_endline
           "--------------------------------------------------------------------------------\n" ) ;
-    let default_cpp11_settings =
-      "(rtm_event_type Event)\n\
-       (rtm_event_subtype std::underlying_type<_auto_gen_prop>::type)"
-    in
-    (* apply settings *)
-    apply_settings default_cpp11_settings Options.helper ;
-    synth_cpp11 Conv_cpp11.synth Options.helper
+    Options.default_cpp11_settings Options.helper ;
+    synth_cpp11 Format.std_formatter Conv_cpp11.synth Options.helper ;
+    Format.print_flush ()
     )
-  else if !Options.spark2014_lang then (
+  else if Options.spark2014_lang Options.helper then (
     verb_m 1 (fun _ ->
         print_endline "Synthesis for SPARK 2014 language" ;
         print_endline
           "--------------------------------------------------------------------------------\n" ) ;
-    synth_spark2014 Conv_spark2014.synth Options.helper
+    synth_spark2014 Format.std_formatter Conv_spark2014.synth Options.helper ;
+    Format.print_flush ()
     )
   else if !Options.simplify_formula then
     let inn = input_fm in

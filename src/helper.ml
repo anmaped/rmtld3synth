@@ -35,12 +35,20 @@ let verb f = verb_m 2 f
 
 let verbose f = if !verb_mode >= 1 then f else ignore
 
-let mk_helper =
+let mk_helper () =
   let tbl = Hashtbl.create 50 in
   Hashtbl.add tbl "init" (Sel true) ;
   Hashtbl.add tbl "prop_map" (Hash (Hashtbl.create 10)) ;
   Hashtbl.add tbl "prop_map_reverse" (Hash (Hashtbl.create 10)) ;
   tbl
+
+(* reset helper to initial state *)
+let reset_helper tbl =
+  Hashtbl.clear tbl ;
+  Hashtbl.add tbl "init" (Sel true) ;
+  Hashtbl.add tbl "prop_map" (Hash (Hashtbl.create 10)) ;
+  Hashtbl.add tbl "prop_map_reverse" (Hash (Hashtbl.create 10)) ;
+  ()
 
 (* new settings structure setters *)
 let set_setting name v tbl = Hashtbl.add tbl name v
@@ -135,15 +143,34 @@ let get_string_of_setting a =
 let pp_settings fmt tbl =
   Hashtbl.iter
     (fun a b ->
-      Format.fprintf fmt "%s -> " a;
-      pp_setting fmt b;
+      Format.fprintf fmt "%s -> " a ;
+      pp_setting fmt b ;
       Format.fprintf fmt "\n" )
     tbl
 
-let print_settings tbl =
-  pp_settings Format.std_formatter tbl
+let print_settings tbl = pp_settings Format.std_formatter tbl
 
 let pp_endline fmt = Format.fprintf fmt "%s\n"
+
+let print_boundary_init pp_endline =
+  pp_endline
+    "This is a multipart message. To interpret this message correctly, \
+     please refer to the boundary delimiter."
+
+let print_part pp_endline id filename content =
+  let boundary = "BOUNDARY_" ^ id in
+  pp_endline ("--" ^ boundary) ;
+  pp_endline
+    ("Content-Disposition: attachment; filename=\"" ^ filename ^ "\"") ;
+  pp_endline "Content-Type: text/plain" ;
+  pp_endline "" ;
+  pp_endline content
+
+let print_boundary_end pp_endline id =
+  let boundary = "BOUNDARY_" ^ id in
+  pp_endline ("--" ^ boundary ^ "--") ;
+  pp_endline "This is the end of the multipart message." ;
+  pp_endline ""
 
 let get_string_of_settings ?(exclude = []) tbl =
   Hashtbl.fold
@@ -334,26 +361,35 @@ let apply_settings s helper =
   in
   let s_num, s_str, _ = settings (settings_from_string s) in
   List.iter (fun (a, b) -> set_setting a (Num b) helper) s_num ;
-  List.iter (fun (a, b) -> if isbool b then set_setting a (Sel (tobool b)) helper else set_setting a (Txt b) helper) s_str
-
+  List.iter
+    (fun (a, b) ->
+      if isbool b then set_setting a (Sel (tobool b)) helper
+      else set_setting a (Txt b) helper )
+    s_str
 
 (* load settings from a file and set them in the helper *)
 let load_settings_from_file filename helper =
   try
-    let int_settings, str_settings, monitor_settings = 
-      settings (settings_from_file filename) in
+    let int_settings, str_settings, monitor_settings =
+      settings (settings_from_file filename)
+    in
     (* load settings and formulas from the configuration file *)
-    List.iter (fun (name, value) -> set_setting name (Num value) helper) int_settings;
-    List.iter (fun (name, value) -> set_setting name (Txt value) helper) str_settings;
-    List.iter (fun (_, _, formula) -> set_setting "input_exp" (Fm formula) helper) monitor_settings
+    List.iter
+      (fun (name, value) -> set_setting name (Num value) helper)
+      int_settings ;
+    List.iter
+      (fun (name, value) -> set_setting name (Txt value) helper)
+      str_settings ;
+    List.iter
+      (fun (_, _, formula) -> set_setting "input_exp" (Fm formula) helper)
+      monitor_settings
   with _ -> failwith ("Failed to load settings from file: " ^ filename)
 
 (* END helper for settings *)
 
 (* create directory if it does not exist *)
 let create_dir dir_name =
-  if not (Sys.file_exists dir_name) then
-    Unix.mkdir dir_name 0o777
+  if not (Sys.file_exists dir_name) then Unix.mkdir dir_name 0o777
   else if not (Sys.is_directory dir_name) then
     failwith (Printf.sprintf "'%s' exists but is not a directory" dir_name)
 
