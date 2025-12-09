@@ -16,7 +16,7 @@ COPY --chown=opam:opam . .
 # Install OCaml dependencies
 RUN opam update
 RUN opam install . --deps-only -y
-RUN opam install dune dream lwt -y
+RUN opam install dune dream lwt jsonschema -y
 
 # Build optimized executable
 RUN eval $(opam env) && ./configure && dune build --profile release src/server/server.exe
