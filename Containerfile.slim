@@ -13,7 +13,7 @@ RUN opam pin add dolmen_loop https://github.com/Gbury/dolmen.git#a0f1bc66e7256ff
 RUN git clone --branch ${RMTLD3SYNTH_VERSION} https://github.com/anmaped/rmtld3synth.git
 RUN git clone --branch z3-4.12.3 https://github.com/Z3Prover/z3.git
 
-RUN opam install zarith ppx_sexp_conv sexplib bigarray-compat ocamlfind ppx_yojson_conv
+RUN opam install zarith ppx_sexp_conv sexplib bigarray-compat ocamlfind ppx_yojson_conv ppx_blob
 RUN cd z3 && eval $(opam env) && python scripts/mk_make.py --ml --staticlib && cd build && make
 
 # fix

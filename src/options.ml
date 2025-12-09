@@ -77,16 +77,13 @@ let set_solve_cvc4 f = set_setting "solver" (Txt "cvc4") helper
 let set_recursive_unrolling helper arg =
   (* check scope: auto or [0-9]+ *)
   let enabled =
-    if arg <> "auto" && not (Str.string_match (Str.regexp "[0-9]+") arg 0)
-    then
-      if arg = "none" then false
-      else if arg = "auto" then true
-      else
-        failwith ("Unrecognized recursive unrolling parameter '" ^ arg ^ "'.")
-    else if Str.string_match (Str.regexp "[0-9]+") arg 0 then (
-      set_setting "rec_unrolling_depth" (Num (int_of_string arg)) helper ;
-      true )
-    else false
+    match arg with
+    | "none" -> false
+    | "auto" -> true
+    | _ when Str.string_match (Str.regexp "[0-9]+") arg 0 ->
+        set_setting "rec_unrolling_depth" (Num (int_of_string arg)) helper ;
+        true
+    | _ -> failwith ("Unrecognized recursive unrolling parameter '" ^ arg ^ "'.")
   in
   set_setting "rec_unrolling" (Sel enabled) helper
 
