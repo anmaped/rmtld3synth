@@ -43,7 +43,10 @@ let run_cmd fmt body =
           Synthesis.Spark2014.synth_spark2014 fmt Conv_spark2014.synth
             job_helper
         else if Options.smtlibv2_lang job_helper then
-          Format.fprintf fmt "Error: Not implemented."
+            let module Smtlib = Synthesis.Standard.Translate (Synthesis.Smtlib2) in
+          let lst = Synthesis.Smtlib2.synth_smtlib fmt Smtlib.synth job_helper in
+          (* convert string list to multipart message *)
+          Helper.to_multipart_message fmt lst
         else
           Format.fprintf fmt "Error: No valid generation language specified."
         )

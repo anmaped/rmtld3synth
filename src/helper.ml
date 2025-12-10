@@ -55,6 +55,13 @@ let set_setting name v tbl = Hashtbl.add tbl name v
 
 let set_setting_replace name v tbl = Hashtbl.replace tbl name v
 
+let remove_setting name v tbl = Hashtbl.remove tbl name
+
+let rec remove_setting_every_occurence name tbl =
+  if Hashtbl.mem tbl name then (
+    Hashtbl.remove tbl name ;
+    remove_setting_every_occurence name tbl )
+
 let is_setting name tbl =
   try
     let _ = Hashtbl.find tbl name in
@@ -171,6 +178,29 @@ let print_boundary_end pp_endline id =
   pp_endline ("--" ^ boundary ^ "--") ;
   pp_endline "This is the end of the multipart message." ;
   pp_endline ""
+
+(** [to_multipart_message fmt lst tbl] generates a multipart message using the
+  provided formatter [fmt] and list of file entries [lst].
+  
+  @param fmt The formatter used to output the multipart message
+  @param lst A list of tuples containing (filename, content) pairs to be included
+         in the multipart message
+  
+  The function generates a random boundary identifier and constructs a multipart
+  message with the following structure:
+  - Initial boundary marker
+  - One part for each (filename, content) pair in [lst]
+  - Final boundary marker
+  
+  Each part is printed using [print_part] with the generated boundary [id]. *)
+let to_multipart_message fmt lst =
+  let id = string_of_int (Random.int 1000000) in
+  let pp_endline = pp_endline fmt in
+  print_boundary_init pp_endline ;
+  List.iter
+    (fun (filename, content) -> print_part pp_endline id filename content)
+    lst ;
+  print_boundary_end pp_endline id
 
 let get_string_of_settings ?(exclude = []) tbl =
   Hashtbl.fold
@@ -384,6 +414,32 @@ let load_settings_from_file filename helper =
       (fun (_, _, formula) -> set_setting "input_exp" (Fm formula) helper)
       monitor_settings
   with _ -> failwith ("Failed to load settings from file: " ^ filename)
+
+(** [set_recursive_unrolling_depth formula helper] configures the recursive unrolling depth
+  setting for the given helper if it has not been set already.
+  
+  The function calculates an appropriate unrolling depth based on the upper time
+  bound of the provided formula. If the formula is unbounded or the calculation fails, it
+  defaults to a bound of 20. The final unrolling depth is set to (bound + 1).
+  
+  @param formula The formula whose upper time bound is used to calculate the unrolling depth.
+  @param helper The helper object to configure with the recursive unrolling depth setting.
+  
+  @raise Failure May propagate failures from [calculate_t_upper_bound] if not caught
+          by the internal try-with expression.
+  
+  Side effects:
+  - Modifies the helper by setting the "rec_unrolling_depth" configuration
+    if it wasn't previously set. *)
+let set_recursive_unrolling_depth formula helper =
+  if not (is_setting "rec_unrolling_depth" helper) then
+    (* Calculate the upper time bound of the formula to determine unrolling
+       depth. Defaults to 20 if the formula is unbounded. *)
+    let bound =
+      int_of_float
+        (try calculate_t_upper_bound formula with Failure _ -> 20.)
+    in
+    set_setting "rec_unrolling_depth" (Num (bound + 1)) helper
 
 (* END helper for settings *)
 

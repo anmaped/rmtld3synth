@@ -27,6 +27,7 @@ RUN cp _build/default/src/server/server.exe /home/opam/app/server
 # copy libz3.so to the build output
 RUN cp $(opam var lib)/stublibs/libz3.so /home/opam/app/libz3.so
 
+
 ###############################
 # Runtime stage
 ###############################
@@ -42,6 +43,7 @@ ENV LD_LIBRARY_PATH="/app:${LD_LIBRARY_PATH}"
 # Bring in the OCaml-built server
 COPY --from=build /home/opam/app/server /app/
 COPY --from=build /home/opam/app/libz3.so /app/
+COPY --from=build /home/opam/app/static /app/static
 
 EXPOSE 8001
 

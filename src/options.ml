@@ -8,7 +8,7 @@ open Helper
 
 let helper = mk_helper ()
 
-let simplify_formula = ref false
+let simplify helper = get_setting_bool "simplify" helper
 
 let ocaml_lang helper = get_setting_bool "ocaml_language" helper
 
@@ -57,7 +57,7 @@ let set_rtm_config_file v =
   set_setting "rtm_config_file" (Txt v) helper ;
   load_settings_from_file v helper
 
-let set_simplify_formula f = simplify_formula := true
+let set_simplify_formula () = set_setting "simplify" (Sel true) helper
 
 let set_ocaml_language () = set_setting "ocaml_language" (Sel true) helper
 
