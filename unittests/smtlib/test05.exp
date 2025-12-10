@@ -38,7 +38,31 @@
 (define-fun ev_prop ((mk Trace) (mt Time) (p Proptype)) Threevalue
   (ite (>= trc_size mt) (ite (= (select mk mt) p) TVTRUE TVFALSE) TVUNKNOWN))
 (declare-const v_dt!3 Duration)
+(define-fun indicator!3 ((mk Trace) (mt Time)) Int
+  (ite (= (ev_prop mk mt 1) TVTRUE) 1 0))
+(declare-fun evaleta!3 (Time Time) Duration)
+(assert (forall ((x Time) (i Time))
+         (=> (>= x 0)
+          (ite (and (>= i 0) (< i x))
+           (= (+ (dval (evaleta!3 (- x 1) i)) (indicator!3 trc x))
+            (dval (evaleta!3 x i)))
+           (= (dval (evaleta!3 x i)) (indicator!3 trc x))))))
+(define-fun duration_op!3 ((mt Time) (mtb Time)) Duration
+  (ite (and (>= trc_size mt) (< (dval (dsome 5)) (- (mapt mt) (mapt mtb))))
+   (evaleta!3 (- mt 1) mtb) dnone))
 (declare-const v_dt!8 Duration)
+(define-fun indicator!8 ((mk Trace) (mt Time)) Int
+  (ite (= (ev_prop mk mt 1) TVTRUE) 1 0))
+(declare-fun evaleta!8 (Time Time) Duration)
+(assert (forall ((x Time) (i Time))
+         (=> (>= x 0)
+          (ite (and (>= i 0) (< i x))
+           (= (+ (dval (evaleta!8 (- x 1) i)) (indicator!8 trc x))
+            (dval (evaleta!8 x i)))
+           (= (dval (evaleta!8 x i)) (indicator!8 trc x))))))
+(define-fun duration_op!8 ((mt Time) (mtb Time)) Duration
+  (ite (and (>= trc_size mt) (< (dval (dsome 5)) (- (mapt mt) (mapt mtb))))
+   (evaleta!8 (- mt 1) mtb) dnone))
 (declare-const v_gamma!10 Index)
 (assert (= v_gamma!10 5))
 (define-fun evalb!10 ((mk Trace) (mt Time) (mtb Time)
@@ -176,30 +200,6 @@
   (mapb3 (evalc!154 mt mtb)))
 (declare-const v_gamma!180 Index)
 (assert (= v_gamma!180 10))
-(define-fun indicator!3 ((mk Trace) (mt Time)) Int
-  (ite (= (ev_prop mk mt 1) TVTRUE) 1 0))
-(declare-fun evaleta!3 (Time Time) Duration)
-(assert (forall ((x Time) (i Time))
-         (=> (>= x 0)
-          (ite (and (>= i 0) (< i x))
-           (= (+ (dval (evaleta!3 (- x 1) i)) (indicator!3 trc x))
-            (dval (evaleta!3 x i)))
-           (= (dval (evaleta!3 x i)) (indicator!3 trc x))))))
-(define-fun duration_op!3 ((mt Time) (mtb Time)) Duration
-  (ite (and (>= trc_size mt) (< (dval (dsome 5)) (- (mapt mt) (mapt mtb))))
-   (evaleta!3 (- mt 1) mtb) dnone))
-(define-fun indicator!8 ((mk Trace) (mt Time)) Int
-  (ite (= (ev_prop mk mt 1) TVTRUE) 1 0))
-(declare-fun evaleta!8 (Time Time) Duration)
-(assert (forall ((x Time) (i Time))
-         (=> (>= x 0)
-          (ite (and (>= i 0) (< i x))
-           (= (+ (dval (evaleta!8 (- x 1) i)) (indicator!8 trc x))
-            (dval (evaleta!8 x i)))
-           (= (dval (evaleta!8 x i)) (indicator!8 trc x))))))
-(define-fun duration_op!8 ((mt Time) (mtb Time)) Duration
-  (ite (and (>= trc_size mt) (< (dval (dsome 5)) (- (mapt mt) (mapt mtb))))
-   (evaleta!8 (- mt 1) mtb) dnone))
 (define-fun evalb!180 ((mk Trace) (mt Time) (mtb Time)
   (v Fourvalue)) Fourvalue
   (ite (= v FVSYMBOL)

@@ -46,7 +46,7 @@ type monitor = string * int * Rmtld3.fm [@@deriving sexp]
 
 type formula = Rmtld3.fm [@@deriving sexp]
 
-exception Settings_Not_Found of string
+exception Setting_Not_Found of string
 
 type values = N of int | S of string
 
@@ -94,6 +94,10 @@ let is_setting name tbl =
     let _ = Hashtbl.find tbl name in
     true
   with Not_found -> false
+
+let get_setting name tbl =
+  try Hashtbl.find tbl name
+  with _ -> raise (Setting_Not_Found ("Setting '" ^ name ^ "' not found!"))
 
 let get_setting_bool name tbl =
   try match Hashtbl.find tbl name with Sel a -> a | _ -> false
@@ -481,6 +485,35 @@ let set_recursive_unrolling_depth formula helper =
     in
     set_setting "rec_unrolling_depth" (Num (bound + 1)) helper
 
+(** {2 Local Variable Management}
+
+  This module provides functions to manage variables stored in the
+  "variables" setting of a helper object. Variables are stored in a
+  hash table mapping string names to values of type [values]. *)
+
+(** [set_variable name value helper] sets the variable with the given [name]
+  to the specified [value] in the "variables" setting of [helper]. *)
+let set_variable name value helper =
+  let h = get_setting "variables" helper in
+  match h with
+  | Hash ht ->
+      Hashtbl.replace ht (S name) value ;
+      set_setting "variables" (Hash ht) helper
+  | _ -> failwith "'variables' setting is not a hash."
+
+(** [get_variable name helper] retrieves the value of the variable
+  with the given [name] from the "variables" setting in [helper]. *)
+let get_variable name helper =
+  let h = get_setting "variables" helper in
+  match h with
+  | Hash ht -> (
+    try
+      match Hashtbl.find ht (S name) with
+      | S s -> s
+      | _ -> failwith ("Variable " ^ name ^ " is not a string.")
+    with Not_found -> failwith ("Variable " ^ name ^ " not found.") )
+  | _ -> failwith "'variables' setting is not a hash."
+
 (* END helper for settings *)
 
 (* create directory if it does not exist *)
@@ -591,3 +624,31 @@ let pow base exponent =
 (** [f % g] is the function composition operator. Returns a function that
   applies [g] first, then [f]. Equivalent to [fun x -> f (g x)]. *)
 let ( % ) f g x = f (g x)
+
+(** {2 List Serialization/Deserialization}
+
+  This functions provides utilities for serializing and deserializing lists
+  using OCaml's Marshal module. *)
+
+(** [list_to_string lst] serializes a list [lst] into a string using
+  OCaml's Marshal module. *)
+let list_to_string (lst : 'a list) = Marshal.to_string lst []
+
+(** [string_to_list s] deserializes a string [s] back into a list
+  using OCaml's Marshal module. *)
+let string_to_list s : 'a list = Marshal.from_string s 0
+
+(** {2 Set of Strings Serialization/Deserialization}
+
+  This functions provides utilities for serializing and deserializing sets
+  of strings using OCaml's Set and Marshal modules. *)
+
+module SS = Set.Make (String)
+
+(** [set_to_string s] serializes a set of strings [s] into a string
+  using OCaml's Marshal module. *)
+let set_to_string (s : SS.t) = Marshal.to_string s []
+
+(** [string_to_set str] deserializes a string [str] back into a set
+  of strings using OCaml's Marshal module. *)
+let string_to_set str : SS.t = Marshal.from_string str 0
