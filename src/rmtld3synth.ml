@@ -28,7 +28,7 @@ let synth_sat_problem fmt =
   (* 'smtlib2_str' will contain the output of the translation *)
   let smtlib2_str_lst = synth_smtlib fmt Smtlib.synth Options.helper in
   (* smtlib2_str contains a list with a pair (filename, smtlibv2 content) *)
-  let smtlib2_str = fst (List.hd smtlib2_str_lst) in
+  let smtlib2_str = snd (List.hd smtlib2_str_lst) in
   if List.length smtlib2_str_lst > 1 then
     failwith
       "Multiple SMTLib2 files generated; solver mode only supports a single \
@@ -107,84 +107,85 @@ let pp_endline = pp_endline Format.std_formatter in
 if Options.simplify Options.helper then (
   let input_lst = get_all_setting_formula "input_exp" Options.helper in
   (* apply simplify to all formulas if exists *)
-  ( if List.length input_lst = 0 then
-      failwith
-        "No input formula provided! Please provide at least one formula \
-         with the 'input_exp' tag."
-    else
-      let simplified_formulas =
-        List.mapi
-          (fun idx fm ->
-            verbose pp_endline
-              ( "Simplifying input formula "
-              ^ string_of_int (idx + 1)
-              ^ "/"
-              ^ string_of_int (List.length input_lst) ) ;
-            verbose pp_endline
-              ( "Output formula from the simplification process:\n"
-              ^ Sexp.to_string_hum (sexp_of_rmtld3_fm fm) ) ;
-            simplify fm )
-          input_lst
-      in
-      (* remove all formulas from settings *)
-      remove_setting_every_occurence "input_exp" Options.helper ;
-      (* add simplified formulas *)
-      List.iter (fun fm -> set_setting "input_exp" (Fm fm) Options.helper) simplified_formulas
-  ) ;
-  (* Selects synthesis for smtlibv2, ocaml, cpp or does simplification. *)
-  if Options.smtlibv2_lang Options.helper then (
-    let fmt = Format.std_formatter in
-    synth_sat_problem fmt ; Format.print_flush () )
-  else if Options.ocaml_lang Options.helper then (
-    verb_m 1 (fun _ ->
-        print_endline "Synthesis for Ocaml language" ;
-        print_endline
-          "--------------------------------------------------------------------------------\n" ) ;
-    synth_ocaml Format.std_formatter Conv_ocaml.synth Options.helper ;
-    Format.print_flush () )
-  else if Options.cpp11_lang Options.helper then (
-    verb_m 1 (fun _ ->
-        print_endline "Synthesis for C++11 language" ;
-        print_endline
-          "--------------------------------------------------------------------------------\n" ) ;
-    Options.default_cpp11_settings Options.helper ;
-    synth_cpp11 Format.std_formatter Conv_cpp11.synth Options.helper ;
-    Format.print_flush () )
-  else if Options.spark2014_lang Options.helper then (
-    verb_m 1 (fun _ ->
-        print_endline "Synthesis for SPARK 2014 language" ;
-        print_endline
-          "--------------------------------------------------------------------------------\n" ) ;
-    synth_spark2014 Format.std_formatter Conv_spark2014.synth Options.helper ;
-    Format.print_flush () )
-  else if Options.simplify Options.helper then
-    (* formulas are simplified just write all of them *)
-    let input_exp_list = get_all_setting_formula "input_exp" Options.helper in
+  if List.length input_lst = 0 then
+    failwith
+      "No input formula provided! Please provide at least one formula with \
+       the 'input_exp' tag."
+  else
     let simplified_formulas =
       List.mapi
+        (fun idx fm ->
+          verbose pp_endline
+            ( "Simplifying input formula "
+            ^ string_of_int (idx + 1)
+            ^ "/"
+            ^ string_of_int (List.length input_lst) ) ;
+          verbose pp_endline
+            ( "Output formula from the simplification process:\n"
+            ^ Sexp.to_string_hum (sexp_of_rmtld3_fm fm) ) ;
+          simplify fm )
+        input_lst
+    in
+    (* remove all formulas from settings *)
+    remove_setting_every_occurence "input_exp" Options.helper ;
+    (* add simplified formulas *)
+    List.iter
+      (fun fm -> set_setting "input_exp" (Fm fm) Options.helper)
+      simplified_formulas ) ;
+(* Selects synthesis for smtlibv2, ocaml, cpp or does simplification. *)
+if Options.smtlibv2_lang Options.helper then (
+  let fmt = Format.std_formatter in
+  synth_sat_problem fmt ; Format.print_flush () )
+else if Options.ocaml_lang Options.helper then (
+  verb_m 1 (fun _ ->
+      print_endline "Synthesis for Ocaml language" ;
+      print_endline
+        "--------------------------------------------------------------------------------\n" ) ;
+  synth_ocaml Format.std_formatter Conv_ocaml.synth Options.helper ;
+  Format.print_flush () )
+else if Options.cpp11_lang Options.helper then (
+  verb_m 1 (fun _ ->
+      print_endline "Synthesis for C++11 language" ;
+      print_endline
+        "--------------------------------------------------------------------------------\n" ) ;
+  Options.default_cpp11_settings Options.helper ;
+  synth_cpp11 Format.std_formatter Conv_cpp11.synth Options.helper ;
+  Format.print_flush () )
+else if Options.spark2014_lang Options.helper then (
+  verb_m 1 (fun _ ->
+      print_endline "Synthesis for SPARK 2014 language" ;
+      print_endline
+        "--------------------------------------------------------------------------------\n" ) ;
+  synth_spark2014 Format.std_formatter Conv_spark2014.synth Options.helper ;
+  Format.print_flush () )
+else if Options.simplify Options.helper then
+  (* formulas are simplified just write all of them *)
+  let input_exp_list = get_all_setting_formula "input_exp" Options.helper in
+  let simplified_formulas =
+    List.mapi
       (fun idx fm ->
         (string_of_int idx, Sexp.to_string_hum (sexp_of_rmtld3_fm fm)) )
       input_exp_list
-    in
-    to_multipart_message Format.std_formatter simplified_formulas
-  else if !Options.gen_rmtld_formula then
-    let fm = gen_formula_default () in
-    slatex_of_rmtld_fm fm |> print_endline
-  else if get_setting_bool "evaluate" Options.helper then
-    (* get trc *)
-    let json =
-      get_setting_string "environment" Options.helper
-      |> Yojson.Safe.from_string
-    in
-    let json_trc = json |> Yojson.Safe.Util.member "trc" in
-    let json_t = json |> Yojson.Safe.Util.member "t" in
-    let trc =
-      if json_trc <> `Null then trace_of_yojson json_trc
-      else failwith "No 'trc' available!"
-    in
-    let env = Rmtld3.environment trc in
-    let lg_env = Rmtld3.lenv in
-    let t = if json_t <> `Null then Rmtld3.time_of_yojson json_t else 0. in
-    let res = Rmtld3.eval (env, lg_env, t) input_fm in
-    res |> b3_to_string |> print_endline
-  else print_endline "Nothing to do. Type --help" )
+  in
+  to_multipart_message Format.std_formatter simplified_formulas
+else if !Options.gen_rmtld_formula then
+  let fm = gen_formula_default () in
+  slatex_of_rmtld_fm fm |> print_endline
+else if get_setting_bool "evaluate" Options.helper then
+  (* get trc *)
+  let json =
+    get_setting_string "environment" Options.helper
+    |> Yojson.Safe.from_string
+  in
+  let json_trc = json |> Yojson.Safe.Util.member "trc" in
+  let json_t = json |> Yojson.Safe.Util.member "t" in
+  let trc =
+    if json_trc <> `Null then trace_of_yojson json_trc
+    else failwith "No 'trc' available!"
+  in
+  let env = Rmtld3.environment trc in
+  let lg_env = Rmtld3.lenv in
+  let t = if json_t <> `Null then Rmtld3.time_of_yojson json_t else 0. in
+  let res = Rmtld3.eval (env, lg_env, t) input_fm in
+  res |> b3_to_string |> print_endline
+else print_endline "Nothing to do. Type --help"

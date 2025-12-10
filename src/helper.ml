@@ -3,6 +3,38 @@ open Sexplib.Conv
 open Rmtld3
 include Helper_
 
+(** {1 Verbosity control utilities}
+  
+  This module provides functions to control verbose output based on a global
+  verbosity level. *)
+
+(** Global verbosity level reference. Higher values enable more verbose output. *)
+let verb_mode = ref 0
+
+(** [verb_m mode f] executes function [f] only if the current verbosity level
+  is greater than or equal to [mode]. *)
+let verb_m mode f = if !verb_mode >= mode then f () else ()
+
+(** [verb f] executes function [f] if verbosity level is 2 or higher. *)
+let verb f = verb_m 2 f
+
+(** [verbose f] returns [f] if verbosity level is 1 or higher, otherwise returns [ignore]. *)
+let verbose f = if !verb_mode >= 1 then f else ignore
+
+(** {1 Settings Management Functions}
+  
+  Provides a flexible hashtable-based configuration system with support for
+  various data types including integers, strings, booleans, formulas, and
+  nested hash tables.
+  
+  The settings system supports:
+  - Type-safe getters and setters for different value types
+  - Multiple values per key (using {!Hashtbl.find_all})
+  - JSON and human-readable serialization
+  - Proposition mapping utilities
+  
+  *)
+
 (* global_int settings *)
 type global_int = string * int [@@deriving sexp]
 
@@ -25,15 +57,10 @@ type settings =
   | Fm of Rmtld3.fm
   | Hash of (values, values) Hashtbl.t
 
+(** [helper] is a hash table type that maps strings to settings.
+  This type represents the new settings structure where each string key
+  is associated with a settings value. *)
 type helper = (string, settings) Hashtbl.t (* new settings structure *)
-
-let verb_mode = ref 0
-
-let verb_m mode f = if !verb_mode >= mode then f () else ()
-
-let verb f = verb_m 2 f
-
-let verbose f = if !verb_mode >= 1 then f else ignore
 
 let mk_helper () =
   let tbl = Hashtbl.create 50 in
@@ -147,61 +174,6 @@ let get_string_of_setting a =
           a ^ "(" ^ m x ^ "->" ^ m y ^ ") " )
         ht ""
 
-let pp_settings fmt tbl =
-  Hashtbl.iter
-    (fun a b ->
-      Format.fprintf fmt "%s -> " a ;
-      pp_setting fmt b ;
-      Format.fprintf fmt "\n" )
-    tbl
-
-let print_settings tbl = pp_settings Format.std_formatter tbl
-
-let pp_endline fmt = Format.fprintf fmt "%s\n"
-
-let print_boundary_init pp_endline =
-  pp_endline
-    "This is a multipart message. To interpret this message correctly, \
-     please refer to the boundary delimiter."
-
-let print_part pp_endline id filename content =
-  let boundary = "BOUNDARY_" ^ id in
-  pp_endline ("--" ^ boundary) ;
-  pp_endline
-    ("Content-Disposition: attachment; filename=\"" ^ filename ^ "\"") ;
-  pp_endline "Content-Type: text/plain" ;
-  pp_endline "" ;
-  pp_endline content
-
-let print_boundary_end pp_endline id =
-  let boundary = "BOUNDARY_" ^ id in
-  pp_endline ("--" ^ boundary ^ "--") ;
-  pp_endline "This is the end of the multipart message." ;
-  pp_endline ""
-
-(** [to_multipart_message fmt lst tbl] generates a multipart message using the
-  provided formatter [fmt] and list of file entries [lst].
-  
-  @param fmt The formatter used to output the multipart message
-  @param lst A list of tuples containing (filename, content) pairs to be included
-         in the multipart message
-  
-  The function generates a random boundary identifier and constructs a multipart
-  message with the following structure:
-  - Initial boundary marker
-  - One part for each (filename, content) pair in [lst]
-  - Final boundary marker
-  
-  Each part is printed using [print_part] with the generated boundary [id]. *)
-let to_multipart_message fmt lst =
-  let id = string_of_int (Random.int 1000000) in
-  let pp_endline = pp_endline fmt in
-  print_boundary_init pp_endline ;
-  List.iter
-    (fun (filename, content) -> print_part pp_endline id filename content)
-    lst ;
-  print_boundary_end pp_endline id
-
 let get_string_of_settings ?(exclude = []) tbl =
   Hashtbl.fold
     (fun a b lst ->
@@ -237,6 +209,71 @@ let get_json_string_of_settings ?(exclude = []) tbl =
       items []
   in
   "{\n  " ^ String.concat ",\n  " json_items ^ "\n}"
+
+let pp_settings fmt tbl =
+  Hashtbl.iter
+    (fun a b ->
+      Format.fprintf fmt "%s -> " a ;
+      pp_setting fmt b ;
+      Format.fprintf fmt "\n" )
+    tbl
+
+let print_settings tbl = pp_settings Format.std_formatter tbl
+
+let pp_endline fmt = Format.fprintf fmt "%s\n"
+
+(** {1 Multipart Message Functions}
+
+  Helper functions for generating multipart message format output. *)
+
+(** [print_boundary_init pp_endline] prints the initial multipart message header
+  using the provided output function [pp_endline]. *)
+let print_boundary_init pp_endline =
+  pp_endline
+    "This is a multipart message. To interpret this message correctly, \
+     please refer to the boundary delimiter."
+
+(** [print_part pp_endline id filename content] prints a message part with the given
+  [id], [filename], and [content] using the output function [pp_endline]. *)
+let print_part pp_endline id filename content =
+  let boundary = "BOUNDARY_" ^ id in
+  pp_endline ("--" ^ boundary) ;
+  pp_endline
+    ("Content-Disposition: attachment; filename=\"" ^ filename ^ "\"") ;
+  pp_endline "Content-Type: text/plain" ;
+  pp_endline "" ;
+  pp_endline content
+
+(** [print_boundary_end pp_endline id] prints the closing boundary for a multipart
+  message with the given [id] using the output function [pp_endline]. *)
+let print_boundary_end pp_endline id =
+  let boundary = "BOUNDARY_" ^ id in
+  pp_endline ("--" ^ boundary ^ "--") ;
+  pp_endline "This is the end of the multipart message." ;
+  pp_endline ""
+
+(** [to_multipart_message fmt lst tbl] generates a multipart message using the
+  provided formatter [fmt] and list of file entries [lst].
+  
+  @param fmt The formatter used to output the multipart message
+  @param lst A list of tuples containing (filename, content) pairs to be included
+         in the multipart message
+  
+  The function generates a random boundary identifier and constructs a multipart
+  message with the following structure:
+  - Initial boundary marker
+  - One part for each (filename, content) pair in [lst]
+  - Final boundary marker
+  
+  Each part is printed using [print_part] with the generated boundary [id]. *)
+let to_multipart_message fmt lst =
+  let id = string_of_int (Random.int 1000000) in
+  let pp_endline = pp_endline fmt in
+  print_boundary_init pp_endline ;
+  List.iter
+    (fun (filename, content) -> print_part pp_endline id filename content)
+    lst ;
+  print_boundary_end pp_endline id
 
 (* proposition two-way mapping helpers *)
 let get_proposition_hashtbl helper = get_setting_hash "prop_map" helper
@@ -415,22 +452,25 @@ let load_settings_from_file filename helper =
       monitor_settings
   with _ -> failwith ("Failed to load settings from file: " ^ filename)
 
-(** [set_recursive_unrolling_depth formula helper] configures the recursive unrolling depth
-  setting for the given helper if it has not been set already.
-  
-  The function calculates an appropriate unrolling depth based on the upper time
-  bound of the provided formula. If the formula is unbounded or the calculation fails, it
-  defaults to a bound of 20. The final unrolling depth is set to (bound + 1).
-  
-  @param formula The formula whose upper time bound is used to calculate the unrolling depth.
-  @param helper The helper object to configure with the recursive unrolling depth setting.
-  
-  @raise Failure May propagate failures from [calculate_t_upper_bound] if not caught
-          by the internal try-with expression.
-  
-  Side effects:
-  - Modifies the helper by setting the "rec_unrolling_depth" configuration
-    if it wasn't previously set. *)
+(** [set_recursive_unrolling_depth formula helper] sets the recursive-unrolling
+    depth for [helper] if it has not been configured already.
+
+    The function derives an appropriate depth from the upper time bound of
+    [formula]. If the formula is unbounded or the computation fails, a default
+    bound of 20 is used. The stored unrolling depth is always [bound + 1].
+
+    @param formula The formula whose upper time bound is used to determine
+                   the unrolling depth.
+    @param helper  The helper object whose "rec_unrolling_depth" configuration
+                   may be initialized.
+
+    @raise Failure Propagates exceptions raised by [calculate_t_upper_bound]
+                  if they are not handled by the internal [try ... with]
+                  expression.
+
+    Side effects:
+    - Sets the "rec_unrolling_depth" field of [helper] if it was previously unset.
+*)
 let set_recursive_unrolling_depth formula helper =
   if not (is_setting "rec_unrolling_depth" helper) then
     (* Calculate the upper time bound of the formula to determine unrolling
@@ -516,16 +556,27 @@ let get_event_subtype helper = get_setting_string "rtm_event_subtype" helper
 let get_event_fulltype helper =
   get_event_type helper ^ "< " ^ get_event_subtype helper ^ " >"
 
-(* auxiliar functions *)
+(** {1 Utility functions}
+
+  This module provides auxiliary functions including string manipulation,
+  range generation, number operations, and function composition. *)
+
+(** [explode s] converts a string [s] into a list of characters. *)
 let explode s = s |> String.to_seq |> List.of_seq
 
-let rec of_enum_ a b c =
-  if a >= b then List.rev (a :: c) else of_enum_ (a + 1) b (a :: c)
+(** [of_enum a b] generates a list of integers from [a] to [b] inclusive. *)
+let of_enum a b =
+  let rec of_enum_ a b c =
+    if a >= b then List.rev (a :: c) else of_enum_ (a + 1) b (a :: c)
+  in
+  of_enum_ a b []
 
-let of_enum a b = of_enum_ a b []
-
+(** [is_even n] returns [true] if [n] is even, [false] otherwise. *)
 let is_even n = n mod 2 = 0
 
+(** [pow base exponent] computes [base] raised to the power of [exponent].
+  Uses fast exponentiation algorithm.
+  @raise Invalid_argument if [exponent] is negative. *)
 let pow base exponent =
   if exponent < 0 then invalid_arg "exponent can not be negative"
   else
@@ -537,4 +588,6 @@ let pow base exponent =
     in
     aux 1 base exponent
 
+(** [f % g] is the function composition operator. Returns a function that
+  applies [g] first, then [f]. Equivalent to [fun x -> f (g x)]. *)
 let ( % ) f g x = f (g x)

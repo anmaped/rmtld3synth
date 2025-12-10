@@ -66,7 +66,7 @@ let set_cpp_language () = set_setting "cpp11_language" (Sel true) helper
 let set_spark2014_language () =
   set_setting "spark2014_language" (Sel true) helper
 
-let set_smt_formula () = set_setting "smtlibv2_language" (Sel true) helper
+let set_smtlibv2_language () = set_setting "smtlibv2_language" (Sel true) helper
 
 let set_solve_statistics f = solver_statistics_flag := true
 
@@ -228,7 +228,7 @@ let speclist =
     , Arg.Unit set_gen_rmtld_formula
     , " Call `gen_formula_default` function" )
   ; ( "--smtlibv2-language"
-    , Arg.Unit set_smt_formula
+    , Arg.Unit set_smtlibv2_language
     , " Enables SMT-LIBv2 language encoding\n\n\
       \ Flags for runtime monitoring (rtm) synthesis: " )
   ; ( "--ocaml-language"
@@ -252,7 +252,7 @@ let speclist =
     , " Enables solving smtlibv2 problems using cvc4 SMT solver" )
   ; ( "--rec-unrolling"
     , Arg.String (set_recursive_unrolling helper)
-    , " Enables recursive unrolling with depth: auto, [0-9]+" )
+    , " Enables recursive unrolling with depth: none, auto, [0-9]+" )
   ; ( "--assume-unary-seq"
     , Arg.Unit set_assume_unary_sequence
     , " Assume that the output sequence is unary." )
@@ -326,7 +326,7 @@ let legacy =
         (fun _ ->
           verbose prerr_endline
             "(Deprecated since 0.7) Use --smtlibv2-language instead." ;
-          set_smt_formula () )
+          set_smtlibv2_language () )
     , "" )
   ; ( "--synth-ocaml"
     , Arg.Unit

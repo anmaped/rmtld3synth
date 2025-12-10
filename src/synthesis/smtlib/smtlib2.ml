@@ -19,11 +19,15 @@ module Export =
     (State)
     (Typer_Pipe)
 
-let recursive_unrolling = ref false
+let recursive_unrolling helper = get_setting_bool "rec_unrolling" helper
 
-let recursive_unrolling_depth = ref 0
+let recursive_unrolling_depth helper =
+  if is_setting "rec_unrolling_depth" helper then
+    get_setting_int "rec_unrolling_depth" helper
+  else failwith "No 'rec_unrolling_depth' setting found!"
 
-let assume_unary_sequence = ref false
+let assume_unary_sequence helper =
+  get_setting_bool "assume_unary_sequence" helper
 
 let isZ3SolverEnabled helper =
   if is_setting "solver" helper then
@@ -151,16 +155,16 @@ let cartesian l l' =
 (* Synthesis *)
 
 (* parameterized synthesis functions for until operators *)
-let evalfold_param id =
+let evalfold_param id helper =
   let evalfold id =
     (* (declare-fun evalfold" ^ id ^ " (Time Time) Fourvalue ) *)
     declare_fun lst
       (Id.mk Id.term ("evalfold" ^ id))
       [f_const_sort "Time"; f_const_sort "Time"]
       (f_const_sort "Fourvalue") ;
-    if !recursive_unrolling then (
+    if recursive_unrolling helper then (
       (* unrooling the recursion just in case (speedup) *)
-      let enumeration = of_enum 0 !recursive_unrolling_depth in
+      let enumeration = of_enum 0 (recursive_unrolling_depth helper) in
       let lst_all_comb = cartesian enumeration enumeration in
       (* (assert (forall ((x Time) (i Time)) (implies (not (and (and (<= 0 x)
          (<= x max_depth) ) (and (<= 0 i) (<= i max_depth) ) ) ) (=
@@ -178,12 +182,14 @@ let evalfold_param id =
                        (f_leq (Term.int "0") (f_const_term "x"))
                        (f_leq (f_const_term "x")
                           (Term.int
-                             (string_of_int !recursive_unrolling_depth) ) ) )
+                             (string_of_int
+                                (recursive_unrolling_depth helper) ) ) ) )
                     (f_and
                        (f_leq (Term.int "0") (f_const_term "i"))
                        (f_leq (f_const_term "i")
                           (Term.int
-                             (string_of_int !recursive_unrolling_depth) ) ) ) ) )
+                             (string_of_int
+                                (recursive_unrolling_depth helper) ) ) ) ) ) )
               (f_equal
                  (Term.apply
                     (f_const_term ("evalfold" ^ id))
@@ -277,7 +283,7 @@ let synth_tm_variable name helper =
   if not (SS.exists (fun s -> s = name) !free_variables_set) then (
     free_variables_set := SS.add name !free_variables_set ;
     declare_const lst (Id.mk Id.term name)
-      ( if !assume_unary_sequence then f_const_sort "Int"
+      ( if (assume_unary_sequence helper) then f_const_sort "Int"
         else f_const_sort "Real" ) ) ;
   empty_body (Term.apply (f_const_term "dsome") [f_const_term name])
 
@@ -285,14 +291,14 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
   let idx = get_duration_counter helper in
   let freevariable = "v_dt!" ^ string_of_int idx in
   declare_const lst (Id.mk Id.term freevariable) (f_const_sort "Duration") ;
-  if !assume_unary_sequence then
+  if (assume_unary_sequence helper) then
     assert_ lst (f_equal (f_const_term freevariable) tm_call)
-  else if !recursive_unrolling then (
+  else if recursive_unrolling helper then (
     assert_ lst
       (f_and
          (f_less
             (Term.apply (f_const_term "dval") [f_const_term freevariable])
-            (Term.int (string_of_int !recursive_unrolling_depth)) )
+            (Term.int (string_of_int (recursive_unrolling_depth helper))) )
          (f_less (Term.int "0")
             (Term.apply (f_const_term "dval") [f_const_term freevariable]) ) ) ;
     (* (assert (forall ((i Index)) (<= 0 (select trc_time i) ) ) ) *)
@@ -331,9 +337,9 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
         (Id.mk Id.term ("evaleta" ^ id))
         [f_const_sort "Time"; f_const_sort "Time"]
         (f_const_sort "Duration") ;
-      if !recursive_unrolling then (
+      if recursive_unrolling helper then (
         (* unrooling the recursion just in case (speedup) *)
-        let enumeration = of_enum 0 !recursive_unrolling_depth in
+        let enumeration = of_enum 0 (recursive_unrolling_depth helper) in
         let lst_all_comb = cartesian enumeration enumeration in
         (* (assert (forall ((x Time) (i Time)) (implies (not (and (and (<= 0
            x) (<= x max_depth) ) (and (<= 0 i) (<= i max_depth) ) ) ) (=
@@ -351,12 +357,14 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
                          (f_leq (Term.int "0") (f_const_term "x"))
                          (f_leq (f_const_term "x")
                             (Term.int
-                               (string_of_int !recursive_unrolling_depth) ) ) )
+                               (string_of_int
+                                  (recursive_unrolling_depth helper) ) ) ) )
                       (f_and
                          (f_leq (Term.int "0") (f_const_term "i"))
                          (f_leq (f_const_term "i")
                             (Term.int
-                               (string_of_int !recursive_unrolling_depth) ) ) ) ) )
+                               (string_of_int
+                                  (recursive_unrolling_depth helper) ) ) ) ) ) )
                 (f_equal
                    (Term.apply
                       (f_const_term ("evaleta" ^ id))
@@ -388,7 +396,7 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
                          (Term.apply
                             (f_const_term ("indicator" ^ id))
                             [f_const_term "trc"; Term.int (string_of_int x)] )
-                         ( if !assume_unary_sequence then Term.int "1"
+                         ( if (assume_unary_sequence helper) then Term.int "1"
                            else
                              Term.apply (f_const_term "select")
                                [ f_const_term "trc_time"
@@ -408,7 +416,7 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
                       (Term.apply
                          (f_const_term ("indicator" ^ id))
                          [f_const_term "trc"; Term.int (string_of_int x)] )
-                      ( if !assume_unary_sequence then Term.int "1"
+                      ( if (assume_unary_sequence helper) then Term.int "1"
                         else
                           Term.apply (f_const_term "select")
                             [ f_const_term "trc_time"
@@ -481,7 +489,7 @@ let synth_tm_duration (tm_call, tm_body) (fm_call, fm_body) helper =
          (f_and
             (f_geq (f_const_term "trc_size") (f_const_term "mt"))
             ( if (* one assumption *)
-                 not !assume_unary_sequence then
+                 not (assume_unary_sequence helper) then
                 f_less
                   (Term.apply (f_const_term "dval") [tm_call])
                   (f_minus
@@ -566,7 +574,7 @@ let synth_fm_uless gamma sf1 sf2 helper =
            (Term.apply (f_const_term "evali") [comp1; comp2])
            (f_const_term "v") )
     in
-    let evalfold id = evalfold_param id in
+    let evalfold id = evalfold_param id helper in
     let evalc id =
       (* (define-fun evalc" ^ id ^ " ((mt Time) (mtb Time) ) (Pair Bool
          Fourvalue) (mk-pair (<= trc_size (+ " ^ (string_of_int gamma) ^ "
@@ -725,7 +733,7 @@ let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
 let synth_smtlib_header helper =
   let common_header () = set_info lst ":smt-lib-version" (Term.real "2.6") in
   let common_header_cvc4 () =
-    if !recursive_unrolling then set_logic lst "QF_AUFDTNIRA"
+    if recursive_unrolling helper then set_logic lst "QF_AUFDTNIRA"
     else set_logic lst "AUFDTNIRA" ;
     set_info_quoted lst ":source" "https://github.com/anmaped/rmtld3synth" ;
     set_info_str lst ":license"
@@ -753,7 +761,8 @@ let synth_smtlib_header helper =
 let synth_smtlib_common_types () =
   (* (define-sort Proptype () Int) *)
   define_sort lst (Id.mk Id.sort "Proptype") [] (f_const_sort "Int") ;
-  define_sort lst (Id.mk Id.sort "Time") [] (f_const_sort "Int") ;
+  define_sort lst (Id
+.mk Id.sort "Time") [] (f_const_sort "Int") ;
   define_sort lst (Id.mk Id.sort "Index") [] (f_const_sort "Int") ;
   (* (declare-datatypes ((Duration 0)) (( (dnone) (dsome (val Int) ) )) ) *)
   define_datatypes lst
@@ -946,13 +955,13 @@ let synth_smtlib_common_evali () =
        (Term.apply (f_const_term "mapb4") [f_const_term "b2"]) ) ;
   ()
 
-let synth_smtlib_common_trace () =
+let synth_smtlib_common_trace helper =
   (* (declare-const trc Trace ) (declare-const trc_size Time) *)
   declare_const lst (Id.mk Id.term "trc") (f_const_sort "Trace") ;
-  if not !assume_unary_sequence then
+  if not (assume_unary_sequence helper) then
     declare_const lst (Id.mk Id.term "trc_time") (f_const_sort "Trace_") ;
   declare_const lst (Id.mk Id.term "trc_size") (f_const_sort "Time") ;
-  if not !assume_unary_sequence then (
+  if not (assume_unary_sequence helper) then (
     declare_fun lst
       (* id *)
       (Id.mk Id.term "mapt")
@@ -960,9 +969,9 @@ let synth_smtlib_common_trace () =
       [f_const_sort "Index"]
       (* return type *)
       (f_const_sort "Real") ;
-    if !recursive_unrolling then (
+    if recursive_unrolling helper then (
       (* unrooling the recursion just in case (speedup) *)
-      let enumeration = of_enum 0 !recursive_unrolling_depth in
+      let enumeration = of_enum 0 (recursive_unrolling_depth helper) in
       (*let lst_all_comb = cartesian enumeration enumeration in*)
       List.fold_left
         (fun _ i ->
@@ -1042,7 +1051,7 @@ let synth_smtlib' fmt synth_fun formula helper =
   synth_smtlib_common_types () ;
   synth_smtlib_common_macros () ;
   synth_smtlib_common_evali () ;
-  synth_smtlib_common_trace () ;
+  synth_smtlib_common_trace helper ;
   synth_smtlib_common_prop () ;
   let tm, stm = synth_fun formula helper in
   add_l stm ;
@@ -1068,7 +1077,7 @@ let synth_smtlib' fmt synth_fun formula helper =
             (Term.apply (f_const_term "select")
                [f_const_term "trc"; f_const_term "t"] )
             (Term.int "0") ) ) ;
-  if not !assume_unary_sequence then
+  if not (assume_unary_sequence helper) then
     assert_ lst
       (Term.forall
          [Term.colon (f_const_term "t") (f_const_sort "Time")]
@@ -1155,10 +1164,6 @@ let synth_smtlib' fmt synth_fun formula helper =
 
 let synth_smtlib fmt synth_fun helper =
   let pp_endline = pp_endline fmt in
-  recursive_unrolling := get_setting_bool "rec_unrolling" helper ;
-  if !recursive_unrolling then
-    recursive_unrolling_depth := get_setting_int "rec_unrolling_depth" helper ;
-  assume_unary_sequence := get_setting_bool "assume_unary_sequence" helper ;
   (* list of expressions with input_exp tag *)
   let input_lst = get_all_setting_formula "input_exp" helper in
   (* contains at least one formula *)
