@@ -4,3 +4,9 @@
   (libraries       rmtld3synth.synthesis)
   (modules         Unittest)
 )
+
+(test
+  (name            basictest)
+  (libraries       rmtld3synth.synthesis)
+  (modules         Basictest)
+)

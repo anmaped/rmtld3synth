@@ -4,9 +4,8 @@
   (public_name     rmtld3synth)
   (libraries       rmtld3synth.synthesis rmtld3synth.options)
   (modules         Rmtld3synth Version)
-  (flags           (-cclib -lstdc++) )
+  (flags           (:standard -cclib -lstdc++) )
   (modes           byte exe js wasm)
-
 
   (js_of_ocaml
     (flags

@@ -570,25 +570,24 @@ let synth_tm_duration tm_call fm_call helper =
     (* this symbol is not correct; it should be the bottom_duration *)
     (* (duration_op"^ id ^" (+ mt "^ dt ^") mt) *)
     Term.apply
-        (f_const_term ("duration_op" ^ id))
-        [ f_sum (f_const_term "mt")
-            (Term.apply (f_const_term "dval") [f_const_term freevariable])
-        ; f_const_term "mt" ]
+      (f_const_term ("duration_op" ^ id))
+      [ f_sum (f_const_term "mt")
+          (Term.apply (f_const_term "dval") [f_const_term freevariable])
+      ; f_const_term "mt" ]
   in
   duration ("!" ^ string_of_int idx) fm_call
 
 let synth_tm_plus cmptr1 cmptr2 helper =
   Term.apply (f_const_term "dsome")
-      [ f_sum
-          (Term.apply (f_const_term "dval") [cmptr1])
-          (Term.apply (f_const_term "dval") [cmptr2]) ]
-
+    [ f_sum
+        (Term.apply (f_const_term "dval") [cmptr1])
+        (Term.apply (f_const_term "dval") [cmptr2]) ]
 
 let synth_tm_times cmptr1 cmptr2 helper =
   Term.apply (f_const_term "dsome")
-      [ f_times
-          (Term.apply (f_const_term "dval") [cmptr1])
-          (Term.apply (f_const_term "dval") [cmptr2]) ]
+    [ f_times
+        (Term.apply (f_const_term "dval") [cmptr1])
+        (Term.apply (f_const_term "dval") [cmptr2]) ]
 
 let synth_fm_true helper = f_const_term "TVTRUE"
 
@@ -596,12 +595,10 @@ let synth_fm_p p helper =
   Term.apply (f_const_term "ev_prop")
     [f_const_term "mk"; f_const_term "mt"; Term.int (string_of_int p)]
 
-let synth_fm_not cmpfm helper =
-  Term.apply (f_const_term "tvnot") [cmpfm]
+let synth_fm_not cmpfm helper = Term.apply (f_const_term "tvnot") [cmpfm]
 
 let synth_fm_or cmpfm1 cmpfm2 helper =
-   Term.apply (f_const_term "tvor") [cmpfm1; cmpfm2]
-
+  Term.apply (f_const_term "tvor") [cmpfm1; cmpfm2]
 
 let synth_fm_less cmptr1 cmptr2 helper =
   Term.apply (f_const_term "tvlessthan") [cmptr1; cmptr2]
@@ -687,9 +684,8 @@ let synth_fm_uless gamma sf1 sf2 helper =
   (* "(until_less_op!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int
      (int_of_float gamma)) ^") mt t )" *)
   Term.apply
-      (f_const_term ("until_less_op!" ^ string_of_int idx))
-      [ f_sum (f_const_term "mt") (f_const_term freevariable)
-      ; f_const_term "mt" ]
+    (f_const_term ("until_less_op!" ^ string_of_int idx))
+    [f_sum (f_const_term "mt") (f_const_term freevariable); f_const_term "mt"]
 
 let synth_fm_ev_eq gamma sf1 helper =
   let idx = get_until_counter helper in
@@ -771,9 +767,8 @@ let synth_fm_ev_eq gamma sf1 helper =
   (* "(eventually_op!" ^ (string_of_int idx) ^" (+ mt "^ (string_of_int
      (int_of_float gamma)) ^") mt t )" *)
   Term.apply
-      (f_const_term ("eventually_op!" ^ string_of_int idx))
-      [ f_sum (f_const_term "mt") (f_const_term freevariable)
-      ; f_const_term "mt" ]
+    (f_const_term ("eventually_op!" ^ string_of_int idx))
+    [f_sum (f_const_term "mt") (f_const_term freevariable); f_const_term "mt"]
 
 let synth_fm_aw_eq gamma sf1 helper =
   synth_fm_not
@@ -1225,10 +1220,10 @@ let synth_smtlib' fmt synth_fun formula helper =
   let hexid = String.sub (Digest.string output_str |> Digest.to_hex) 0 4 in
   try
     let out_dir = get_setting_string "out_dir" helper in
-    print_endline "Generated Output Files:" ;
+    verbose (pp_endline fmt) "Generated Output Files:" ;
     let name = String.capitalize_ascii ("encoding_" ^ hexid) in
     save_file (out_dir ^ "/" ^ name ^ ".smt2") output_str ;
-    print_endline (out_dir ^ "/" ^ name ^ ".smt2") ;
+    verbose (pp_endline fmt) (out_dir ^ "/" ^ name ^ ".smt2") ;
     output_str
   with Not_found -> (
     try
@@ -1240,11 +1235,11 @@ let synth_smtlib' fmt synth_fun formula helper =
         else
           let out_file = get_setting_string "out_file" helper in
           save_file out_file output_str ;
-          verb (fun _ ->
-              print_endline ("SMTLIBv2 file " ^ out_file ^ " saved.") ) ) ;
+          verbose (pp_endline fmt) ("SMTLIBv2 file " ^ out_file ^ " saved.")
+      ) ;
       if isZ3SolverEnabled helper then output_str else ""
     with Not_found ->
-      if not (isZ3SolverEnabled helper) then print_endline output_str ;
+      if not (isZ3SolverEnabled helper) then pp_endline fmt output_str ;
       output_str )
 
 let synth_smtlib fmt synth_fun helper =
