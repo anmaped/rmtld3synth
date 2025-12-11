@@ -1,26 +1,40 @@
 #tab-bar {
     display: flex;
-    background: #d1d1d1;
-    border-bottom: 1px solid #333;
+    flex-wrap: wrap;
+    /* allows tabs to wrap to next line */
+    gap: 5px;
+    /* optional spacing between tabs */
+    width: 98%;
 }
 
-.tab {
-    padding: 10px 20px;
-    color: #ccc;
+#tab-bar .tab {
+    flex: 1 1 auto;
+    /* grow/shrink automatically */
+    padding: 8px 12px;
+    background-color: #eee;
     cursor: pointer;
-    background: #2d2d2d;
-    border-right: 1px solid #444;
-    transition: background 0.2s;
+    text-align: center;
+    white-space: nowrap;
+    /* prevent text from breaking in the middle */
+    border-radius: 4px;
 }
 
-.tab:hover {
-    background: #3c3c3c;
-}
-
-.tab.active {
-    background: #0d6efd;
-    color: #fff;
+#tab-bar .tab.active {
+    background-color: #4287f5;
+    color: white;
     font-weight: bold;
+}
+
+#tab-bar .tab:not(.active):hover {
+    background: #a0c4ff;
+}
+
+/* Optional: smaller padding on very small screens */
+@media (max-width: 500px) {
+    #tab-bar .tab {
+        padding: 6px 8px;
+        font-size: 14px;
+    }
 }
 
 .ace_editor,
@@ -32,4 +46,9 @@
 
 .ace_editor {
     height: 100%;
+}
+
+.tooltip-large .tooltip-inner {
+    max-width: 450px;
+    text-align: left;
 }

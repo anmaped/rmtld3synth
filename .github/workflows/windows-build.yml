@@ -63,8 +63,8 @@ jobs:
           eval $(opam env --switch=4.14.2 --set-switch) #
           env #
           ls -l #
-          find /c/ -name libgcc_s_sjlj-1.dll #
           find / -name libgcc_s_sjlj-1.dll #
+          find /cygdrive/c/ -name libgcc_s_sjlj-1.dll #
           mkdir bundle #
           cp "$OPAM_SWITCH_PREFIX/bin/rmtld3synth.exe" ./bundle #
           cp "$OPAM_SWITCH_PREFIX/bin/libz3.dll" ./bundle #

@@ -29,6 +29,10 @@ wasm: version
 	opam install wasm_of_ocaml-compiler js_of_ocaml js_of_ocaml-ppx js_of_ocaml-lwt zarith_stubs_js -y --confirm-level unsafe-yes
 	dune build --profile js src/rmtld3synth.bc.wasm.js
 
+server:
+	opam install dream lwt jsonschema -y --confirm-level unsafe-yes
+	dune build --profile release @install
+
 tests:
 	dune runtest -p rmtld3synth
 

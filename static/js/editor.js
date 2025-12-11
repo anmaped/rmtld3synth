@@ -32,7 +32,7 @@ inputEditor.session.on('change', ev => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: inputEditor.getValue()
+                body: updateInputConversion(inputEditor.getValue())
             })
                 .then(response => response.json())
                 .then(data => {
@@ -136,8 +136,19 @@ function setActiveTab(tabName) {
     }
 }
 
+// Update file count badge
+function updateFileCount() {
+    const tabs = document.querySelectorAll('.tab[data-tab]');
+    const count = tabs.length > 0 && tabs[0].textContent.trim() === 'No generated files yet' ? 0 : tabs.length;
+    const fileCountSpan = document.getElementById('file-count');
+    if (fileCountSpan) {
+        fileCountSpan.textContent = count;
+    }
+}
+
 // Initialize with tab1
 switchTab('0');
+updateFileCount();
 
 
 // Server REST API multipart file handling
@@ -293,5 +304,9 @@ function fill_text_editor(files) {
         if (id === 0) switchTab(0);
 
         id += 1;
+
+        // update file count badge
+        updateFileCount();
+
     }
 }

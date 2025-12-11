@@ -9,6 +9,7 @@
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
     <link rel="stylesheet" type="text/css" href="style.css" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.js" type="text/javascript"
         charset="utf-8"></script>
@@ -64,12 +65,12 @@
                     <div class="col-lg-5 col-xl-4">
                         <div class="accordion" id="menuAccordion">
 
-                            <!-- Monitor Synthesis -->
+                            <!-- Monitor Generation -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="heading1">
                                     <button class="accordion-button" type="button" data-bs-toggle="collapse"
                                         data-bs-target="#collapse1">
-                                        Monitor Synthesis
+                                        Example Demonstrations
                                     </button>
                                 </h2>
                                 <div id="collapse1" class="accordion-collapse collapse show"
@@ -268,12 +269,27 @@
                                     <h2 class="accordion-header">
                                         <button class="accordion-button" type="button" data-bs-toggle="collapse"
                                             data-bs-target="#inputcollapse">
-                                            Input
+                                            <i class="bi bi-code-square me-2"></i> Input Command
                                         </button>
                                     </h2>
                                     <div id="inputcollapse" class="accordion-collapse collapse show"
                                         data-bs-parent="#inputcommand">
                                         <div class="accordion-body">
+
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <label class="form-label mb-0"></label>
+                                                <div class="btn-group" role="group" aria-label="Input type toggle">
+                                                    <input type="radio" class="btn-check" name="inputType"
+                                                        id="inputTypeCli" value="cli">
+                                                    <label class="btn btn-outline-primary btn-sm" for="inputTypeCli">CLI
+                                                    </label>
+
+                                                    <input type="radio" class="btn-check" name="inputType"
+                                                        id="inputTypeJson" value="json" checked>
+                                                    <label class="btn btn-outline-primary btn-sm"
+                                                        for="inputTypeJson">JSON</label>
+                                                </div>
+                                            </div>
 
                                             <div id="input-editor"></div>
 
@@ -290,7 +306,7 @@
                                     <h2 class="accordion-header">
                                         <button class="accordion-button" type="button" data-bs-toggle="collapse"
                                             data-bs-target="#configcollapse">
-                                            Configuration
+                                            <i class="bi bi-gear-fill me-2"></i> Configuration
                                         </button>
                                     </h2>
                                     <div id="configcollapse" class="accordion-collapse collapse show"
@@ -321,14 +337,31 @@
                         <h2 class="accordion-header">
                             <button class="accordion-button" type="button" data-bs-toggle="collapse"
                                 data-bs-target="#codecollapse">
-                                Code Generation
+                                <i class="bi bi-file-earmark-code me-2"></i> Code Generation
+                                <span class="badge bg-info text-dark ms-2" id="file-count-badge">
+                                    <i class="bi bi-file-earmark-code"></i> <span id="file-count">0</span> files
+                                </span>
                             </button>
                         </h2>
                         <div id="codecollapse" class="accordion-collapse collapse show" data-bs-parent="#codea">
                             <div class="accordion-body">
 
-                                <div style="width:98%;" id="tab-bar">
-                                    <div class="tab active" data-tab="tab0" onclick="switchTab('0')">No file</div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="btn-group" role="group" aria-label="Code actions">
+                                        <button id="download-zip-btn" class="btn btn-outline-secondary btn-sm"
+                                            title="Download all generated files as ZIP">
+                                            <i class="bi bi-download"></i> Download ZIP
+                                        </button>
+                                        <button id="copy-all-btn" class="btn btn-outline-secondary btn-sm"
+                                            title="Copy all code to clipboard">
+                                            <i class="bi bi-clipboard"></i> Copy All
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="tab-bar">
+                                    <div class="tab active" data-tab="tab0" onclick="switchTab('0')">
+                                        No generated files yet</div>
                                 </div>
                                 <div id="code"></div>
 
@@ -420,6 +453,180 @@
         </div>
     </div>
 
+    <!-- Tooltip script -->
+    <script>
+        // Configuration tooltip/popup
+        document.addEventListener('DOMContentLoaded', function () {
+            const configHeading = document.querySelector('#configuration .accordion-header button');
+            if (configHeading) {
+                // Create tooltip content
+                const tooltipContent = `
+                <div class="p-3" style="max-width: 450px;">
+                    <h6 class="mb-2 fw-bold">Configuration Options</h6>
+                    <ul class="mb-0 small lh-lg">
+                        <li><strong>Language Backend:</strong> Select target language (OCaml, C++11, SMT-Lib) for runtime monitor source-code generation</li>
+                        <li><strong>Input Format:</strong> Choose specification format: LaTeX equations for temporal logic, S-expressions for AST representation, or RM-DSL for scheduling constraints</li>
+                        <li><strong>Verbosity Level:</strong> Adjust diagnostic output detail (0=minimal, 2=detailed)</li>
+                        <li><strong>Recursive Unrolling:</strong> Set bounded unrolling depth for temporal operators in SMT-Lib encoding</li>
+                    </ul>
+                </div>
+            `;
+
+                // Initialize Bootstrap tooltip with HTML content
+                new bootstrap.Tooltip(configHeading, {
+                    title: tooltipContent,
+                    html: true,
+                    placement: 'right',
+                    trigger: 'hover focus',
+                    customClass: 'tooltip-large'
+                });
+            }
+
+            // Initialize Bootstrap tooltip for Input accordion
+            const inputHeading = document.querySelector('#inputcommand .accordion-header button');
+            if (inputHeading) {
+                const inputTooltipContent = `
+                    <div class="p-3" style="max-width: 450px;">
+                        <h6 class="mb-2 fw-bold">Input Terminal</h6>
+                        <ul class="mb-0 small lh-lg">
+                            <li><strong>Command Arguments:</strong> Enter rmtld3synth command-line arguments for monitor synthesis</li>
+                            <li><strong>JSON Configuration:</strong> Alternatively, provide a JSON object with synthesis parameters</li>
+                            <li><strong>Example (CLI):</strong> --ocaml-language --input-latexeq 'a ∧ b' --verbose 2</li>
+                            <li><strong>Example (JSON):</strong> {"language": "ocaml", "input": "a ∧ b", "verbose": 2}</li>
+                            <li><strong>Quick Start:</strong> Use predefined examples from the left panel to populate this field</li>
+                        </ul>
+                    </div>
+                `;
+
+                new bootstrap.Tooltip(inputHeading, {
+                    title: inputTooltipContent,
+                    html: true,
+                    placement: 'right',
+                    trigger: 'hover focus',
+                    customClass: 'tooltip-large'
+                });
+            }
+
+            // Initialize Bootstrap tooltip for Code Generation accordion
+            const codeHeading = document.querySelector('#codea .accordion-header button');
+            if (codeHeading) {
+                const codeTooltipContent = `
+                    <div class="p-3" style="max-width: 450px;">
+                        <h6 class="mb-2 fw-bold">Code Generation Output</h6>
+                        <ul class="mb-0 small lh-lg">
+                            <li><strong>Generated Files:</strong> View synthesized runtime monitor source code across multiple tabs</li>
+                            <li><strong>Syntax Highlighting:</strong> Code displayed with language-specific syntax highlighting via Ace Editor</li>
+                            <li><strong>Multiple Outputs:</strong> May include monitor implementation, header files, and auxiliary modules</li>
+                            <li><strong>Copy & Export:</strong> Select and copy code directly, or download files for integration</li>
+                            <li><strong>Real-time Updates:</strong> Output refreshes automatically after each synthesis run</li>
+                        </ul>
+                    </div>
+                `;
+
+                new bootstrap.Tooltip(codeHeading, {
+                    title: codeTooltipContent,
+                    html: true,
+                    placement: 'left',
+                    trigger: 'hover focus',
+                    customClass: 'tooltip-large'
+                });
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const cliRadio = document.getElementById('inputTypeCli');
+            const jsonRadio = document.getElementById('inputTypeJson');
+
+            cliRadio.addEventListener('change', function () {
+                if (this.checked && typeof convertJsonToCli === 'function') {
+                    convertJsonToCli(inputEditor.getValue());
+                }
+            });
+
+            jsonRadio.addEventListener('change', function () {
+                if (this.checked && typeof convertCliToJson === 'function') {
+                    convertCliToJson(inputEditor.getValue());
+                }
+            });
+
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Download ZIP functionality
+            document.getElementById('download-zip-btn').addEventListener('click', function () {
+                if (typeof fflate === 'undefined') {
+                    alert('ZIP library not loaded');
+                    return;
+                }
+
+                const files = {};
+                const tabs = document.querySelectorAll('.tab[data-tab]');
+
+                tabs.forEach(tab => {
+                    const tabId = tab.getAttribute('data-tab');
+                    const fileName = tab.textContent.trim();
+                    const editor = ace.edit('code');
+                    const content = editor.getValue();
+
+                    if (content) {
+                        files[fileName] = fflate.strToU8(content);
+                    }
+                });
+
+                if (Object.keys(files).length === 0) {
+                    alert('No files to download');
+                    return;
+                }
+
+                fflate.zip(files, (err, data) => {
+                    if (err) {
+                        console.error('ZIP creation failed:', err);
+                        return;
+                    }
+
+                    const blob = new Blob([data], { type: 'application/zip' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'generated_code.zip';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            });
+
+            // Copy All functionality
+            document.getElementById('copy-all-btn').addEventListener('click', function () {
+                const editor = ace.edit('code');
+                const content = editor.getValue();
+
+                if (!content) {
+                    alert('No code to copy');
+                    return;
+                }
+
+                navigator.clipboard.writeText(content).then(() => {
+                    const btn = this;
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                    btn.classList.add('btn-success');
+                    btn.classList.remove('btn-outline-secondary');
+
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-secondary');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Copy failed:', err);
+                    alert('Failed to copy to clipboard');
+                });
+            });
+        });
+    </script>
 
     <script>
         // Remove focus from modal buttons when closed

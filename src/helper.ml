@@ -491,6 +491,21 @@ let set_recursive_unrolling_depth formula helper =
   "variables" setting of a helper object. Variables are stored in a
   hash table mapping string names to values of type [values]. *)
 
+(** [init_set_variables helper] initializes the "variables" setting in [helper]
+  as a hash table if it does not already exist. If it exists, the existing
+  hash table is reset to be empty.
+
+  @param helper The helper object in which to initialize the "variables" setting. *)
+let init_set_variables helper =
+  (* check if hash is already there *)
+  if is_setting "variables" helper then
+    (* do reset hash table *)
+    let h = get_setting_hash "variables" helper in
+    Hashtbl.reset h ;
+  else
+    let h = Hashtbl.create 5 in
+    set_setting "variables" (Hash h) helper
+
 (** [set_variable name value helper] sets the variable with the given [name]
   to the specified [value] in the "variables" setting of [helper]. *)
 let set_variable name value helper =
@@ -512,6 +527,24 @@ let get_variable name helper =
       | S s -> s
       | _ -> failwith ("Variable " ^ name ^ " is not a string.")
     with Not_found -> failwith ("Variable " ^ name ^ " not found.") )
+  | _ -> failwith "'variables' setting is not a hash."
+
+(** [append_variable name value helper] appends the given [value] to the
+  variable with the specified [name] in the "variables" setting of [helper].
+  If the variable does not exist, it is created with the initial [value]. *)
+let append_variable name value helper =
+  let h = get_setting "variables" helper in
+  match h with
+  | Hash ht -> (
+    try
+      match Hashtbl.find ht (S name) with
+      | S s ->
+          Hashtbl.replace ht (S name) (S (s ^ "\n" ^ value)) ;
+          set_setting "variables" (Hash ht) helper
+      | _ -> failwith ("Variable " ^ name ^ " is not a string.")
+    with Not_found ->
+      Hashtbl.add ht (S name) (S value) ;
+      set_setting "variables" (Hash ht) helper )
   | _ -> failwith "'variables' setting is not a hash."
 
 (* END helper for settings *)

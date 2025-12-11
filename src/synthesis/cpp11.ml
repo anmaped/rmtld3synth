@@ -131,11 +131,11 @@ let synth_fm_less (cmptr1, a) (cmptr2, b) helper =
   , a ^ b )
 
 let convert_to_always_equal (sf2, b) gamma helper =
-  print_endline
+  append_variable "warning_messages" 
     ( "The next operator 'false U[" ^ string_of_float gamma
     ^ "] fm' or false U[=" ^ string_of_float gamma
     ^ "] fm' is converted to 'Always[=" ^ string_of_float gamma
-    ^ "] fm' since cpp11 synthesis is enabled." ) ;
+    ^ "] fm' since cpp11 synthesis is enabled." ) helper ;
   (* get new id *)
   let id = get_until_counter helper in
   ( "always_equal<T, Eval_always_b_" ^ string_of_int id ^ "<T>, "
@@ -157,9 +157,9 @@ let convert_to_always_equal (sf2, b) gamma helper =
       \  " )
 
 let convert_to_unbounded_eventually (sf2, b) helper =
-  print_endline
+  append_variable "warning_messages" 
     "The unbounded until operator 'true U[infty] fm' is converted to \
-     'Eventually[infty] fm' since cpp11 synthesis is enabled." ;
+     'Eventually[infty] fm' since cpp11 synthesis is enabled." helper ;
   (* get new id *)
   let id = get_until_counter helper in
   ( "eventually_less_unbounded<T, Eval_eventually_less_unbounded_"
@@ -251,9 +251,9 @@ let rec synth_fm_sless gamma (sf1, a) (sf2, b) helper =
     gamma = max_float
     && (sf1, a) = synth_fm_not (synth_fm_true helper) helper
   then (
-    print_endline
+    append_variable "warning_messages" 
       "The unbounded previous 'prev[∞] ɸ' is converted to 'false since[<1.] \
-       ɸ' since cpp11 synthesis is enabled." ;
+       ɸ' since cpp11 synthesis is enabled." helper ;
     synth_fm_sless 1.
       (synth_fm_not (synth_fm_true helper) helper)
       (sf2, b) helper )
@@ -316,6 +316,8 @@ let synth_fm_seq gamma (sf1, a) (sf2, b) helper =
 (* monitor dependent c++ functions begin here *)
 let synth_cpp11 fmt compute helper =
   let pp_endline = pp_endline fmt in
+  init_set_variables helper ;
+  set_variable "warning_messages" (S "Warning!!") helper ;
   verbose pp_endline
     "\x1b[33mConfiguration before C++ code generation:\x1b[0m" ;
   verbose print_settings helper ;
@@ -591,6 +593,9 @@ let synth_cpp11 fmt compute helper =
     ^ String.uppercase_ascii monitor_name
     ^ "_H_"
   in
+  (* print warning messages *)
+  verbose pp_endline (get_variable "warning_messages" helper) ;
+  (* output to files *)
   try
     let out_dir = get_setting_string "out_dir" helper in
     pp_endline "\x1b[32mGenerated Output Files:\x1b[0m" ;
