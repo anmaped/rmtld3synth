@@ -53,11 +53,24 @@
     text-align: left;
 }
 
+/* Spinner animation for icons */
 .spin {
     animation: spin 1s linear infinite;
-    font-size:20px;
-    color:#4287f5;
+    font-size: 20px;
+    color: #4287f5;
 }
+
+.nospin {
+    font-size: 20px;
+    color: #4287f5;
+}
+
 @keyframes spin {
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
+/* end spinner animation for icons */

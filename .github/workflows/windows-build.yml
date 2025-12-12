@@ -16,11 +16,7 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: 5
-
-      - name: Create opam switch 4.14.2
-        run: |
-          opam switch create 4.14.2
+          ocaml-compiler: 5.1
 
       - name: Add cygwin to PATH
         run: |
@@ -29,7 +25,7 @@ jobs:
 
       - name: Set-up opam package z3
         run: |
-          eval $(opam env --switch=4.14.2 --set-switch) #
+          eval $(opam env) #
           cd "C:\.opam" #
           cd ./repo/default/packages/z3 #
           mkdir -p z3.4.11.2 #
@@ -47,25 +43,22 @@ jobs:
 
       - name: Update opam packages
         run: |
-          (& opam env --switch=4.14.2 --set-switch) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
+          (& opam env) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
           cd C:\.opam\repo\default
           opam admin update-extrafiles
 
       - name: Build rmtld3synth
         run: |
-          (& opam env --switch=4.14.2 --set-switch) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
+          (& opam env) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
           opam install z3=4.11.2 --verbose
-          opam install arch-x86_64 host-arch-x86_64 ocaml-env-mingw64 --verbose
           opam pin --no-action add rmtld3synth.dev .
           opam install rmtld3synth --with-test --verbose
 
       - name: Set-up rmtld3synth bundle
         run: |
-          eval $(opam env --switch=4.14.2 --set-switch) #
+          eval $(opam env) #
           env #
           ls -l #
-          find / -name libgcc_s_sjlj-1.dll #
-          find /cygdrive/c/ -name libgcc_s_sjlj-1.dll #
           mkdir bundle #
           cp "$OPAM_SWITCH_PREFIX/bin/rmtld3synth.exe" ./bundle #
           cp "$OPAM_SWITCH_PREFIX/bin/libz3.dll" ./bundle #

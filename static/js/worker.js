@@ -75,6 +75,8 @@ function runWorker(cmd) {
       if (id == 0) { switchTab(0); }
       id = id + 1;
 
+      updateFileCount();
+
     }
   }
 

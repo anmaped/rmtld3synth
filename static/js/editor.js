@@ -21,9 +21,17 @@ inputEditor.session.on('change', ev => {
     if (ev.action === 'insert') {
         if (window.backendMode === false) {
             let cmd = convertInputFormat(inputEditor.getValue());
+            // set code-gen-icon to spinning
+            document.getElementById('code-gen-icon').classList.add('spin');
             runWorker(cmd);
+            // stop spinning after 1 seconds
+            setTimeout(() => {
+                document.getElementById('code-gen-icon').classList.remove('spin');
+            }, 1000);
         }
         else {
+            // set code-gen-icon to spinning
+            document.getElementById('code-gen-icon').classList.add('spin');
             // Handle backend mode logic here
             console.log("Backend mode is enabled; not running worker.");
             log(JSON.stringify({ input_dsl: inputEditor.getValue(), ocaml_language: true }))
@@ -79,6 +87,10 @@ inputEditor.session.on('change', ev => {
                     console.error('Error:', error);
                 });
 
+            // stop spinning after 1 seconds
+            setTimeout(() => {
+                document.getElementById('code-gen-icon').classList.remove('spin');
+            }, 1000);
 
         }
     }
