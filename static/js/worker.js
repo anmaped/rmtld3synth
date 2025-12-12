@@ -1,12 +1,34 @@
 
+/**
+ * Worker instance for handling background tasks.
+ * @type {Worker|undefined}
+ */
 var worker;
-function runWorker() {
+
+/**
+ * Executes a worker thread to process a command and handle file generation.
+ * 
+ * @param {string} cmd - The command string to be executed by the worker. Single quotes will be replaced with double quotes.
+ * 
+ * @description
+ * This function initializes and runs a Web Worker that processes the given command.
+ * It resets global variables related to file handling and sessions, creates a new Worker instance.
+ * The command string is URL-encoded and passed as a query parameter to the worker script.
+ * The function also sets up message and error handlers for the worker to manage output and file content.
+ * 
+ * @global {Worker} worker - The Web Worker instance
+ * 
+ * @requires Worker - Web Workers API
+ * @requires ace - Ace Editor library for code editing
+ * @requires clangformat - Function for formatting C/C++ code
+ */
+function runWorker(cmd) {
   lst_files = [];
   id = 0;
   sessions = [];
   document.getElementById('tab-bar').innerHTML = "";
 
-  var argv = encodeURIComponent("rmtld3synth --out-src \".\" " + inputEditor.getValue().replaceAll("'", "\""));
+  var argv = encodeURIComponent(cmd.replaceAll("'", "\"") + " --out-src \".\" ");
   if (worker) {
     worker.terminate();
   }
@@ -63,7 +85,32 @@ function runWorker() {
   }
 }
 
-
+/**
+ * Parses a command-line string into a JSON object representing flags and their values.
+ * 
+ * This function tokenizes the input string while respecting single and double quotes,
+ * then converts the tokens into a key-value object. Flag names with hyphens are converted
+ * to underscores, and numeric strings are automatically converted to numbers.
+ * 
+ * @param {string} cmd - The command-line string to parse (e.g., "--name value --flag")
+ * @returns {Object} An object where keys are flag names (without "--" prefix, with "-" replaced by "_")
+ *                   and values are either:
+ *                   - `true` for flags without values
+ *                   - strings or numbers for flags with single values
+ *                   - arrays for flags that appear multiple times
+ * 
+ * @example
+ * parseCommandLine('--name "John Doe" --age 30 --verbose')
+ * // Returns: { name: "John Doe", age: 30, verbose: true }
+ * 
+ * @example
+ * parseCommandLine('--file data.txt --file config.json')
+ * // Returns: { file: ["data.txt", "config.json"] }
+ * 
+ * @example
+ * parseCommandLine("--output-dir '/path/to/dir' --max-count 100")
+ * // Returns: { output_dir: "/path/to/dir", max_count: 100 }
+ */
 function parseCommandLine(cmd) {
   // 1. Tokenize respecting quotes, without unescaping
   const tokens = [];
@@ -137,6 +184,17 @@ function parseCommandLine(cmd) {
 
 
 
+/**
+ * Sets the input value in the editor based on the backend mode.
+ * 
+ * In backend mode, parses the command line input, converts it to formatted JSON,
+ * and selects the JSON input type radio button. In non-backend mode, sets the
+ * raw command string and selects the CLI input type radio button.
+ * 
+ * @param {string} cmd - The command line string to be set as input
+ * @throws {Error} Logs error to console if setting input fails
+ * @returns {void}
+ */
 function setInput(cmd) {
   try {
     if (window.backendMode) {
@@ -145,6 +203,7 @@ function setInput(cmd) {
       document.getElementById("inputTypeJson").checked = true;
     } else {
       inputEditor.setValue(cmd);
+      document.getElementById("inputTypeCli").checked = true;
     }
     console.log("Set Input:", window.schema);
   } catch (error) {
@@ -251,11 +310,28 @@ function isJsonString(str) {
   return true;
 }
 
-function updateInputConversion(value) {
+/**
+ * Converts input value based on the current backend mode.
+ * 
+ * If in backend mode and value is not JSON, converts CLI format to JSON.
+ * If not in backend mode and value is JSON, converts JSON to CLI format.
+ * Otherwise, returns the value unchanged.
+ * 
+ * @param {string} value - The input value to be converted
+ * @returns {string} The converted value in the appropriate format, or the original value if no conversion is needed
+ */
+function convertInputFormat(value) {
 
-  if (!isJsonString(value)) {
-    let x = convertCliToJson(inputEditor.getValue(), false);
-    return x;
+  if (backendMode) {
+    if (!isJsonString(value)) {
+      let x = convertCliToJson(inputEditor.getValue(), false);
+      return x;
+    }
+  } else {
+    if (isJsonString(value)) {
+      let y = convertJsonToCli(inputEditor.getValue(), false);
+      return y;
+    }
   }
 
   return value;

@@ -91,14 +91,14 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setInput(`--ocaml-language --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
+                                                            onclick="setInput(`rmtld3synth --ocaml-language --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
                                                             Monitor</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setInput(`--ocaml-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setInput(`rmtld3synth --ocaml-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
                                                             Duration Monitor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setInput(`--ocaml-language --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
+                                                            onclick="setInput(`rmtld3synth --ocaml-language --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
                                                             Invariant</button>
                                                     </div>
                                                 </div>
@@ -119,10 +119,10 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setInput(`--cpp11-language --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
+                                                            onclick="setInput(`rmtld3synth --cpp11-language --input-latexeq '(a \\rightarrow ((a \\lor b) \\until_{<10} c)) \\land \\int^{10} c < 4' --verbose 2`)">Simple
                                                             Monitor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setInput(`--cpp11-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setInput(`rmtld3synth --cpp11-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Simple
                                                             Duration Monitor</button>
                                                     </div>
                                                 </div>
@@ -142,7 +142,7 @@
                                                     data-bs-parent="#autopilotAccordion">
                                                     <div class="accordion-body">
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setInput(`--cpp11-language --input-sexp '(Or \n\
+                                                            onclick="setInput(`rmtld3synth --cpp11-language --input-sexp '(Or \n\
     (Not \n\
         (Or \n\
         (Not \n\
@@ -202,22 +202,22 @@
                                                         <!-- Buttons for commands -->
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setInput(`--smtlibv2-language --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
+                                                            onclick="setInput(`rmtld3synth --smtlibv2-language --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
                                                             Temporal</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setInput(`--smtlibv2-language --rec-unrolling 10 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
+                                                            onclick="setInput(`rmtld3synth --smtlibv2-language --rec-unrolling 10 --input-latexeq ' (a \\lor b) \\ \\until_{<10} \ c' --verbose 2`)">Simple
                                                             Temporal (recursively unrolled)</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setInput(`--smtlibv2-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Bounded
+                                                            onclick="setInput(`rmtld3synth --smtlibv2-language --input-latexeq '\\int^{9} c < 2' --verbose 2`)">Bounded
                                                             Duration</button>
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setInput(`--smtlibv2-language --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
+                                                            onclick="setInput(`rmtld3synth --smtlibv2-language --input-latexeq '\\always_{< 4} \\, a \\rightarrow \\eventually_{= 2} \\, b' --verbose 2`)">Bounded
                                                             Invariant</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setInput(`--smtlibv2-language --input-latexeq '\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2' --verbose 2`)">Simple
+                                                            onclick="setInput(`rmtld3synth --smtlibv2-language --input-latexeq '\\left( (a \\lor b) \\ \\until_{<10} \\, c \\right) \\land \\int^{9} c < 2' --verbose 2`)">Simple
                                                             Temporal with Bounded Duration</button>
                                                     </div>
                                                 </div>
@@ -238,14 +238,14 @@
                                                     <div class="accordion-body">
                                                         <button
                                                             class="btn btn-sm btn-outline-primary w-100 text-start mb-1"
-                                                            onclick="setInput(`--smtlibv2-language --input-rmdsl '\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}' --verbose 2`)">Simple
+                                                            onclick="setInput(`rmtld3synth --smtlibv2-language --input-rmdsl '\\rm{core0}{ \\tk{ts1}{5,2} }{10,10}' --verbose 2`)">Simple
                                                             Single processor</button>
                                                         <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setInput(`--smtlibv2-language --input-rmdsl '\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}' --verbose 2`)">Advanced
+                                                            onclick="setInput(`rmtld3synth --smtlibv2-language --input-rmdsl '\\rm{RMA}{ \\tk{ts1}{10,8} \\succ \\tk{ts2}{5,20} \\bowtie \\tk{ts3}{7,27} }{20,20} \\mid \\\\ & \\rm{RMC}{\\tk{ts1}{4,33}}{50,50}' --verbose 2`)">Advanced
                                                             Single processor</button>
                                                         <!--
                                                             <button class="btn btn-sm btn-outline-primary w-100 text-start"
-                                                            onclick="setInput(`--smtlibv2-language --input-rmdsl '\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1' --verbose 2`)">Single
+                                                            onclick="setInput(`rmtld3synth --smtlibv2-language --input-rmdsl '\\rm{core0}{ \\left( \\tk{ts1}{10,8} \\succ \\tk{ts2}{20,5} \\right) \\ \\bowtie \\ \\tk{ts3}{27,7} }{0,0} \\overset{c}{\\mapsto} \\ core0 \\ \\parallel \\ \\rm{core1}{ \\tk{ts4}{33,4} \\succ \\tk{ts5}{6,2} }{0,0} \\overset{c}{\\mapsto} \\ core1' --verbose 2`)">Single
                                                             Multi processor</button>
                                                         -->
                                                     </div>
@@ -337,7 +337,7 @@
                         <h2 class="accordion-header">
                             <button class="accordion-button" type="button" data-bs-toggle="collapse"
                                 data-bs-target="#codecollapse">
-                                <i class="bi bi-file-earmark-code me-2"></i> Code Generation
+                                <i class="bi bi-file-earmark-code me-2 spin"></i> Code Generation
                                 <span class="badge bg-info text-dark ms-2" id="file-count-badge">
                                     <i class="bi bi-file-earmark-code"></i> <span id="file-count">0</span> files
                                 </span>
@@ -642,7 +642,7 @@
 
             const buttonsContainer = document.getElementById('entry-container');
             const backendUrl = ""; // Your backend main URL
-            const backendHealthCheck = backendUrl + "/api/options"; // Lightweight endpoint to check availability
+            const backendHealthCheck = backendUrl + "api/options"; // Lightweight endpoint to check availability
 
             try {
                 const response = await fetch(backendHealthCheck, { method: 'GET' });

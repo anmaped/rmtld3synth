@@ -55,6 +55,7 @@ jobs:
         run: |
           (& opam env --switch=4.14.2 --set-switch) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
           opam install z3=4.11.2 --verbose
+          opam install arch-x86_64 host-arch-x86_64 ocaml-env-mingw64 --verbose
           opam pin --no-action add rmtld3synth.dev .
           opam install rmtld3synth --with-test --verbose
 

@@ -11,9 +11,7 @@
     (flags
      --disable=genprim
      --debug-info
-     +base/runtime.js
-     +zarith_stubs_js/runtime.js
-     +zarith_stubs_js/biginteger.js)
+    )
   )
 )
 

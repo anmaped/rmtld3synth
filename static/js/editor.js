@@ -20,19 +20,20 @@ inputEditor.session.on('change', ev => {
     console.log("Editor change action: " + ev.action);
     if (ev.action === 'insert') {
         if (window.backendMode === false) {
-            runWorker();
+            let cmd = convertInputFormat(inputEditor.getValue());
+            runWorker(cmd);
         }
         else {
             // Handle backend mode logic here
             console.log("Backend mode is enabled; not running worker.");
             log(JSON.stringify({ input_dsl: inputEditor.getValue(), ocaml_language: true }))
             // do a post request to the server with the inputEditor content
-            fetch('/api/request', {
+            fetch('api/request', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: updateInputConversion(inputEditor.getValue())
+                body: convertInputFormat(inputEditor.getValue())
             })
                 .then(response => response.json())
                 .then(data => {
@@ -42,7 +43,7 @@ inputEditor.session.on('change', ev => {
 
                     // check the request every 2 seconds until we get a response with status 'completed'
                     const intervalId = setInterval(() => {
-                        fetch('/api/request/' + data.hash_id)
+                        fetch('api/request/' + data.hash_id)
                             .then(response => response.json())
                             .then(data => {
                                 console.log('Status response:', data);

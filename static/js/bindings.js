@@ -42,4 +42,10 @@ console.log = function (...args) {
   self.postMessage("[Worker] " + args.join(" ") + "\n");
 };
 
-importScripts("../bundles/rmtld3synth.js")
+// Check if rmtld3synth.js exists, fallback to rmtld3synth.bc.js
+try {
+  importScripts("../bundles/rmtld3synth.js");
+} catch (e) {
+  console.log("Failed to load rmtld3synth.js, trying rmtld3synth.bc.js");
+  importScripts("../bundles/rmtld3synth.bc.js");
+}
