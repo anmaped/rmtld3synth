@@ -31,10 +31,10 @@ function typeLine(text, colorClass = "", speed = 1) {
         logConsole.appendChild(line);
         let i = 0;
         function type() {
-            line.innerHTML = `<span class="${colorClass}">${text.slice(0,i)}</span><span class="cursor"></span>`;
+            line.innerHTML = `<span class="${colorClass}">${text.slice(0, i)}</span><span class="cursor"></span>`;
             logConsole.scrollTop = logConsole.scrollHeight;
-            if(i<text.length){i++; setTimeout(type,speed);} 
-            else {line.innerHTML = `<span class="${colorClass}">${text}</span>`; resolve();}
+            if (i < text.length) { i++; setTimeout(type, speed); }
+            else { line.innerHTML = `<span class="${colorClass}">${text}</span>`; resolve(); }
         }
         type();
     });
@@ -48,7 +48,7 @@ function updateLineCount() {
 }
 
 
-async function terminalLog(text, colorClass = "") { await typeLine(text,colorClass); updateLineCount(); }
+async function terminalLog(text, colorClass = "") { await typeLine(text, colorClass); updateLineCount(); }
 
 
 // Connection status badge
@@ -79,3 +79,29 @@ function setConnectionStatus(connected) {
 }
 
 setConnectionStatus(false); // initially disconnected
+
+// Accordion auto-height adjustment
+// This ensures the accordion's height is always correct based on its content
+// It handles dynamic content changes, animations, and window resizing
+// It also ensures the body padding is adjusted to prevent content overlap
+// This is necessary for the accordion to work properly with Bootstrap's collapse feature
+const accordion = document.getElementById('logConsoleAccordion');
+
+function updateBodyPadding() {
+    const rect = accordion.getBoundingClientRect();
+    document.body.style.paddingBottom = `${rect.height}px`;
+}
+
+// Bootstrap collapse events
+accordion.addEventListener('shown.bs.collapse', updateBodyPadding);
+accordion.addEventListener('hidden.bs.collapse', updateBodyPadding);
+
+// Window resize
+window.addEventListener('resize', updateBodyPadding);
+
+// Observe live size changes (animation, content growth, badges, etc.)
+const resizeObserver = new ResizeObserver(updateBodyPadding);
+resizeObserver.observe(accordion);
+
+// Initial
+updateBodyPadding();

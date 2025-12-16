@@ -74,3 +74,8 @@
     }
 }
 /* end spinner animation for icons */
+
+/* Accordion auto-height adjustment transition */
+body {
+  transition: padding-bottom 0.2s ease;
+}

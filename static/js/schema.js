@@ -122,7 +122,7 @@ function createField(name, def) {
         textarea.name = name;
         textarea.id = name;
         textarea.rows = 3;
-        textarea.placeholder = "Enter values, one per line or comma-separated";
+        textarea.placeholder = "Enter expressions, one per line or comma-separated";
         wrapper.appendChild(label);
         wrapper.appendChild(textarea);
         wrapper.appendChild(errorDiv);
@@ -310,7 +310,15 @@ function updateOutput() {
         const def = window.schema.properties[key];
         if (def && (def.type === "array" || (def.oneOf && def.oneOf.some(o => o.type === "array")))) {
             if (typeof data[key] === "string" && data[key].trim()) {
-                data[key] = data[key].split(/[,\n]/).map(v => v.trim()).filter(v => v !== "");
+                // Split by newlines first, then by commas not inside brackets
+                const lines = data[key].split(/\n/).map(v => v.trim()).filter(v => v !== "");
+                const items = [];
+                lines.forEach(line => {
+                    // Split by commas, but keep commas inside brackets together
+                    const parts = line.split(/,(?![^\[]*\])/);
+                    items.push(...parts.map(v => v.trim()).filter(v => v !== ""));
+                });
+                data[key] = items;
             }
         }
     });
