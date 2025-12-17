@@ -51,8 +51,7 @@ let synth_sat_problem fmt =
             List.fold_left
               (fun (cnt, a) b ->
                 let cnte = cnt +. 1. in
-                (cnte, a ^ " (\"" ^ b ^ "\",(" ^ string_of_float cnt ^ ")); ")
-                )
+                (cnte, a ^ " (\"" ^ b ^ "\",(" ^ string_of_float cnt ^ ")); ") )
               (0., "") scheduler_trace
           in
           print_endline trc_str
@@ -76,7 +75,9 @@ let synth_sat_problem fmt =
 (** rmtld3synth's command line interface *)
 let _ =
   Options.default_settings Options.helper ;
-  try Options.parse () with Exit -> exit 1
+  try Options.parse () with
+  | Exit -> exit 1
+  | Failure msg -> Printf.eprintf "%s%!" msg ; exit 1
 ;;
 
 (* version information *)

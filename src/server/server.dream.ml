@@ -15,9 +15,14 @@ let run_cmd fmt body =
   | Ok () ->
       (* set options from json *)
       let json = Yojson.Safe.from_string body in
-      Options.apply_options_from_assoc_list
-        (json |> Yojson.Safe.Util.to_assoc)
-        job_helper ;
+      ( try
+          Options.apply_options_from_assoc_list
+            (json |> Yojson.Safe.Util.to_assoc)
+            job_helper
+        with Failure msg ->
+          Format.fprintf fmt "Error: %s" (String.escaped msg) ;
+          Dream.log "apply_options_from_assoc_list failed: %s" msg ;
+          failwith ("Failed to apply options.") ) ;
       Dream.log "Settings after applying JSON options: %s"
         (Helper.get_json_string_of_settings job_helper) ;
       (* Check if version flag is set to display version info, otherwise
@@ -43,8 +48,10 @@ let run_cmd fmt body =
           Synthesis.Spark2014.synth_spark2014 fmt Conv_spark2014.synth
             job_helper
         else if Options.smtlibv2_lang job_helper then
-            let module Smtlib = Synthesis.Standard.Translate (Synthesis.Smtlib2) in
-          let lst = Synthesis.Smtlib2.synth_smtlib fmt Smtlib.synth job_helper in
+          let module Smtlib = Synthesis.Standard.Translate (Synthesis.Smtlib2) in
+          let lst =
+            Synthesis.Smtlib2.synth_smtlib fmt Smtlib.synth job_helper
+          in
           (* convert string list to multipart message *)
           Helper.to_multipart_message fmt lst
         else

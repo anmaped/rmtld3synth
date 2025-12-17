@@ -81,8 +81,8 @@ let fail text buffer (checkpoint : _ I.checkpoint) =
   (* Expand away the $i keywords that might appear in the message. *)
   let message = E.expand (get text checkpoint) message in
   (* Show these three components. *)
-  eprintf "%s%s%s%!" location indication message ;
-  raise Exit
+  (* eprintf "%s%s%s%!" location indication message ; *)
+  raise (Failure (location^indication^message))
 
 (* [check filename text] runs the parser. *)
 

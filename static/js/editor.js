@@ -71,10 +71,23 @@ inputEditor.session.on('change', ev => {
 
                                     // Fill the text editor with the received files
                                     fill_text_editor(files);
+
+                                    showFloatingAlert("Code generation completed successfully!", "success", 8000);
                                 }
                                 else if (data.status === 'error') {
                                     clearInterval(intervalId);
                                     console.error('Error processing request on server.');
+                                    console.error('Error details:', data.result);
+
+                                    // data.result may contain vt100 escape sequences, can you convert them to plain text with color or underline
+
+                                    let errorMessage = data.result;
+
+                                    showFloatingAlert("Error processing request on server.", "danger", 15000, ansiOctalToDom(errorMessage));
+
+                                    log("Error processing request on server:\n" + ansiOctalToDom(errorMessage).textContent);
+
+                                    clearEditorToDefault();
                                 }
                             })
                             .catch((error) => {
@@ -122,11 +135,6 @@ sessions = [
     ace.createEditSession("Run the tool first to see generated code here\nChoose an example on the left to get started.", "ace/mode/text"),
 ];
 
-// Store tab names corresponding to each session
-const sessionNames = [
-    "output.txt"
-];
-
 // Function to switch between tabs
 function switchTab(tabName) {
     console.log(tabName);
@@ -162,6 +170,69 @@ function updateFileCount() {
 // Initialize with tab1
 switchTab('0');
 updateFileCount();
+
+
+// floating alerts
+(function initFloatingAlerts() {
+    // Create container once
+    if (!document.getElementById("floating-alert-container")) {
+        const container = document.createElement("div");
+        container.id = "floating-alert-container";
+        document.body.appendChild(container);
+    }
+})();
+
+// Show a floating alert message
+function showFloatingAlert(message, type = "danger", timeout = 4000, object = null) {
+    const container = document.getElementById("floating-alert-container");
+    const template = document.getElementById("floating-alert-template");
+
+    if (!container || !template) return;
+
+    // Clone template
+    const alert = template.cloneNode(true);
+    alert.removeAttribute("id");
+
+    // Set alert type
+    alert.classList.remove("alert-danger", "d-none", "fade");
+    alert.classList.add(`alert-${type}`, "floating-alert", "show");
+
+    // Set message and append object if provided
+    const alertMsg = alert.querySelector(".alert-msg");
+    alertMsg.textContent = message;
+
+    if (object) {
+        alertMsg.appendChild(document.createElement("br"));
+        alertMsg.appendChild(object);
+        alertMsg.innerHTML = alertMsg.innerHTML.replace(/\\n/g, "<br>");
+    }
+
+    // Close button
+    const closeBtn = alert.querySelector(".btn-close");
+    closeBtn.addEventListener("click", () => alert.remove());
+
+    // Add to stack
+    container.appendChild(alert);
+
+    // Auto-remove
+    if (timeout) {
+        setTimeout(() => alert.remove(), timeout);
+    }
+}
+
+// Clear editor to default state
+function clearEditorToDefault() {
+    sessions = [
+        ace.createEditSession("Run the tool first to see generated code here\nChoose an example on the left to get started.", "ace/mode/text"),
+    ];
+    document.getElementById('tab-bar').innerHTML = ""; // clear previous tabs
+    // reset tab id
+    let id = 0;
+    const tabHTML = `<div class="tab active" data-tab="tab${id}" onclick="switchTab('${id}')">No generated files yet</div>`;
+    document.getElementById('tab-bar').innerHTML += tabHTML;
+    switchTab(0);
+    updateFileCount();
+}
 
 
 // Server REST API multipart file handling
@@ -322,4 +393,87 @@ function fill_text_editor(files) {
         updateFileCount();
 
     }
+}
+
+
+function ansiOctalToDom(input) {
+    if (!input) return document.createTextNode("");
+
+    const ANSI_COLORS = {
+        "30": "black",
+        "31": "red",
+        "32": "green",
+        "33": "yellow",
+        "34": "blue",
+        "35": "magenta",
+        "36": "cyan",
+        "37": "white",
+        "90": "gray",
+        "91": "lightcoral",
+        "92": "lightgreen",
+        "93": "lightyellow",
+        "94": "lightblue",
+        "95": "plum",
+        "96": "lightcyan",
+        "97": "white"
+    };
+
+    const container = document.createDocumentFragment();
+    const ansiRegex = /\\027\[([0-9:;]*)m/g;
+
+    let lastIndex = 0;
+    let match;
+    let currentStyles = {};
+
+    const pushTextNode = (text) => {
+        if (!text) return;
+        const span = document.createElement("span");
+        // Apply current styles
+        Object.assign(span.style, currentStyles);
+        span.textContent = text;
+        container.appendChild(span);
+    };
+
+    while ((match = ansiRegex.exec(input)) !== null) {
+        // Text before this ANSI code
+        pushTextNode(input.substring(lastIndex, match.index));
+
+        const codesRaw = match[1].split(/[;:]/).filter(s => s !== "");
+        const codes = codesRaw.map(Number).filter(n => !isNaN(n));
+
+        codes.forEach(code => {
+            switch (code) {
+                case 0: // reset
+                    currentStyles = {};
+                    break;
+                case 1: // bold
+                    currentStyles.fontWeight = "bold";
+                    break;
+                case 3: // italic
+                    currentStyles.fontStyle = "italic";
+                    break;
+                case 4: // underline
+                    currentStyles.textDecoration = "underline";
+                    break;
+                case 21: // bold off
+                    delete currentStyles.fontWeight;
+                    break;
+                case 24: // underline off
+                    delete currentStyles.textDecoration;
+                    break;
+                default:
+                    if (ANSI_COLORS[code]) {
+                        currentStyles.color = ANSI_COLORS[code];
+                    }
+                // ignore unknown codes like 58:2 safely
+            }
+        });
+
+        lastIndex = ansiRegex.lastIndex;
+    }
+
+    // Remaining text
+    pushTextNode(input.substring(lastIndex));
+
+    return container;
 }

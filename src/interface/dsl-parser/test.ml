@@ -17,8 +17,12 @@ let print_kind = function
   | Less (t, u) -> "[<" ^ print_time t ^ print_u u ^ "]"
   | Equal (t, u) -> "[=" ^ print_time t ^ print_u u ^ "]"
   | LessOrEqual (t, u) -> "[<=" ^ print_time t ^ print_u u ^ "]"
-  | RangeC ((t0,u0),(t1,u1)) -> "[ [" ^ print_time t0 ^ print_u u0 ^ "," ^ print_time t1 ^ print_u u1 ^ "] ]"
-  | RangeO ((t0,u0),(t1,u1)) -> "[ [" ^ print_time t0 ^ print_u u0 ^ "," ^ print_time t1 ^ print_u u1 ^ "[ ]"
+  | RangeC ((t0, u0), (t1, u1)) ->
+      "[ [" ^ print_time t0 ^ print_u u0 ^ "," ^ print_time t1 ^ print_u u1
+      ^ "] ]"
+  | RangeO ((t0, u0), (t1, u1)) ->
+      "[ [" ^ print_time t0 ^ print_u u0 ^ "," ^ print_time t1 ^ print_u u1
+      ^ "[ ]"
 
 let rec print_tm = function
   | Constant x -> string_of_float x
@@ -75,5 +79,6 @@ let parse s =
 (* função Main *)
 let () =
   let s = read_line () in
-  try parse s
-  with Exit -> exit 1
+  try parse s with
+  | Exit -> exit 1
+  | Failure msg -> Printf.eprintf "%s%!" msg ; exit 1

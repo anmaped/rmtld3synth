@@ -433,14 +433,19 @@
             <h2 class="accordion-header" id="headingLogConsole" style="cursor: ns-resize;">
                 <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse"
                     data-bs-target="#collapseLogConsole" aria-expanded="false" aria-controls="collapseLogConsole">
-                    <i class="bi bi-terminal me-2"></i> Console
 
-                    <!-- Line count badge -->
-                    <span class="badge bg-secondary ms-auto me-2" id="log-console-line-count">no line</span>
+                    <div class="d-flex align-items-center w-100">
+                        <i class="bi bi-terminal me-2"></i>
+                        <span>Console</span>
 
-                    <!-- Connection status badge -->
-                    <span id="log-connection-status" class="badge bg-danger me-2 ms-auto d-none">Disconnected</span>
+                        <!-- Line count badge -->
+                        <span id="log-console-line-count" class="badge bg-secondary ms-2">no line</span>
+
+                        <!-- Connection status badge -->
+                        <span id="log-connection-status" class="badge me-2 ms-auto d-none">Disconnected</span>
+                    </div>
                 </button>
+
             </h2>
             <div id="collapseLogConsole" class="accordion-collapse collapse" aria-labelledby="headingLogConsole"
                 data-bs-parent="#logConsoleAccordion">
@@ -452,6 +457,25 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Floating alert template -->
+    <div id="floating-alert-template"
+        class="alert alert-danger alert-dismissible fade py-2 px-3 d-none shadow-sm rounded" role="alert">
+        <div class="d-flex">
+            <!-- Icon -->
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5 flex-shrink-0"></i>
+
+            <!-- Text -->
+            <div class="flex-grow-1 me-3">
+                <span class="alert-msg"></span>
+            </div>
+
+            <!-- Close button -->
+            <button type="button" class="btn-close btn-close-sm flex-shrink-0" aria-label="Close"></button>
+        </div>
+    </div>
+
 
     <!-- Tooltip script -->
     <script>
