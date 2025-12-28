@@ -28,7 +28,7 @@
         const log = (...msg) => {
             //document.getElementById("log").innerText += msg.join(" ") + "\n";
             console.log(msg.join(" "));
-            //csEditor.setValue(csEditor.getValue() + msg.join(" ") + "\n", 1);
+
             if (typeof terminalLog !== 'undefined' && terminalLog) {
                 terminalLog(msg.join(" "));
             }
@@ -70,7 +70,7 @@
                                 <h2 class="accordion-header" id="heading1">
                                     <button class="accordion-button" type="button" data-bs-toggle="collapse"
                                         data-bs-target="#collapse1">
-                                        Example Demonstrations
+                                        Monitor Demonstrations
                                     </button>
                                 </h2>
                                 <div id="collapse1" class="accordion-collapse collapse show"
@@ -181,7 +181,7 @@
                                 <h2 class="accordion-header" id="heading2">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                         data-bs-target="#collapse2">
-                                        SMT-Lib Synthesis
+                                        SMT-Lib Demonstrations
                                     </button>
                                 </h2>
                                 <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#menuAccordion">
@@ -304,12 +304,12 @@
                             <div class="accordion" id="configuration">
                                 <div class="accordion-item">
                                     <h2 class="accordion-header">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#configcollapse">
+                                        <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#configcollapse">
                                             <i class="bi bi-gear-fill me-2"></i> Configuration
                                         </button>
                                     </h2>
-                                    <div id="configcollapse" class="accordion-collapse collapse show"
+                                    <div id="configcollapse" class="accordion-collapse collapse"
                                         data-bs-parent="#configuration">
                                         <div class="accordion-body">
 
@@ -431,8 +431,7 @@
     <div class="accordion fixed-bottom shadow-lg" id="logConsoleAccordion" style="z-index: 1030;">
         <div class="accordion-item border-0 rounded-0">
             <h2 class="accordion-header" id="headingLogConsole" style="cursor: ns-resize;">
-                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#collapseLogConsole" aria-expanded="false" aria-controls="collapseLogConsole">
+                <button id="toggleConsoleBtn" class="accordion-button collapsed py-2" type="button">
 
                     <div class="d-flex align-items-center w-100">
                         <i class="bi bi-terminal me-2"></i>
@@ -451,7 +450,7 @@
                 data-bs-parent="#logConsoleAccordion">
                 <div class="accordion-body p-0 bg-dark">
                     <div id="log-console" class="terminal-body p-3 font-monospace text-light"
-                        style="height: 200px; overflow-y: auto; background-color: #1e1e1e; font-size: 0.875rem; line-height: 1.5;">
+                        style="overflow-y: auto; background-color: #1e1e1e; font-size: 0.875rem; line-height: 1.5;">
                     </div>
                 </div>
             </div>
@@ -698,7 +697,7 @@
                     backendButton.href = '#';
                     backendButton.className = 'btn btn-success btn-lg';
                     backendButton.setAttribute('data-bs-dismiss', 'modal');
-                    backendButton.innerHTML = '<i class="bi bi-cloud"></i> Server-Backed Mode';
+                    backendButton.innerHTML = '<i class="bi bi-cloud"></i> Server-Backend Mode';
                     backendButton.title = 'Enhanced performance with server-side processing';
                     buttonGroup.appendChild(backendButton);
 
@@ -707,7 +706,7 @@
                     // Add feature comparison
                     const helpText = document.createElement('p');
                     helpText.className = 'small text-muted mt-3 mb-0';
-                    helpText.innerHTML = '<strong>Browser-Only:</strong> Works offline, and runs locally via JavaScript or WebAssembly.<br><strong>Server-Backed:</strong> Supports constraint solving and simulations with server resources.';
+                    helpText.innerHTML = '<strong>Browser-Only:</strong> Works offline, and runs locally via JavaScript or WebAssembly.<br><strong>Server-Backend:</strong> Supports constraint solving and simulations with server resources.';
                     buttonsContainer.appendChild(helpText);
 
                     // Set backend mode
@@ -727,7 +726,7 @@
             }
 
             if (enabled) {
-                log("Change to server-Backed Mode.");
+                log("Change to server-Backend Mode.");
                 window.backendMode = true;
             } else {
                 log("Browser-Only Mode enabled.");
