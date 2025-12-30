@@ -1,7 +1,7 @@
 ###############################
 # Build stage
 ###############################
-FROM ocaml/opam:debian-12-ocaml-5.1 AS build
+FROM ocaml/opam:debian-13-ocaml-5.1 AS build
 
 USER opam
 WORKDIR /home/opam/app
@@ -21,10 +21,10 @@ RUN opam install dune dream lwt jsonschema -y
 # Build optimized executable
 RUN eval $(opam env) && ./configure && dune build --profile release src/server/server.exe
 
-# Copy the executable to a predictable location
+# Copy the executable to the build output folder
 RUN cp _build/default/src/server/server.exe /home/opam/app/server
 
-# copy libz3.so to the build output
+# copy libz3.so to the build output folder
 RUN cp $(opam var lib)/stublibs/libz3.so /home/opam/app/libz3.so
 
 # Bundles folder for static files (e.g., wasm binaries)
@@ -44,7 +44,7 @@ RUN cp _build/default/src/rmtld3synth.bc.js /home/opam/app/static/bundles
 ###############################
 # Runtime stage
 ###############################
-FROM debian:12-slim AS runner
+FROM debian:13-slim AS runner
 
 # Install minimal needed runtime libs
 RUN apt-get update && apt-get install -y libssl3 libev-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
