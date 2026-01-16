@@ -103,6 +103,7 @@ atom:
 | a = term GREATER b = term { GreaterThan(a,b) }
 | a = term LESSOREQUAL b = term { GreaterOrEqualThan(a,b) }
 | a = term GREATEROREQUAL b = term { GreaterThan(a,b) }
+| a = term EQUAL b = term { EqualTo(a,b) }
 | TRUE { True }
 | FALSE { False }
 | c = NAME { Prop c }

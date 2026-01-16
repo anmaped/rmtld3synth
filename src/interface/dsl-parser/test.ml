@@ -46,6 +46,7 @@ and print_fm = function
   | LessOrEqualThan (a, b) -> print_tm a ^ "<=" ^ print_tm b
   | GreaterThan (a, b) -> print_tm b ^ "<" ^ print_tm a
   | GreaterOrEqualThan (a, b) -> print_tm b ^ "<=" ^ print_tm a
+  | EqualTo (a, b) -> print_tm a ^ "=" ^ print_tm b
   | Until (k, a, b) ->
       "(" ^ print_fm a ^ " U" ^ print_kind k ^ " " ^ print_fm b ^ ")"
   | Since (k, a, b) ->

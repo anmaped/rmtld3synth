@@ -1301,3 +1301,33 @@ main: PAST EVENTUALLY FALSE RPAR
 ##
 
 Ill-formed expression. Try "past eventually" <F> "within" <C>
+
+main: NUM EQUAL WITHIN
+##
+## Ends in an error in state: 39.
+##
+## atom -> term EQUAL . term [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term EQUAL
+##
+
+Ill-formed expression. Try <T> "=" <T>
+
+main: NUM EQUAL NUM TWODOTS
+##
+## Ends in an error in state: 40.
+##
+## atom -> term EQUAL term . [ WITHIN UNTIL SINCE RPAR OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . PLUS TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES LPAR term RPAR [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES NUM [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+## term -> term . TIMES TIME [ WITHIN UNTIL TIMES SINCE RPAR PLUS OR ON IN IMPLIES EOF AND ]
+##
+## The known suffix of the stack is as follows:
+## term EQUAL term
+##
+
+Ill-formed expression. Try <T> "=" <T>

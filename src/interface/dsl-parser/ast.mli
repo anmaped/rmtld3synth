@@ -29,6 +29,7 @@ type fm =
   | LessOrEqualThan of tm * tm
   | GreaterThan of tm * tm
   | GreaterOrEqualThan of tm * tm
+  | EqualTo of tm * tm
   | Next of kind * fm (* shorthand *)
   | Prev of kind * fm (* shorthand *)
   | Fall of kind * fm (* shorthand *)

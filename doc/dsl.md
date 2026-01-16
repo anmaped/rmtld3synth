@@ -14,6 +14,7 @@ The BNF representation of the domain specific language is provided below:
 | <T> ">" <T>                        (* greater than *)
 | <T> "<=" <T>                       (* less or equal than *)
 | <T> ">=" <T>                       (* greater or equal than *)
+| <T> "=" <T>                        (* equal to *)
 | <F> "until" <F> "within" <C>       (* until operator *)
 | <F> "since" <F> "within" <C>       (* since operator *)
 | "always" <F> "within" <C>          (* always shorthand *)
@@ -125,3 +126,9 @@ The BNF representation of the domain specific language is provided below:
         ```
         a until b within range [10ns, 1s]
         ```.
+
+6) (since version 0.8) Term equality is supported. For example:
+    ```
+    duration of p in 0 .. 2 = 10
+    ```
+    compares the duration of proposition `p` within the interval [0, 2] to the value 10.

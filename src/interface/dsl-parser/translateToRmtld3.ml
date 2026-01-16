@@ -54,6 +54,7 @@ and conv_fm : fm -> Rmtld3.fm = function
   | LessOrEqualThan (a, b) -> less_or_equal (conv_tm a) (conv_tm b)
   | GreaterThan (a, b) -> greater (conv_tm a) (conv_tm b)
   | GreaterOrEqualThan (a, b) -> greater_or_equal (conv_tm a) (conv_tm b)
+  | EqualTo (a, b) -> equal (conv_tm a) (conv_tm b)
   | Until ((Less (_, _) as k), a, b) ->
       Until (conv_kind k, conv_fm a, conv_fm b)
   | Until ((Equal (_, _) as k), a, b) ->
