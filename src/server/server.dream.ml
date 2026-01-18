@@ -1,6 +1,6 @@
 (** Run generation command with JSON input.
     Validates the input against the schema, applies options, and executes code generation. *)
-let run_cmd fmt body =
+let run_rmtld3synth fmt body =
   let job_helper = Helper.mk_helper () in
   (* default settings job_helper *)
   Options.default_settings job_helper ;
@@ -123,20 +123,20 @@ let options () =
 open Lwt.Infix
 
 (** Hash table storing currently pending requests: request_id -> (timestamp, target) *)
-let pending_requests = Hashtbl.create 100
+let pending_requests = Atomic.make (Hashtbl.create 100)
 
 (** Hash table storing completed requests: hash_id -> (status, result, timestamp) *)
-let completed_requests = Hashtbl.create 100
+let completed_requests = Atomic.make (Hashtbl.create 100)
 
 (** Hash table storing cancellable request tasks: hash_id -> Lwt.t *)
-let cancellable_requests = Hashtbl.create 100
+let cancellable_requests = Atomic.make (Hashtbl.create 100)
 
 (** Clean up completed requests older than one day. *)
 let cleanup_old_requests () =
   let now = Unix.gettimeofday () in
   let one_day = 86400.0 in
   (* seconds in a day *)
-  Hashtbl.filter_map_inplace
+  Ahashtable.filter_map_inplace_atomic
     (fun _hash_id (status, result, timestamp) ->
       if now -. timestamp > one_day then None
       else Some (status, result, timestamp) )
@@ -158,15 +158,15 @@ let request_tracking handler request =
   let timestamp = Unix.gettimeofday () in
   let target = Dream.target request in
   let request_id = target ^ "_" ^ string_of_float timestamp in
-  Hashtbl.add pending_requests request_id (timestamp, target) ;
-  let active_count = Hashtbl.length pending_requests in
+  Ahashtable.add_atomic pending_requests request_id (timestamp, target) ;
+  let active_count = Ahashtable.length_atomic pending_requests in
   Dream.log "Request %s started: %s (total active: %d)" request_id target
     active_count ;
   Lwt.finalize
-    (fun () -> handler request)
+    (fun () -> Lwt_preemptive.detach (fun () -> handler request) ())
     (fun () ->
-      Hashtbl.remove pending_requests request_id ;
-      let remaining = Hashtbl.length pending_requests in
+      Ahashtable.remove_atomic pending_requests request_id ;
+      let remaining = Ahashtable.length_atomic pending_requests in
       Dream.log "Request %s completed: %s (remaining: %d)" request_id target
         remaining ;
       Lwt.return_unit )
@@ -181,11 +181,11 @@ let iso8601 t =
 (** API endpoints for request control: submit, query, and cancel requests. *)
 let request_control () =
   [ Dream.get "/api/requests/active" (fun _request ->
-        let active_count = Hashtbl.length pending_requests in
+        let active_count = Ahashtable.length_atomic pending_requests in
         Dream.json (Printf.sprintf {|{"active_requests":%d}|} active_count) )
   ; Dream.get "/api/requests/pending" (fun _request ->
         let pending =
-          Hashtbl.fold
+          Ahashtable.fold_atomic
             (fun id (timestamp, target) acc ->
               `Assoc
                 [ ("id", `String id)
@@ -197,7 +197,7 @@ let request_control () =
         Dream.json (Yojson.Basic.to_string (`List pending)) )
   ; Dream.get "/api/request/:hash_id" (fun request ->
         let hash_id = Dream.param request "hash_id" in
-        match Hashtbl.find_opt completed_requests hash_id with
+        match Ahashtable.find_opt_atomic completed_requests hash_id with
         | Some (status, result, timestamp) ->
             let json =
               `Assoc
@@ -211,12 +211,12 @@ let request_control () =
               (Printf.sprintf {|{"status":"not_found","result":""}|}) )
   ; Dream.delete "/api/request/:hash_id" (fun request ->
         let hash_id = Dream.param request "hash_id" in
-        match Hashtbl.find_opt cancellable_requests hash_id with
+        match Ahashtable.find_opt_atomic cancellable_requests hash_id with
         | Some task ->
             Lwt.cancel task ;
-            Hashtbl.remove cancellable_requests hash_id ;
+            Ahashtable.remove_atomic cancellable_requests hash_id ;
             let timestamp = Unix.gettimeofday () in
-            Hashtbl.replace completed_requests hash_id
+            Ahashtable.replace_atomic completed_requests hash_id
               ("cancelled", "", timestamp) ;
             Dream.json
               (Printf.sprintf {|{"status":"cancelled","hash_id":"%s"}|}
@@ -233,18 +233,17 @@ let request_control () =
             (Digest.string (body ^ string_of_float (Unix.gettimeofday ())))
         in
         let timestamp = Unix.gettimeofday () in
-        Hashtbl.add completed_requests hash_id ("pending", "", timestamp) ;
+        Ahashtable.add_atomic completed_requests hash_id ("pending", "", timestamp) ;
         let task =
           request_tracking
             (fun _req ->
               (let buf = Buffer.create 1024 in
                let fmt = Format.formatter_of_buffer buf in
                try
-                 run_cmd fmt body ;
+                 run_rmtld3synth fmt body ;
                  Format.pp_print_flush fmt () ;
                  let result = Buffer.contents buf in
-                 (*Lwt_unix.sleep 60.0 >>= fun () ->*)
-                 Hashtbl.replace completed_requests hash_id
+                 Ahashtable.replace_atomic completed_requests hash_id
                    ("completed", result, timestamp)
                with e ->
                  Format.pp_print_flush fmt () ;
@@ -252,15 +251,15 @@ let request_control () =
                  let backtrace = Printexc.get_backtrace () in
                  Dream.log "Error in request %s: %s\n%s" hash_id
                    (Printexc.to_string e) backtrace ;
-                 Hashtbl.replace completed_requests hash_id
+                 Ahashtable.replace_atomic completed_requests hash_id
                    ("error", error_msg, timestamp) ) ;
-              Hashtbl.remove cancellable_requests hash_id ;
+              Ahashtable.remove_atomic cancellable_requests hash_id ;
+              Dream.log "Request %s processing finished." hash_id ;
               Lwt.return_unit )
             request
         in
-        Hashtbl.add cancellable_requests hash_id task ;
-        task
-        >>= fun () ->
+        Ahashtable.add_atomic cancellable_requests hash_id task ;
+        Dream.log "Request %s submitted." hash_id ;
         Dream.json
           (Printf.sprintf {|{"hash_id":"%s","status":"pending"}|} hash_id) )
   ]

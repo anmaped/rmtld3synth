@@ -1,7 +1,7 @@
 (executable
   (name server)
   (public_name rmtld3synth-server)
-  (modules Server Json_schema Solver Version)
+  (modules Server Json_schema Solver Ahashtable Version)
   (libraries rmtld3synth.options rmtld3synth.synthesis rmtld3synth.interface
     (select server.ml from
       ( dream yojson lwt lwt.unix jsonschema !rmtld3synth.js -> server.dream.ml)

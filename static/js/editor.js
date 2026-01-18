@@ -131,7 +131,7 @@ inputEditor.session.on('change', ev => {
                             .catch((error) => {
                                 console.error('Error:', error);
                             });
-                    }, 200);
+                    }, 2000);
 
                 })
                 .catch((error) => {
