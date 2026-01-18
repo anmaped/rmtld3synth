@@ -456,34 +456,41 @@ let load_settings_from_file filename helper =
       monitor_settings
   with _ -> failwith ("Failed to load settings from file: " ^ filename)
 
-(** [set_recursive_unrolling_depth formula helper] sets the recursive-unrolling
-    depth for [helper] if it has not been configured already.
+(** [set_recursive_unrolling_depth formula helper] configures the recursive 
+  unrolling depth for [helper] based on the formula's upper time bound.
 
-    The function derives an appropriate depth from the upper time bound of
-    [formula]. If the formula is unbounded or the computation fails, a default
-    bound of 20 is used. The stored unrolling depth is always [bound + 1].
+  If "rec_unrolling_depth" is not set, it is initialized to [bound + 1] where
+  [bound] is derived from the formula's upper time bound. If the computation
+  fails or the formula is unbounded, a default bound of 20 is used.
 
-    @param formula The formula whose upper time bound is used to determine
-                   the unrolling depth.
-    @param helper  The helper object whose "rec_unrolling_depth" configuration
-                   may be initialized.
+  If "rec_unrolling_depth" is already set and the current value is less than
+  the newly calculated [bound + 1], the setting is updated to the larger value.
 
-    @raise Failure Propagates exceptions raised by [calculate_t_upper_bound]
-                  if they are not handled by the internal [try ... with]
-                  expression.
-
-    Side effects:
-    - Sets the "rec_unrolling_depth" field of [helper] if it was previously unset.
+  @param formula The formula whose upper time bound determines the unrolling depth
+  @param helper  The helper object storing the "rec_unrolling_depth" configuration
 *)
 let set_recursive_unrolling_depth formula helper =
+  let calculate () =
+    int_of_float (try calculate_t_upper_bound formula with Failure _ -> 20.)
+  in
   if not (is_setting "rec_unrolling_depth" helper) then
     (* Calculate the upper time bound of the formula to determine unrolling
        depth. Defaults to 20 if the formula is unbounded. *)
-    let bound =
-      int_of_float
-        (try calculate_t_upper_bound formula with Failure _ -> 20.)
-    in
+    let bound = calculate () in
     set_setting "rec_unrolling_depth" (Num (bound + 1)) helper
+  else
+    (* reset or update the existing setting if needed *)
+    let _ =
+      match get_setting "rec_unrolling_depth" helper with
+      | Num v ->
+          let bound = calculate () in
+          if v < bound + 1 then
+            set_setting_replace "rec_unrolling_depth"
+              (Num (bound + 1))
+              helper
+      | _ -> ()
+    in
+    ()
 
 (** {2 Local Variable Management}
 
@@ -501,10 +508,21 @@ let init_set_variables helper =
   if is_setting "variables" helper then
     (* do reset hash table *)
     let h = get_setting_hash "variables" helper in
-    Hashtbl.reset h ;
+    Hashtbl.reset h
   else
     let h = Hashtbl.create 5 in
     set_setting "variables" (Hash h) helper
+
+(** [reset_set_variables helper] clears all entries from the "variables" hash table
+  stored in the helper's settings.
+  
+  @param helper The helper object containing settings *)
+let reset_set_variables helper =
+  (* check if hash is already there *)
+  if is_setting "variables" helper then
+    let h = get_setting_hash "variables" helper in
+    Hashtbl.reset h
+  else failwith "'variables' setting does not exist."
 
 (** [set_variable name value helper] sets the variable with the given [name]
   to the specified [value] in the "variables" setting of [helper]. *)

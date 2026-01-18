@@ -81,6 +81,11 @@ function createField(name, def) {
         lbl.htmlFor = name;
         lbl.textContent = name;
 
+        // set checked
+        if (def.default === true) {
+            input.checked = true;
+        }
+
         checkboxWrapper.appendChild(input);
         checkboxWrapper.appendChild(lbl);
         wrapper.appendChild(checkboxWrapper);
@@ -96,6 +101,12 @@ function createField(name, def) {
         input.name = name;
         input.id = name;
         input.step = "1"; // ensure integers only
+
+        // set default value
+        if (def.default !== undefined) {
+            input.value = def.default;
+        }
+
         wrapper.appendChild(label);
         wrapper.appendChild(input);
         wrapper.appendChild(errorDiv);
@@ -103,7 +114,7 @@ function createField(name, def) {
     }
 
     /* --- STRING --- */
-    if (def.type === "string") {
+    if (def.type === "string" && !def.enum) {
         const input = document.createElement("input");
         input.type = "text";
         input.className = "form-control";
@@ -127,6 +138,35 @@ function createField(name, def) {
         wrapper.appendChild(textarea);
         wrapper.appendChild(errorDiv);
         return wrapper;
+    }
+
+
+    /* --- Enumeration --- */
+    if (def.type === "string" && def.enum) {
+
+        const stringOption = def;
+
+        if (stringOption) {
+            const select = document.createElement("select");
+            select.className = "form-select";
+            select.name = `${name}`;
+            select.id = `${name}-select`;
+
+            // Add enum options
+            stringOption.enum.forEach(val => {
+                const opt = document.createElement("option");
+                opt.value = val;
+                opt.textContent = val;
+                select.appendChild(opt);
+            });
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(select);
+            wrapper.appendChild(errorDiv);
+            return wrapper;
+        }
+
+        console.warn(`Unsupported enum types for "${name}":`, types);
     }
 
 
@@ -259,8 +299,10 @@ function buildForm() {
 ------------------------------------------------------ */
 function updateOutput() {
 
+    const form = document.getElementById("dynamic-form");
+
     const data = {};
-    const formData = new FormData(document.getElementById("dynamic-form"));
+    const formData = new FormData(form);
 
     // Collect all non-empty form field values
     formData.forEach((value, key) => {
@@ -268,7 +310,7 @@ function updateOutput() {
     });
 
     // Handle unchecked checkboxes
-    document.querySelectorAll("input[type=checkbox]").forEach(cb => {
+    form.querySelectorAll("input[type=checkbox]").forEach(cb => {
         if (cb.checked) data[cb.name] = cb.checked;
     });
 
@@ -378,6 +420,28 @@ document.getElementById("submit-btn").addEventListener("click", () => {
 });
 
 document.getElementById("dynamic-form").addEventListener("blur", (e) => {
-    log("Field blurred: " + e.target.name);
+
+    const disableBlur = document.getElementById("disable-blur-check").checked;
+    if (disableBlur) {
+        log("Auto-update disabled.", "text-info");
+        return;
+    }
+
+    log("--------------------------------------------------", "text-info");
+    log("Field blurred: " + e.target.name, "text-info");
+    log("user clicks away, tabs away, or focus moves elsewhere", "text-info");
+    log("--------------------------------------------------", "text-info");
+    log("Submit current JSON:", "text-info");
     updateOutput();
 }, true);
+
+document.getElementById("reset-btn").addEventListener("click", () => {
+    log("Resetting form to default values.", "text-warning");
+    buildForm();
+});
+
+document.getElementById("auto-fill-btn").addEventListener("click", () => {
+    log("Filling form with input configuration.", "text-info");
+    // not implemented yet
+    log("Auto-fill not implemented yet.", "text-warning");
+});

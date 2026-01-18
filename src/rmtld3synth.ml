@@ -34,19 +34,19 @@ let synth_sat_problem fmt =
       "Multiple SMTLib2 files generated; solver mode only supports a single \
        file" ;
   (*let smtlib2_str = rmtld3synthsmt formula helper in*)
-  if Smtlib2.isZ3SolverEnabled Options.helper then (
+  if Smtlib2.is_z3_solver_enabled Options.helper then (
     verb (fun _ -> print_endline "Z3 solver enabled.") ;
     let ctx, exp = parse_smtlibv2 smtlib2_str in
     let out, solver = solve_ ctx exp in
     verb (fun _ -> print_endline ("Result: " ^ out)) ;
-    if not !Options.get_schedule_flag then print_endline out ;
+    if not (Options.get_trace Options.helper) then print_endline out ;
     if out = "satisfiable" then (
       let model = get_model ctx solver in
-      if not !Options.get_schedule_flag then
+      if not (Options.get_trace Options.helper) then
         print_endline (string_of_z3model model) ;
-      if !Options.get_schedule_flag then (
+      if (Options.get_trace Options.helper) then (
         let scheduler_trace = get_scheduler ctx model Options.helper in
-        if !Options.trace_style = "tinterval" then
+        if Options.trace_style Options.helper = "tinterval" then
           let _, trc_str =
             List.fold_left
               (fun (cnt, a) b ->
@@ -55,7 +55,7 @@ let synth_sat_problem fmt =
               (0., "") scheduler_trace
           in
           print_endline trc_str
-        else if !Options.trace_style = "tcum" then
+        else if Options.trace_style Options.helper = "tcum" then
           let _, trc_str =
             List.fold_left
               (fun (cnt, a) b ->

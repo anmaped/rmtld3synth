@@ -28,7 +28,7 @@ let recursive_unrolling_depth helper =
 let assume_unary_sequence helper =
   get_setting_bool "assume_unary_sequence" helper
 
-let isZ3SolverEnabled helper =
+let is_z3_solver_enabled helper =
   if is_setting "solver" helper then
     let s = get_setting_string "solver" helper in
     s = "z3"
@@ -39,20 +39,6 @@ let isCvc4SolverEnabled helper =
     let s = get_setting_string "solver" helper in
     s = "cvc4"
   else false
-
-let init_set_variables helper =
-  (* check if hash is already there *)
-  if is_setting "variables" helper then (
-    (* do reset hash table *)
-    let h = get_setting_hash "variables" helper in
-    Hashtbl.reset h ;
-    Hashtbl.add h (S "free_variables_set") (S (set_to_string SS.empty)) ;
-    Hashtbl.add h (S "lst") (S (list_to_string [])) )
-  else
-    let h = Hashtbl.create 5 in
-    Hashtbl.add h (S "free_variables_set") (S (set_to_string SS.empty)) ;
-    Hashtbl.add h (S "lst") (S (list_to_string [])) ;
-    set_setting "variables" (Hash h) helper
 
 let set_variable_lst lst helper =
   let lst_str = list_to_string lst in
@@ -815,7 +801,7 @@ let synth_smtlib_header helper =
   in
   common_header () ;
   common_header_cvc4 () ;
-  if isZ3SolverEnabled helper then common_header_z3 () ;
+  if is_z3_solver_enabled helper then common_header_z3 () ;
   ()
 
 let synth_smtlib_common_types helper =
@@ -1143,9 +1129,9 @@ let synth_smtlib' fmt synth_fun formula helper =
     (* body *)
     (f_equal tm (f_const_term "TVTRUE"))
     helper ;
-  (* if isZ3SolverEnabled helper then (assert (forall ((t Time)) (>= (select
+  (* if is_z3_solver_enabled helper then (assert (forall ((t Time)) (>= (select
      trc t) 0) )) *)
-  if isZ3SolverEnabled helper then
+  if is_z3_solver_enabled helper then
     assert_
       (Term.forall
          [Term.colon (f_const_term "t") (f_const_sort "Time")]
@@ -1168,11 +1154,11 @@ let synth_smtlib' fmt synth_fun formula helper =
        (Term.apply (f_const_term "allcheck")
           [f_const_term "trc"; Term.int "0"] ) )
     helper ;
-  if not (isZ3SolverEnabled helper) then (
+  if not (is_z3_solver_enabled helper) then (
     check_sat helper ;
     get_model helper ;
     get_info ":all-statistics" helper ) ;
-  (* if isZ3SolverEnabled helper then "(check-sat-using (then qe smt))" ;
+  (* if is_z3_solver_enabled helper then "(check-sat-using (then qe smt))" ;
      this entry is available only in Z3 *)
   (* 
    * initialize dolmen to pretty print smtlib
@@ -1237,9 +1223,9 @@ let synth_smtlib' fmt synth_fun formula helper =
           save_file out_file output_str ;
           verbose (pp_endline fmt) ("SMTLIBv2 file " ^ out_file ^ " saved.")
       ) ;
-      if isZ3SolverEnabled helper then output_str else ""
+      if is_z3_solver_enabled helper then output_str else ""
     with Not_found ->
-      if not (isZ3SolverEnabled helper) then pp_endline fmt output_str ;
+      if not (is_z3_solver_enabled helper) then pp_endline fmt output_str ;
       output_str )
 
 let synth_smtlib fmt synth_fun helper =
@@ -1258,6 +1244,11 @@ let synth_smtlib fmt synth_fun helper =
       ^ string_of_int (List.length input_lst) ) ;
     List.mapi
       (fun idx fm ->
+        (* Reset state for each formula to ensure isolation *)
+        reset_set_variables helper ;
+        set_variable "free_variables_set" (S (set_to_string SS.empty)) helper ;
+        set_variable "lst" (S (list_to_string [])) helper ;
+        (* set recursive unrolling depth *)
         set_recursive_unrolling_depth fm helper ;
         verbose pp_endline
           ( "Setting recursive unrolling depth to "
@@ -1267,6 +1258,6 @@ let synth_smtlib fmt synth_fun helper =
           ^ string_of_int (idx + 1)
           ^ "/"
           ^ string_of_int (List.length input_lst) ) ;
-        (string_of_int idx ^ ".smt2", synth_smtlib' fmt synth_fun fm helper)
+        ("f" ^ string_of_int idx ^ ".smt2", synth_smtlib' fmt synth_fun fm helper)
         )
       input_lst )

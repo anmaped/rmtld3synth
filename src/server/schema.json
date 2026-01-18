@@ -33,15 +33,15 @@
       "default": false,
       "description": "[group: Language] Enable Simpl CAD output"
     },
-    "solver_z3": {
-      "type": "boolean",
-      "default": false,
+    "solver": {
+      "type": "string",
+      "default": "none",
+      "enum": [
+            "none",
+            "z3",
+            "cvc4"
+          ],
       "description": "[group: Solvers] Use the Z3 solver"
-    },
-    "solver_cvc4": {
-      "type": "boolean",
-      "default": false,
-      "description": "[group: Solvers] Use the CVC4 solver"
     },
     "solver_statistics": {
       "type": "boolean",
@@ -53,10 +53,10 @@
         {
           "type": "string",
           "enum": [
-            "none",
-            "auto"
+            "auto",
+            "none"
           ],
-          "default": "none"
+          "default": "auto"
         },
         {
           "type": "integer",
@@ -65,9 +65,9 @@
       ],
       "description": "[group: Recursive Unrolling] Depth for recursive unrolling"
     },
-    "assume_unary_seq": {
+    "assume_unary_sequence": {
       "type": "boolean",
-      "default": false,
+      "default": true,
       "description": "[group: Tracing] Assume unary sequence"
     },
     "get_trace": {
@@ -77,6 +77,11 @@
     },
     "trace_style": {
       "type": "string",
+      "default": "tcum",
+      "enum": [
+            "tcum",
+            "tinterval"
+          ],
       "description": "[group: Tracing] Trace output style"
     },
     "eval": {
@@ -202,6 +207,7 @@
     "verbose": {
       "type": "integer",
       "minimum": 0,
+      "default": 1,
       "description": "[group: Misc] Verbosity level"
     },
     "version": {

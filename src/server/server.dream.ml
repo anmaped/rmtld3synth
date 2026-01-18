@@ -22,7 +22,7 @@ let run_cmd fmt body =
         with Failure msg ->
           Format.fprintf fmt "Error: %s" (String.escaped msg) ;
           Dream.log "apply_options_from_assoc_list failed: %s" msg ;
-          failwith ("Failed to apply options.") ) ;
+          failwith "Failed to apply options." ) ;
       Dream.log "Settings after applying JSON options: %s"
         (Helper.get_json_string_of_settings job_helper) ;
       (* Check if version flag is set to display version info, otherwise
@@ -52,8 +52,20 @@ let run_cmd fmt body =
           let lst =
             Synthesis.Smtlib2.synth_smtlib fmt Smtlib.synth job_helper
           in
-          (* convert string list to multipart message *)
-          Helper.to_multipart_message fmt lst
+          (* call z3 solver if enabled *)
+          if Synthesis.Smtlib2.is_z3_solver_enabled job_helper then
+            let solved_lst =
+              List.map
+                (fun (filename, smt_str) ->
+                  print_endline ("Solving SMTLib2 file: " ^ filename) ;
+                  let result = Solver.with_z3 smt_str job_helper in
+                  (filename ^ " (trace)", result) )
+                lst
+            in
+            Helper.to_multipart_message fmt solved_lst
+          else
+            (* convert string list to multipart message *)
+            Helper.to_multipart_message fmt lst
         else
           Format.fprintf fmt "Error: No valid generation language specified."
         )
@@ -67,7 +79,15 @@ let schema () =
 let status () =
   [ Dream.get "/api/settings" (fun _request ->
         let settings = Helper.get_json_string_of_settings Options.helper in
-        Dream.json settings ) ]
+        Dream.json settings )
+  ; (* version *)
+    Dream.get "/api/version" (fun _request ->
+        let version_info =
+          Printf.sprintf {|{"version":"%s"}|} (String.escaped Version.git)
+        in
+        Dream.json version_info )
+  ; (* status *)
+    Dream.head "/api/status" (fun _request -> Dream.empty `OK) ]
 
 (** API endpoint to retrieve available command-line options and their descriptions. *)
 let options () =
@@ -239,7 +259,8 @@ let request_control () =
             request
         in
         Hashtbl.add cancellable_requests hash_id task ;
-        Lwt.async (fun () -> task) ;
+        task
+        >>= fun () ->
         Dream.json
           (Printf.sprintf {|{"hash_id":"%s","status":"pending"}|} hash_id) )
   ]
@@ -264,7 +285,7 @@ let () =
                  Dream.from_filesystem "static/bundles"
                    (Dream.param request "file")
                    request ) ]
-         ; options () @ schema () @ request_control () ] )
+         ; status () @ options () @ schema () @ request_control () ] )
     |> Dream.logger
   in
   Dream.run ~interface:"0.0.0.0" ~port:8001 app

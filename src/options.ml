@@ -22,9 +22,9 @@ let smt_solver = ref ""
 
 let solver_statistics_flag = ref false
 
-let get_schedule_flag = ref false
+let get_trace helper = get_setting_bool "get_trace" helper
 
-let trace_style = ref ""
+let trace_style helper = get_setting_string "trace_style" helper
 
 let gen_rmtld_formula = ref false
 
@@ -66,7 +66,8 @@ let set_cpp_language () = set_setting "cpp11_language" (Sel true) helper
 let set_spark2014_language () =
   set_setting "spark2014_language" (Sel true) helper
 
-let set_smtlibv2_language () = set_setting "smtlibv2_language" (Sel true) helper
+let set_smtlibv2_language () =
+  set_setting "smtlibv2_language" (Sel true) helper
 
 let set_solve_statistics f = solver_statistics_flag := true
 
@@ -83,16 +84,17 @@ let set_recursive_unrolling helper arg =
     | _ when Str.string_match (Str.regexp "[0-9]+") arg 0 ->
         set_setting "rec_unrolling_depth" (Num (int_of_string arg)) helper ;
         true
-    | _ -> failwith ("Unrecognized recursive unrolling parameter '" ^ arg ^ "'.")
+    | _ ->
+        failwith ("Unrecognized recursive unrolling parameter '" ^ arg ^ "'.")
   in
   set_setting "rec_unrolling" (Sel enabled) helper
 
 let set_assume_unary_sequence () =
   set_setting "assume_unary_sequence" (Sel true) helper
 
-let set_get_schedule f = get_schedule_flag := true
+let set_get_trace f = set_setting "get_trace" (Sel true) helper
 
-let set_trace_style f = trace_style := f
+let set_trace_style f = set_setting "trace_style" (Txt f) helper
 
 let set_gen_rmtld_formula f = gen_rmtld_formula := true
 
@@ -135,8 +137,8 @@ let set_exp_dsl helper v =
     (Fm (Dsl.Load.parse_string v |> Dsl.TranslateToRmtld3.conv_fm))
     helper
 
-let set_exp_ltxeq helper v =
-  set_setting "input_ltxeq" (Txt v) helper ;
+let set_exp_latexeq helper v =
+  set_setting "input_latexeq" (Txt v) helper ;
   set_setting "input_exp" (Fm (Tex.Texeqparser.texeqparser v)) helper
 
 let set_exp_rmdsl helper v =
@@ -182,11 +184,16 @@ let apply_options_from_assoc_list assoc_list helper =
       | `String s ->
           if key = "input_sexp" then set_exp helper s
           else if key = "input_dsl" then set_exp_dsl helper s
-          else if key = "input_latexeq" then set_exp_ltxeq helper s
+          else if key = "input_latexeq" then set_exp_latexeq helper s
           else if key = "input_rmdsl" then set_exp_rmdsl helper s
           else if key = "rec_unrolling" then set_recursive_unrolling helper s
+          else if key = "solver" then set_setting key (Txt s) helper
+          else if key = "trace_style" then set_setting key (Txt s) helper
           else failwith ("Unknown string option: " ^ key)
-      | `Int n -> set_setting key (Num n) helper
+      | `Int n ->
+          if key = "rec_unrolling" then
+            set_recursive_unrolling helper (string_of_int n)
+          else set_setting key (Num n) helper
       | `Bool b -> set_setting key (Sel b) helper
       | `List _ ->
           let apply_setter setter err_msg_list err_msg_nonlist =
@@ -208,11 +215,11 @@ let apply_options_from_assoc_list assoc_list helper =
               (fun s -> set_exp_dsl helper s)
               "Expected list of strings for input_dsl"
               "Expected list for input_dsl"
-          else if key = "input_ltxeq" then
+          else if key = "input_latexeq" then
             apply_setter
-              (fun s -> set_exp_ltxeq helper s)
-              "Expected list of strings for input_ltxeq"
-              "Expected list for input_ltxeq"
+              (fun s -> set_exp_latexeq helper s)
+              "Expected list of strings for input_latexeq"
+              "Expected list for input_latexeq"
           else if key = "input_rmdsl" then
             apply_setter
               (fun s -> set_exp_rmdsl helper s)
@@ -253,13 +260,13 @@ let speclist =
   ; ( "--rec-unrolling"
     , Arg.String (set_recursive_unrolling helper)
     , " Enables recursive unrolling with depth: none, auto, [0-9]+" )
-  ; ( "--assume-unary-seq"
+  ; ( "--assume-unary-sequence"
     , Arg.Unit set_assume_unary_sequence
     , " Assume that the output sequence is unary." )
   ; ( "--solver-statistics"
     , Arg.Unit set_solve_statistics
     , " Enables printing the solver statistics" )
-  ; ("--get-trace", Arg.Unit set_get_schedule, " Returns the schedule")
+  ; ("--get-trace", Arg.Unit set_get_trace, " Returns the schedule")
   ; ( "--trace-style"
     , Arg.String set_trace_style
     , " Sets the trace style\n\n Evaluation:" )
@@ -280,7 +287,7 @@ let speclist =
     , Arg.String (set_exp_dsl helper)
     , " Inputs dsl expression (RMTLD3 formula)" )
   ; ( "--input-latexeq"
-    , Arg.String (set_exp_ltxeq helper)
+    , Arg.String (set_exp_latexeq helper)
     , " Inputs latex equation expressions (RMTLD3 formula) (Experimental)" )
   ; ( "--input-rmdsl"
     , Arg.String (set_exp_rmdsl helper)
@@ -348,7 +355,10 @@ let legacy =
           prerr_endline
             "(Deprecated since 0.7) Use --spark2014-language instead." ;
           set_spark2014_language () )
-    , "" ) ]
+    , "" )
+  ; ( "--assume-unary-seq"
+    , Arg.Unit set_assume_unary_sequence
+    , " Assume that the output sequence is unary." ) ]
 
 let usage_msg =
   "rmtld3synth flags [options] input [output]\n\n Flags for synthesis: "

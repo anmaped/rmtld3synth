@@ -66,13 +66,17 @@ function cleanupBlobs() {
 // ------------------------
 const originalFetch = window.fetch;
 window.fetch = async function (resource, options) {
-    console.log("Fetch:", resource);
 
     let urlStr = resource;
     if (resource instanceof Request) urlStr = resource.url;
 
+    // [exception] do not log every fetch if is a ping
+    if (!urlStr.includes("api/status")) {
+        log("Fetch:", urlStr);
+    }
+
     if (blobURLStore[urlStr]) {
-        console.log("Serving \"" + urlStr + "\" from blob URL:", blobURLStore[urlStr]);
+        log("Serving \"" + urlStr + "\" from blob URL:", blobURLStore[urlStr]);
         return originalFetch(blobURLStore[urlStr], options);
     }
 

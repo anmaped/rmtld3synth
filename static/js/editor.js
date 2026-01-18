@@ -35,6 +35,11 @@ inputEditor.session.on('change', ev => {
             // Handle backend mode logic here
             console.log("Backend mode is enabled; not running worker.");
             log(JSON.stringify({ input_dsl: inputEditor.getValue(), ocaml_language: true }))
+            // update requested jobs count badge
+            let requestedJobsCountElem = document.getElementById('requested-jobs-count');
+            let requestedJobsCount = parseInt(requestedJobsCountElem.textContent);
+            requestedJobsCount += 1;
+            requestedJobsCountElem.textContent = requestedJobsCount;
             // do a post request to the server with the inputEditor content
             fetch('api/request', {
                 method: 'POST',
@@ -44,20 +49,29 @@ inputEditor.session.on('change', ev => {
                 body: convertInputFormat(inputEditor.getValue())
             })
                 .then(response => response.json())
-                .then(data => {
+                .then(requestdata => {
                     // Handle server response
-                    console.log('Server response:', data);
+                    console.log('Server response:', requestdata);
 
+                    // update pending jobs count badge
+                    updatePendingJobsCount(1);
+
+                    // add pending jobs to modal  pendingJobsTableBody
+                    addPendingJobToModalAndLocalStorage(requestdata.hash_id, 'Pending');
+
+                    // set hash
+                    window.location.hash = requestdata.hash_id;
+
+                    // Start polling for the request status
 
                     // check the request every 2 seconds until we get a response with status 'completed'
                     const intervalId = setInterval(() => {
-                        fetch('api/request/' + data.hash_id)
+                        fetch('api/request/' + requestdata.hash_id)
                             .then(response => response.json())
                             .then(data => {
                                 console.log('Status response:', data);
                                 if (data.status === 'completed') {
                                     clearInterval(intervalId);
-                                    log("Request completed successfully.");
 
                                     let files = convertMultipartToJsonListAutoBoundary(data.result)
 
@@ -73,6 +87,19 @@ inputEditor.session.on('change', ev => {
                                     fill_text_editor(files);
 
                                     showFloatingAlert("Code generation completed successfully!", "success", 8000);
+
+                                    log("Request completed successfully.", "text-success");
+
+                                    // stop spinning after 1 seconds
+                                    setTimeout(() => {
+                                        document.getElementById('code-gen-icon').classList.remove('spin');
+                                    }, 1000);
+
+                                    // update pending jobs count badge
+                                    updatePendingJobsCount(-1);
+
+                                    // update pending jobs table in modal
+                                    updatePendingJobsModalAndLocalStorage(requestdata.hash_id, 'Completed');
                                 }
                                 else if (data.status === 'error') {
                                     clearInterval(intervalId);
@@ -85,9 +112,20 @@ inputEditor.session.on('change', ev => {
 
                                     showFloatingAlert("Error processing request on server.", "danger", 15000, ansiOctalToDom(errorMessage));
 
-                                    log("Error processing request on server:\n" + ansiOctalToDom(errorMessage).textContent);
+                                    log("Error processing request on server:\n" + ansiOctalToDom(errorMessage).textContent, "text-danger");
 
                                     clearEditorToDefault();
+
+                                    // stop spinning after 1 seconds
+                                    setTimeout(() => {
+                                        document.getElementById('code-gen-icon').classList.remove('spin');
+                                    }, 1000);
+
+                                    // update pending jobs count badge
+                                    updatePendingJobsCount(-1);
+
+                                    // update pending jobs table in modal
+                                    updatePendingJobsModalAndLocalStorage(requestdata.hash_id, 'Error');
                                 }
                             })
                             .catch((error) => {
@@ -99,11 +137,6 @@ inputEditor.session.on('change', ev => {
                 .catch((error) => {
                     console.error('Error:', error);
                 });
-
-            // stop spinning after 1 seconds
-            setTimeout(() => {
-                document.getElementById('code-gen-icon').classList.remove('spin');
-            }, 1000);
 
         }
     }
